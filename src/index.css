@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+
+  /* Prevent tap highlight on all elements */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Brand color tokens — always available regardless of Tailwind JIT state */
+  :root {
+    color-scheme: light;
+    --color-primary: #006a65;
+    --color-accent: #2FA7A0;
+    --color-surface: #fcf9f4;
+  }
+
+  /* Strip Safari native chrome — only for non-checkbox/radio inputs */
+  button,
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Prevent Safari auto-zoom on input focus (requires font-size >= 16px) */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  /* Native checkbox & radio — use accent-color to tint them teal */
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: #2FA7A0;
+    cursor: pointer;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+}
+
+@layer utilities {
+  .abstract-blob {
+    filter: blur(60px);
+    opacity: 0.4;
+  }
+
+  .hero-gradient {
+    background: radial-gradient(circle at 50% 50%, #2fa7a020 0%, #fcf9f4 70%);
+  }
+
+  /* Primary color overrides — #006a65 = rgb(0,106,101)
+     These win over anything Tailwind generates
+     because they appear last in the utilities layer source order */
+  .bg-primary {
+    background-color: #006a65;
+  }
+  .text-primary {
+    color: #006a65;
+  }
+  .border-primary {
+    border-color: #006a65;
+  }
+  .bg-primary\/5 {
+    background-color: rgba(0, 106, 101, 0.05);
+  }
+  .bg-primary\/10 {
+    background-color: rgba(0, 106, 101, 0.1);
+  }
+  .bg-primary\/20 {
+    background-color: rgba(0, 106, 101, 0.2);
+  }
+  .ring-primary {
+    --tw-ring-color: #006a65;
+  }
+  .ring-primary\/5 {
+    --tw-ring-color: rgba(0, 106, 101, 0.05);
+  }
+  .ring-primary\/20 {
+    --tw-ring-color: rgba(0, 106, 101, 0.2);
+  }
+  .from-primary {
+    --tw-gradient-from: #006a65;
+    --tw-gradient-to: rgba(0, 106, 101, 0);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+  .to-primary {
+    --tw-gradient-to: #006a65;
+  }
+  .bg-primary\/30 {
+    background-color: rgba(0, 106, 101, 0.3);
+  }
+  .text-primary\/50 {
+    color: rgba(0, 106, 101, 0.5);
+  }
+  .text-primary\/80 {
+    color: rgba(0, 106, 101, 0.8);
+  }
+  .border-primary\/10 {
+    border-color: rgba(0, 106, 101, 0.1);
+  }
+  .border-primary\/20 {
+    border-color: rgba(0, 106, 101, 0.2);
+  }
+  .border-primary\/30 {
+    border-color: rgba(0, 106, 101, 0.3);
+  }
+  .shadow-primary\/20 {
+    --tw-shadow-color: rgba(0, 106, 101, 0.2);
+  }
+  .shadow-primary\/30 {
+    --tw-shadow-color: rgba(0, 106, 101, 0.3);
+  }
+}
+
+html {
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #fcf9f4;
+  height: 100dvh;
+  width: 100vw;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-overflow-scrolling: touch;
+}
