@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -27,6 +27,7 @@ const APP_SHELL_ROUTES = ['/home', '/bookmarks', '/settings', '/notifications-li
 
 function AppLayout() {
   const location = useLocation()
+  const mainRef = useRef<HTMLElement>(null)
   const isHydrated = useAppStore((state) => state.isHydrated)
   const setHydrated = useAppStore((state) => state.setHydrated)
 
@@ -34,22 +35,29 @@ function AppLayout() {
     setHydrated(true)
   }, [setHydrated])
 
+  // Reset scroll to top on every page change
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0
+  }, [location.pathname])
+
   return (
     <div className="bg-surface text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden">
       <div className="w-full max-w-[390px] mx-auto h-full relative shadow-sm bg-background flex flex-col overflow-hidden">
 
-        {/* Only the page content fades — BottomNav never remounts */}
+        {/* Only page content fades — BottomNav never remounts */}
         <main
+          ref={mainRef}
           className="flex-1 w-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          <AnimatePresence mode="sync" initial={false}>
+          {/* mode="wait": only ONE page in DOM at a time — prevents double-content layout bug */}
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: 'easeInOut' }}
+              transition={{ duration: 0.12 }}
               style={{ willChange: 'opacity' }}
             >
               {isHydrated
