@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useAppStore } from '../store'
@@ -8,6 +9,8 @@ export function SettingsPage() {
     email,
     birthDate,
     horoscopeTime,
+    profilePhoto,
+    setProfilePhoto,
     showHoroscope,
     showHolidays,
     showSupport,
@@ -15,6 +18,20 @@ export function SettingsPage() {
     toggleHolidays,
     toggleSupport
   } = useAppStore()
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handlePhotoClick = () => fileInputRef.current?.click()
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setProfilePhoto(reader.result as string)
+    reader.readAsDataURL(file)
+    // reset so same file can be re-selected
+    e.target.value = ''
+  }
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -27,12 +44,21 @@ export function SettingsPage() {
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial="hidden"
       animate="show"
       variants={containerVariants}
       className="flex flex-col min-h-full bg-background font-body"
     >
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
         <div className="flex items-center gap-4 h-16">
@@ -44,19 +70,31 @@ export function SettingsPage() {
       <main className="px-6 pb-28 hide-scrollbar">
         {/* Profile Block */}
         <motion.section variants={itemVariants} className="flex items-center gap-6 mb-10 mt-4">
-          <div className="relative">
+          <button
+            onClick={handlePhotoClick}
+            className="relative flex-shrink-0 active:scale-95 transition-transform"
+            aria-label="Сменить фото профиля"
+          >
             <div className="w-20 h-20 rounded-full overflow-hidden bg-surface-container-high ring-4 ring-surface-container-low flex items-center justify-center text-on-surface-variant">
-              <span className="material-symbols-outlined text-4xl">person</span>
+              {profilePhoto
+                ? <img src={profilePhoto} className="w-full h-full object-cover" alt="Фото профиля" />
+                : <span className="material-symbols-outlined text-4xl">person</span>
+              }
             </div>
-            <div className="absolute bottom-0 right-0 p-1.5 rounded-full shadow-lg border-2 border-surface bg-accent">
+            <div className="absolute bottom-0 right-0 p-1.5 rounded-full shadow-lg border-2 border-surface bg-accent pointer-events-none">
               <span className="material-symbols-outlined text-white text-sm">photo_camera</span>
             </div>
-          </div>
+          </button>
           <div className="flex flex-col gap-1">
             <span className="font-headline text-xl font-bold text-on-surface">
               {userName || 'Профиль'}
             </span>
-            <button className="text-sm font-medium hover:underline text-left text-accent">Сменить фото</button>
+            <button
+              onClick={handlePhotoClick}
+              className="text-sm font-medium text-left text-accent active:opacity-60 transition-opacity"
+            >
+              Сменить фото
+            </button>
           </div>
         </motion.section>
 
@@ -84,29 +122,17 @@ export function SettingsPage() {
           </div>
         </motion.section>
 
-        {/* Card 1: Уведомления (Контент) */}
+        {/* Контент */}
         <motion.section variants={itemVariants} className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
           <h2 className="text-sm font-bold text-on-surface mb-5 px-1 uppercase tracking-wider opacity-60">Контент</h2>
           <div className="flex flex-col gap-6">
-            <ToggleItem 
-              label="Гороскоп" 
-              isActive={showHoroscope} 
-              onToggle={toggleHoroscope} 
-            />
-            <ToggleItem 
-              label="Праздники" 
-              isActive={showHolidays} 
-              onToggle={toggleHolidays} 
-            />
-            <ToggleItem 
-              label="Поддержка на сегодня" 
-              isActive={showSupport} 
-              onToggle={toggleSupport} 
-            />
+            <ToggleItem label="Гороскоп" isActive={showHoroscope} onToggle={toggleHoroscope} />
+            <ToggleItem label="Праздники" isActive={showHolidays} onToggle={toggleHolidays} />
+            <ToggleItem label="Поддержка на сегодня" isActive={showSupport} onToggle={toggleSupport} />
           </div>
         </motion.section>
 
-        <div className="h-6"></div>
+        <div className="h-6" />
       </main>
     </motion.div>
   )

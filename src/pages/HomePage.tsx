@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useDragControls } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import type { Variants } from 'framer-motion'
 import { useAppStore } from '../store'
@@ -35,11 +35,13 @@ export function HomePage() {
   const setSupportPhrase = useAppStore(s => s.setSupportPhrase)
   const addBookmark = useAppStore(s => s.addBookmark)
   const bookmarks = useAppStore(s => s.bookmarks)
+  const profilePhoto = useAppStore(s => s.profilePhoto)
 
   const [horoscopeTab, setHoroscopeTab] = useState<'short' | 'detailed'>('short')
   const [isMoodSheetOpen, setIsMoodSheetOpen] = useState(false)
   const [installDismissed, setInstallDismissed] = useState(false)
   const [showIOSModal, setShowIOSModal] = useState(false)
+  const iosDragControls = useDragControls()
 
   const quoteIdxRef = useRef<number>(-1)
 
@@ -132,7 +134,10 @@ export function HomePage() {
       {/* Header */}
       <motion.header variants={itemVariants} className="flex justify-between items-center py-2">
         <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high border-2 border-surface-container-lowest flex items-center justify-center">
-          <span className="material-symbols-outlined text-[28px] text-outline-variant opacity-50" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
+          {profilePhoto
+            ? <img src={profilePhoto} className="w-full h-full object-cover" alt="avatar" />
+            : <span className="material-symbols-outlined text-[28px] text-outline-variant opacity-50" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
+          }
         </div>
         <span className="font-headline font-semibold text-on-surface-variant text-sm">Сегодня — {getTodayFormatted()}</span>
         <button
@@ -319,15 +324,32 @@ export function HomePage() {
               className="fixed inset-0 z-50 bg-black/40"
             />
             <motion.div
+              drag="y"
+              dragControls={iosDragControls}
+              dragListener={false}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.25 }}
+              onDragEnd={(_, { offset, velocity }) => {
+                if (offset.y > 60 || velocity.y > 200) {
+                  setShowIOSModal(false)
+                  setInstallDismissed(true)
+                }
+              }}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[28px] px-6 pt-5 shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 z-50 max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[28px] shadow-2xl"
               style={{ paddingBottom: 'max(32px, env(safe-area-inset-bottom))' }}
             >
-              <div className="w-10 h-1 bg-surface-container-highest rounded-full mx-auto mb-6" />
-              <div className="flex items-center gap-4 mb-6">
+              {/* Drag zone — pill only */}
+              <div
+                className="pt-5 pb-2 touch-none select-none cursor-grab flex justify-center"
+                onPointerDown={(e) => iosDragControls.start(e)}
+              >
+                <div className="w-10 h-1 bg-surface-container-highest rounded-full" />
+              </div>
+              <div className="px-6 pb-2 flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_today</span>
                 </div>
@@ -336,26 +358,28 @@ export function HomePage() {
                   <p className="text-xs text-on-surface-variant mt-0.5">3 простых шага в Safari</p>
                 </div>
               </div>
-              <div className="space-y-4 mb-8">
-                {[
-                  { icon: 'ios_share', text: 'Нажмите иконку "Поделиться" внизу Safari' },
-                  { icon: 'add_box', text: 'Выберите "На экран «Домой»"' },
-                  { icon: 'check_circle', text: 'Нажмите "Добавить" — готово!' },
-                ].map((step, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="material-symbols-outlined text-primary text-lg">{step.icon}</span>
+              <div className="px-6">
+                <div className="space-y-4 mb-8">
+                  {[
+                    { icon: 'ios_share', text: 'Нажмите иконку "Поделиться" внизу Safari' },
+                    { icon: 'add_box', text: 'Выберите "На экран «Домой»"' },
+                    { icon: 'check_circle', text: 'Нажмите "Добавить" — готово!' },
+                  ].map((step, i) => (
+                    <div key={i} className="flex items-center gap-4">
+                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="material-symbols-outlined text-primary text-lg">{step.icon}</span>
+                      </div>
+                      <p className="text-sm text-on-surface font-medium">{step.text}</p>
                     </div>
-                    <p className="text-sm text-on-surface font-medium">{step.text}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <button
+                  onClick={() => { setShowIOSModal(false); setInstallDismissed(true) }}
+                  className="w-full py-4 bg-primary-container text-white rounded-full font-headline font-bold text-sm active:scale-[0.98] transition-transform"
+                >
+                  Понятно
+                </button>
               </div>
-              <button
-                onClick={() => { setShowIOSModal(false); setInstallDismissed(true) }}
-                className="w-full h-13 py-4 bg-primary-container text-white rounded-full font-headline font-bold text-sm active:scale-[0.98] transition-transform"
-              >
-                Понятно
-              </button>
             </motion.div>
           </>
         )}

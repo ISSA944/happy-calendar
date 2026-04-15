@@ -47,6 +47,9 @@ type AppState = {
   hasCompletedOnboarding: boolean
   setHasCompletedOnboarding: (v: boolean) => void
 
+  profilePhoto: string
+  setProfilePhoto: (url: string) => void
+
   email: string
   setEmail: (email: string) => void
   birthDate: string
@@ -118,6 +121,9 @@ export const useAppStore = create<AppState>()(
       setGender: (gender) => set({ gender }),
       hasCompletedOnboarding: false,
       setHasCompletedOnboarding: (hasCompletedOnboarding) => set({ hasCompletedOnboarding }),
+
+      profilePhoto: '',
+      setProfilePhoto: (profilePhoto) => set({ profilePhoto }),
 
       email: '',
       setEmail: (email) => set({ email }),
