@@ -5,7 +5,13 @@ export function WelcomePage() {
   const navigate = useNavigate()
 
   return (
-    <div className="relative h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto flex flex-col justify-between p-8 overscroll-none scroll-smooth">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="relative h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto flex flex-col justify-between p-8 overscroll-none scroll-smooth"
+    >
       {/* Background Blobs */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <motion.div 
@@ -107,6 +113,6 @@ export function WelcomePage() {
           Начать
         </motion.button>
       </motion.div>
-    </div>
+    </motion.div>
   )
 }

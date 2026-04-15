@@ -27,10 +27,10 @@ export function RegistrationPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       /*
         overflow-y-auto (NOT hidden): a registration form with 2 inputs + 2 checkboxes
         will never fully fit above the keyboard on iPhone SE (375×667). Using auto lets
