@@ -17,11 +17,11 @@ import {
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
+  show: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.02 } }
 }
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 380, damping: 28 } }
 }
 
 export function HomePage() {
@@ -89,7 +89,6 @@ export function HomePage() {
       <motion.div
         initial="hidden"
         animate="show"
-        exit={{ opacity: 0 }}
         variants={containerVariants}
         className="max-w-[390px] mx-auto px-5 space-y-6 pt-2 pb-8"
       >

@@ -12,8 +12,6 @@ export interface Bookmark {
 }
 
 type AppState = {
-  isHydrated: boolean
-  setHydrated: (value: boolean) => void
   currentMood: string
   setCurrentMood: (mood: string) => void
   zodiacSign: string
@@ -51,8 +49,6 @@ type AppState = {
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      isHydrated: false,
-      setHydrated: (isHydrated) => set({ isHydrated }),
       currentMood: 'Воодушевлена',
       setCurrentMood: (mood) => set({ currentMood: mood }),
       zodiacSign: '',

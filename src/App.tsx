@@ -19,23 +19,13 @@ import {
   SettingsPage,
   WelcomePage,
 } from './pages'
-import { useAppStore } from './store'
 import { BottomNav } from './components/BottomNav'
-
-// Routes that live inside the persistent AppLayout shell
-const APP_SHELL_ROUTES = ['/home', '/bookmarks', '/settings', '/notifications-list']
 
 function AppLayout() {
   const location = useLocation()
   const mainRef = useRef<HTMLElement>(null)
-  const isHydrated = useAppStore((state) => state.isHydrated)
-  const setHydrated = useAppStore((state) => state.setHydrated)
 
-  useEffect(() => {
-    setHydrated(true)
-  }, [setHydrated])
-
-  // Reset scroll to top on every page change
+  // Reset scroll to top on every tab switch
   useEffect(() => {
     if (mainRef.current) mainRef.current.scrollTop = 0
   }, [location.pathname])
@@ -44,26 +34,23 @@ function AppLayout() {
     <div className="bg-surface text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden">
       <div className="w-full max-w-[390px] mx-auto h-full relative shadow-sm bg-background flex flex-col overflow-hidden">
 
-        {/* Only page content fades — BottomNav never remounts */}
+        {/* Page content crossfades — BottomNav sits below and never remounts */}
         <main
           ref={mainRef}
           className="flex-1 w-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {/* mode="wait": only ONE page in DOM at a time — prevents double-content layout bug */}
+          {/* mode="wait": one page in DOM at a time, pure opacity crossfade */}
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.12 }}
+              transition={{ duration: 0.1 }}
               style={{ willChange: 'opacity' }}
             >
-              {isHydrated
-                ? <Outlet />
-                : <div style={{ background: '#fcf9f4', height: '100%' }} />
-              }
+              <Outlet />
             </motion.div>
           </AnimatePresence>
         </main>
@@ -77,29 +64,21 @@ function AppLayout() {
 function AppRoutes() {
   const location = useLocation()
 
-  // App-shell routes share one stable key → AppLayout never remounts on tab switches.
-  // Standalone pages each get a unique key → full crossfade between them.
-  const routeKey = APP_SHELL_ROUTES.includes(location.pathname)
-    ? 'app-shell'
-    : location.key
-
   return (
-    <AnimatePresence mode="sync" initial={false}>
-      <Routes location={location} key={routeKey}>
-        <Route path="/" element={<WelcomePage />} />
-        <Route path="/register" element={<RegistrationPage />} />
-        <Route path="/otp" element={<OtpPage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/profile-setup" element={<ProfileSetupPage />} />
-        <Route element={<AppLayout />}>
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/bookmarks" element={<BookmarksPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/notifications-list" element={<NotificationsListPage />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AnimatePresence>
+    <Routes location={location}>
+      <Route path="/" element={<WelcomePage />} />
+      <Route path="/register" element={<RegistrationPage />} />
+      <Route path="/otp" element={<OtpPage />} />
+      <Route path="/notifications" element={<NotificationsPage />} />
+      <Route path="/profile-setup" element={<ProfileSetupPage />} />
+      <Route element={<AppLayout />}>
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/bookmarks" element={<BookmarksPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/notifications-list" element={<NotificationsListPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
 
