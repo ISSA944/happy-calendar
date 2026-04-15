@@ -19,7 +19,7 @@ const MOODS = [
 
 export function MoodSheet({ onClose }: MoodSheetProps) {
   const currentMood = useAppStore((state) => state.currentMood)
-  const setCurrentMood = useAppStore((state) => state.setCurrentMood)
+  const setMood = useAppStore((state) => state.setMood)
   const dragControls = useDragControls()
 
   // Body scroll lock — lock when mounted, release when unmounted
@@ -31,7 +31,7 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
   }, [])
 
   const handleSelect = (mood: string) => {
-    setCurrentMood(mood)
+    setMood(mood)
     setTimeout(() => onClose(), 150)
   }
 
