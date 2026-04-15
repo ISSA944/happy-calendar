@@ -29,14 +29,14 @@ function ToggleRow({
 }: {
   label: string;
   checked: boolean;
-  onChange: (val: boolean) => void;
+  onChange: () => void;
   disabled?: boolean;
 }) {
   return (
     <div className={`flex items-center justify-between ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
       <h3 className="font-semibold text-[15px] text-[#1B1B1F]">{label}</h3>
       <div
-        onClick={() => !disabled && onChange(!checked)}
+        onClick={() => !disabled && onChange()}
         className={`relative inline-flex items-center w-12 h-6 ${disabled ? '' : 'cursor-pointer'}`}
       >
         <div className={`w-12 h-6 rounded-full transition-colors duration-200 ${checked ? 'bg-[#2FA7A0]' : 'bg-[#E1E2E4]'}`}></div>
@@ -54,14 +54,17 @@ function ToggleRow({
 export function NotificationsPage() {
   const navigate = useNavigate()
   const setHoroscopeTime = useAppStore(state => state.setHoroscopeTime)
+  const showHoroscope = useAppStore(state => state.showHoroscope)
+  const showHolidays = useAppStore(state => state.showHolidays)
+  const showSupport = useAppStore(state => state.showSupport)
+  const toggleHoroscope = useAppStore(state => state.toggleHoroscope)
+  const toggleHolidays = useAppStore(state => state.toggleHolidays)
+  const toggleSupport = useAppStore(state => state.toggleSupport)
 
   const [selectedTime, setSelectedTime] = useState<string>('09:00')
   const [customTime, setCustomTime] = useState('')
   const [isCustomSelected, setIsCustomSelected] = useState(false)
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
-  const [horoscopeToggle, setHoroscopeToggle] = useState(true)
-  const [holidayToggle, setHolidayToggle] = useState(true)
-  const [moodToggle, setMoodToggle] = useState(false)
 
   const fixedTimes = ['08:00', '09:00', '10:00']
 
@@ -168,20 +171,20 @@ export function NotificationsPage() {
 
           <ToggleRow
             label="Гороскоп"
-            checked={horoscopeToggle}
-            onChange={setHoroscopeToggle}
+            checked={showHoroscope}
+            onChange={toggleHoroscope}
           />
 
           <ToggleRow
             label="Праздники"
-            checked={holidayToggle}
-            onChange={setHolidayToggle}
+            checked={showHolidays}
+            onChange={toggleHolidays}
           />
 
           <ToggleRow
             label="Поддержка по настроению"
-            checked={moodToggle}
-            onChange={setMoodToggle}
+            checked={showSupport}
+            onChange={toggleSupport}
           />
         </motion.section>
       </main>
