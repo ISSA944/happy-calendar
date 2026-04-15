@@ -8,14 +8,22 @@ interface BeforeInstallPromptEvent extends Event {
 interface UsePWAInstall {
   isInstallable: boolean
   isInstalled: boolean
+  isIOS: boolean
   triggerInstall: () => Promise<void>
 }
 
 function getIsStandalone(): boolean {
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
-    // iOS Safari
     ('standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true)
+  )
+}
+
+function detectIOS(): boolean {
+  return (
+    /iphone|ipad|ipod/i.test(navigator.userAgent) &&
+    !(window as { MSStream?: unknown }).MSStream &&
+    !getIsStandalone()
   )
 }
 
@@ -23,8 +31,15 @@ export function usePWAInstall(): UsePWAInstall {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isInstallable, setIsInstallable] = useState(false)
   const [isInstalled, setIsInstalled] = useState(() => getIsStandalone())
+  const [isIOS] = useState(() => detectIOS())
 
   useEffect(() => {
+    // iOS Safari never fires beforeinstallprompt — handle separately
+    if (isIOS) {
+      setIsInstallable(true)
+      return
+    }
+
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
@@ -44,7 +59,7 @@ export function usePWAInstall(): UsePWAInstall {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
       window.removeEventListener('appinstalled', handleAppInstalled)
     }
-  }, [])
+  }, [isIOS])
 
   const triggerInstall = useCallback(async () => {
     if (!deferredPrompt) return
@@ -56,5 +71,5 @@ export function usePWAInstall(): UsePWAInstall {
     }
   }, [deferredPrompt])
 
-  return { isInstallable, isInstalled, triggerInstall }
+  return { isInstallable, isInstalled, isIOS, triggerInstall }
 }

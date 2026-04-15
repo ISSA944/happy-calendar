@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 
 export function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-[390px] z-50 rounded-t-[2rem] bg-white shadow-[0_-1px_0_rgba(0,0,0,0.06)] border-t border-stone-100">
+    <nav className="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-[390px] z-50 rounded-t-[2rem] bg-white/85 backdrop-blur-xl shadow-[0_-4px_24px_rgba(0,0,0,0.06)] border-t border-stone-100/80">
       <div className="flex justify-around items-center px-4 pt-3 pb-[env(safe-area-inset-bottom,24px)]">
         {/* Home */}
         <NavLink 
