@@ -1,9 +1,8 @@
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import type { Variants } from 'framer-motion'
 import { useAppStore } from '../store'
 
 export function SettingsPage() {
-  const navigate = useNavigate()
   const {
     userName,
     email,
@@ -17,19 +16,14 @@ export function SettingsPage() {
     toggleSupport
   } = useAppStore()
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
+    show: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.02 } }
   }
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 380, damping: 28 } }
   }
 
   return (
@@ -40,26 +34,21 @@ export function SettingsPage() {
       className="flex flex-col min-h-full bg-background font-body"
     >
       {/* TopAppBar */}
-      <header className="sticky top-0 w-full z-50 bg-[#fcf9f4] px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
+      <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
         <div className="flex items-center gap-4 h-16">
-          <button 
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 -ml-1 flex items-center justify-center text-on-surface-variant hover:bg-black/5 rounded-full transition-colors active:scale-95"
-          >
-            <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-          </button>
-          <h1 className="font-headline font-bold text-lg tracking-tight text-[#006a65] truncate">Настройки</h1>
+          <div className="w-10" />
+          <h1 className="font-headline font-bold text-lg tracking-tight text-primary truncate">Настройки</h1>
         </div>
       </header>
 
-      <main className="px-6 pb-[112px] overflow-y-auto hide-scrollbar">
+      <main className="px-6 pb-28 hide-scrollbar">
         {/* Profile Block */}
         <motion.section variants={itemVariants} className="flex items-center gap-6 mb-10 mt-4">
           <div className="relative">
             <div className="w-20 h-20 rounded-full overflow-hidden bg-surface-container-high ring-4 ring-surface-container-low flex items-center justify-center text-on-surface-variant">
               <span className="material-symbols-outlined text-4xl">person</span>
             </div>
-            <div className="absolute bottom-0 right-0 p-1.5 rounded-full shadow-lg border-2 border-surface" style={{ backgroundColor: '#2FA7A0' }}>
+            <div className="absolute bottom-0 right-0 p-1.5 rounded-full shadow-lg border-2 border-surface bg-accent">
               <span className="material-symbols-outlined text-white text-sm">photo_camera</span>
             </div>
           </div>
@@ -67,7 +56,7 @@ export function SettingsPage() {
             <span className="font-headline text-xl font-bold text-on-surface">
               {userName || 'Профиль'}
             </span>
-            <button className="text-sm font-medium hover:underline text-left" style={{ color: '#2FA7A0' }}>Сменить фото</button>
+            <button className="text-sm font-medium hover:underline text-left text-accent">Сменить фото</button>
           </div>
         </motion.section>
 
@@ -129,8 +118,7 @@ function ToggleItem({ label, isActive, onToggle }: { label: string, isActive: bo
       <span className="font-medium text-on-surface">{label}</span>
       <button
         onClick={onToggle}
-        style={{ backgroundColor: isActive ? '#2FA7A0' : '#e5e2dd' }}
-        className="w-12 h-6 rounded-full relative transition-colors duration-300"
+        className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${isActive ? 'bg-accent' : 'bg-surface-container-highest'}`}
       >
         <motion.span
           animate={{ x: isActive ? 24 : 4 }}

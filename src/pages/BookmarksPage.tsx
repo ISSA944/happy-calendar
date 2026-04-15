@@ -48,12 +48,12 @@ export function BookmarksPage() {
             <button
               key={type}
               onClick={() => setFilter(type)}
-              className="flex-shrink-0 px-6 py-2 rounded-full text-sm font-medium transition-all active:scale-95"
-              style={
+              className={`flex-shrink-0 px-6 py-2 rounded-full text-sm font-medium transition-all active:scale-95 ${
                 filter === type
-                  ? { background: 'linear-gradient(to right, #006a65, #2fa7a0)', color: '#fff' }
-                  : { backgroundColor: '#fff', border: '1px solid #E6E0D7', color: '#6D7A78' }
-              }
+                  ? 'text-white'
+                  : 'bg-white border border-outline-variant text-on-surface-variant'
+              }`}
+              style={filter === type ? { background: 'linear-gradient(to right, #006a65, #2fa7a0)' } : undefined}
             >
               {type === 'все' ? 'Все' : type === 'гороскоп' ? 'Гороскоп' : 'Поддержка'}
             </button>
@@ -73,19 +73,19 @@ export function BookmarksPage() {
                 className="bg-white rounded-[24px] p-5 flex flex-col gap-4 shadow-[0_4px_16px_rgba(0,0,0,0.04)]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(47,167,160,0.08)', color: '#2FA7A0' }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-accent/10 text-accent">
                     <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
                       {bm.icon}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div
-                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold mb-0.5 uppercase tracking-wider"
-                    style={bm.type === 'гороскоп'
-                      ? { backgroundColor: 'rgba(47,167,160,0.12)', color: '#2FA7A0' }
-                      : { backgroundColor: '#f0ede9', color: '#6D7A78' }
-                    }
-                  >
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold mb-0.5 uppercase tracking-wider ${
+                        bm.type === 'гороскоп'
+                          ? 'bg-accent/10 text-accent'
+                          : 'bg-surface-container text-on-surface-variant'
+                      }`}
+                    >
                       {bm.type}
                     </div>
                     <p className="text-[11px] text-on-surface-variant">{bm.date}</p>

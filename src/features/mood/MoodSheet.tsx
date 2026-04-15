@@ -99,17 +99,17 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
                 <button
                   key={mood.id}
                   onClick={() => handleSelect(mood.id)}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-[#2FA7A0]/[0.10] border border-[#2FA7A0]/30 transition-all text-left shadow-sm active:scale-[0.98]"
+                  className="flex items-center justify-between p-4 rounded-2xl bg-accent/10 border border-accent/30 transition-all text-left shadow-sm active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 flex-shrink-0 rounded-full bg-[#2FA7A0]/[0.18] flex items-center justify-center">
-                      <span className="material-symbols-outlined text-[#006a65]" style={{ fontVariationSettings: "'FILL' 1", fontSize: '20px' }}>
+                    <div className="w-12 h-12 flex-shrink-0 rounded-full bg-accent/20 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1", fontSize: '20px' }}>
                         {mood.icon}
                       </span>
                     </div>
-                    <span className="font-bold text-[#006a65] font-headline">{mood.label}</span>
+                    <span className="font-bold text-primary font-headline">{mood.label}</span>
                   </div>
-                  <span className="material-symbols-outlined text-[#006a65] text-xl font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span className="material-symbols-outlined text-primary text-xl font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>
                     check_circle
                   </span>
                 </button>
@@ -122,8 +122,8 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
                 onClick={() => handleSelect(mood.id)}
                 className="flex items-center gap-4 p-4 rounded-2xl bg-transparent border border-transparent hover:bg-surface-container/50 transition-all text-left active:scale-[0.98]"
               >
-                <div className="w-12 h-12 flex-shrink-0 rounded-full bg-[#2FA7A0]/[0.12] flex items-center justify-center transition-colors">
-                  <span className="material-symbols-outlined text-[#2FA7A0]" style={{ fontSize: '20px' }}>
+                <div className="w-12 h-12 flex-shrink-0 rounded-full bg-accent/10 flex items-center justify-center transition-colors">
+                  <span className="material-symbols-outlined text-accent" style={{ fontSize: '20px' }}>
                     {mood.icon}
                   </span>
                 </div>

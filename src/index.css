@@ -59,6 +59,17 @@
 }
 
 @layer utilities {
+  /* Hide scrollbar cross-browser — used on horizontally scrollable filter rows etc. */
+  .no-scrollbar,
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar,
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .abstract-blob {
     filter: blur(60px);
     opacity: 0.4;
