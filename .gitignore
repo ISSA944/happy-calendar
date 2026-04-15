@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Local project memory (never commit)
+CLAUDE.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +25,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+.env*.local
