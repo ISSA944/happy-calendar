@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useAppStore } from '../store'
 
 // Helper function to calculate Zodiac
 function getZodiac(dateStr: string): string | null {
@@ -36,7 +37,11 @@ import { CalendarSheet } from '../features/auth/CalendarSheet'
 
 export function ProfileSetupPage() {
   const navigate = useNavigate()
-  
+  const storeBirthDate = useAppStore((s) => s.setBirthDate)
+  const storeGender = useAppStore((s) => s.setGender)
+  const storeZodiac = useAppStore((s) => s.setZodiacSign)
+  const setHasCompletedOnboarding = useAppStore((s) => s.setHasCompletedOnboarding)
+
   const [birthDate, setBirthDate] = useState('15.08.1995')
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [gender, setGender] = useState<'F' | 'M' | 'UNKNOWN'>('UNKNOWN')
@@ -44,6 +49,10 @@ export function ProfileSetupPage() {
   const zodiacSign = useMemo(() => getZodiac(birthDate), [birthDate])
 
   const handleSubmit = () => {
+    storeBirthDate(birthDate)
+    storeGender(gender)
+    storeZodiac(zodiacSign ?? '')
+    setHasCompletedOnboarding(true)
     navigate('/home')
   }
 
@@ -53,7 +62,7 @@ export function ProfileSetupPage() {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-full mx-auto overflow-x-hidden overflow-y-auto overscroll-none scroll-smooth"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none scroll-smooth"
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background/90 backdrop-blur-xl px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">

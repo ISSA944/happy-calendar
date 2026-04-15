@@ -4,9 +4,10 @@ import { useAppStore } from '../store'
 
 export function SettingsPage() {
   const navigate = useNavigate()
-  const { 
-    email, 
-    birthDate, 
+  const {
+    userName,
+    email,
+    birthDate,
     horoscopeTime,
     showHoroscope,
     showHolidays,
@@ -63,7 +64,9 @@ export function SettingsPage() {
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="font-headline text-xl font-bold text-on-surface">Профиль</span>
+            <span className="font-headline text-xl font-bold text-on-surface">
+              {userName || 'Профиль'}
+            </span>
             <button className="text-sm font-medium hover:underline text-left" style={{ color: '#2FA7A0' }}>Сменить фото</button>
           </div>
         </motion.section>

@@ -93,7 +93,7 @@ export function NotificationsPage() {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-full mx-auto overflow-x-hidden overflow-y-auto overscroll-none scroll-smooth"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none scroll-smooth"
     >
       <AnimatePresence>
         {isTimePickerOpen && (

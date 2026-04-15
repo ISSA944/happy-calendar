@@ -65,7 +65,7 @@ export function OtpPage() {
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       // h-[100dvh] = viewport excluding keyboard on iOS 15.4+
       // overflow-y-hidden = no scroll; elastic spacers handle the squeeze
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-full mx-auto overflow-x-hidden overflow-y-auto"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto"
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background/90 backdrop-blur-xl px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">

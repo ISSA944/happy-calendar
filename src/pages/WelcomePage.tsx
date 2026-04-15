@@ -5,7 +5,7 @@ export function WelcomePage() {
   const navigate = useNavigate()
 
   return (
-    <div className="relative h-[100dvh] w-full max-w-full mx-auto overflow-x-hidden overflow-y-auto flex flex-col justify-between p-8 overscroll-none scroll-smooth">
+    <div className="relative h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto flex flex-col justify-between p-8 overscroll-none scroll-smooth">
       {/* Background Blobs */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <motion.div 
@@ -38,8 +38,8 @@ export function WelcomePage() {
       </motion.div>
 
       {/* Central Orb */}
-      <div className="relative z-10 flex flex-col items-center justify-center space-y-24 py-12">
-        <div className="relative w-full aspect-square flex items-center justify-center">
+      <div className="relative z-10 flex flex-col items-center justify-center py-6">
+        <div className="relative w-full max-h-[280px] aspect-square flex items-center justify-center">
           <motion.div 
             animate={{ scale: [1, 1.05, 1], opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}

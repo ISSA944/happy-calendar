@@ -1,21 +1,28 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useAppStore } from '../store'
 
 export function RegistrationPage() {
   const navigate = useNavigate()
+  const setUserName = useAppStore((s) => s.setUserName)
+  const setEmail = useAppStore((s) => s.setEmail)
 
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [emailInput, setEmailInput] = useState('')
   const [consent, setConsent] = useState(false)
   const [marketing, setMarketing] = useState(false)
 
   const isValidEmail = (v: string) => /\S+@\S+\.\S+/.test(v)
-  const canSubmit = isValidEmail(email) && consent
+  const canSubmit = isValidEmail(emailInput) && consent
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (canSubmit) navigate('/otp')
+    if (canSubmit) {
+      setUserName(name.trim())
+      setEmail(emailInput.trim())
+      navigate('/otp')
+    }
   }
 
   return (
@@ -30,7 +37,7 @@ export function RegistrationPage() {
         the user scroll just enough to reach the button; in idle state (no keyboard)
         there is nothing to scroll because the content fills exactly 100dvh.
       */
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-full mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background/90 backdrop-blur-xl px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
@@ -96,8 +103,8 @@ export function RegistrationPage() {
                 name="email"
                 placeholder="example@mail.com"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
               />
               <p className="text-xs text-on-surface-variant/60 ml-1">Мы пришлём код подтверждения на эту почту.</p>
             </div>

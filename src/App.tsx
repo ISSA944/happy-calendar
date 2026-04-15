@@ -74,7 +74,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <div className="relative w-full h-[100dvh] overflow-hidden bg-background">
+        <AppRoutes />
+      </div>
     </BrowserRouter>
   )
 }
