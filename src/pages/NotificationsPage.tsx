@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, startTransition } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
@@ -72,11 +72,15 @@ export function NotificationsPage() {
   }
 
   const handleTimePickerSave = (time: string) => {
-    setCustomTime(time)
-    setSelectedTime(time)
-    setIsCustomSelected(true)
-    setHoroscopeTime(time)
+    // Close first — exit animation starts on a clean frame with no re-render work
     setIsTimePickerOpen(false)
+    // Defer non-critical state updates so they don't block the closing animation
+    startTransition(() => {
+      setCustomTime(time)
+      setSelectedTime(time)
+      setIsCustomSelected(true)
+      setHoroscopeTime(time)
+    })
   }
 
   const handleAllow = () => {
