@@ -5,7 +5,9 @@ import {
   Outlet,
   Route,
   Routes,
+  useLocation,
 } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
 import {
   BookmarksPage,
   HomePage,
@@ -34,7 +36,7 @@ function AppLayout() {
       <div className="w-full max-w-[390px] mx-auto h-full relative shadow-sm bg-background flex flex-col">
 
         {/* Main Content Area — scrolls internally, pb-24 clears the fixed BottomNav */}
-        <main className="flex-1 w-full overflow-y-auto pb-24">
+        <main className="flex-1 w-full overflow-y-auto pb-24 touch-pan-y">
           {isHydrated
             ? <Outlet />
             : <div style={{ background: '#fcf9f4', height: '100%' }} />
@@ -47,10 +49,11 @@ function AppLayout() {
   )
 }
 
-export default function App() {
+function AppRoutes() {
+  const location = useLocation()
   return (
-    <BrowserRouter>
-      <Routes>
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
         <Route path="/" element={<WelcomePage />} />
         <Route path="/register" element={<RegistrationPage />} />
         <Route path="/otp" element={<OtpPage />} />
@@ -64,6 +67,14 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </AnimatePresence>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   )
 }

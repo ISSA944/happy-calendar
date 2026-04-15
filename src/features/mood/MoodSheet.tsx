@@ -3,7 +3,6 @@ import { motion, useDragControls } from 'framer-motion'
 import { useAppStore } from '../../store'
 
 interface MoodSheetProps {
-  isOpen: boolean
   onClose: () => void
 }
 
@@ -18,27 +17,23 @@ const MOODS = [
   { id: 'Злость', label: 'Злость', icon: 'local_fire_department' },
 ]
 
-export function MoodSheet({ isOpen, onClose }: MoodSheetProps) {
+export function MoodSheet({ onClose }: MoodSheetProps) {
   const currentMood = useAppStore((state) => state.currentMood)
   const setCurrentMood = useAppStore((state) => state.setCurrentMood)
   const dragControls = useDragControls()
 
-  // Body scroll lock — prevents background page from scrolling while sheet is open
+  // Body scroll lock — lock when mounted, release when unmounted
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    }
+    document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = ''
     }
-  }, [isOpen])
+  }, [])
 
   const handleSelect = (mood: string) => {
     setCurrentMood(mood)
     setTimeout(() => onClose(), 150)
   }
-
-  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">

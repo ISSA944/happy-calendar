@@ -286,7 +286,9 @@ export function HomePage() {
       </motion.div>
 
       <AnimatePresence>
-        <MoodSheet isOpen={isMoodSheetOpen} onClose={() => setIsMoodSheetOpen(false)} />
+        {isMoodSheetOpen && (
+          <MoodSheet onClose={() => setIsMoodSheetOpen(false)} />
+        )}
       </AnimatePresence>
     </>
   )
