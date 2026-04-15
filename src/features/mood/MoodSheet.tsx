@@ -44,7 +44,7 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
         onClick={onClose}
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer touch-none"
+        className="absolute inset-0 bg-black/50 cursor-pointer touch-none"
         aria-hidden="true"
       />
 

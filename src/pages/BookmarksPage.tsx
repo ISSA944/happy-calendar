@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useAppStore } from '../store'
@@ -14,6 +15,7 @@ const itemVariants: Variants = {
 }
 
 export function BookmarksPage() {
+  const navigate = useNavigate()
   const bookmarks = useAppStore(s => s.bookmarks)
   const removeBookmark = useAppStore(s => s.removeBookmark)
   const [filter, setFilter] = useState<'все' | BookmarkType>('все')
@@ -22,7 +24,7 @@ export function BookmarksPage() {
 
   return (
     <motion.div initial="hidden" animate="show" variants={containerVariants} className="flex flex-col min-h-full bg-background">
-      <header className="sticky top-0 w-full z-50 bg-background/90 backdrop-blur-xl px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
+      <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
         <div className="flex items-center gap-4 h-16">
           <button 
             onClick={() => navigate(-1)}

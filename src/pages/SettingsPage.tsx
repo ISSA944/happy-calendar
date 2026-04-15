@@ -40,7 +40,7 @@ export function SettingsPage() {
       className="flex flex-col min-h-full bg-background font-body"
     >
       {/* TopAppBar */}
-      <header className="sticky top-0 w-full z-50 bg-[#fcf9f4]/90 backdrop-blur-xl px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
+      <header className="sticky top-0 w-full z-50 bg-[#fcf9f4] px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
         <div className="flex items-center gap-4 h-16">
           <button 
             onClick={() => navigate(-1)}

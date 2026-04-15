@@ -92,7 +92,6 @@ export function HomePage() {
         exit={{ opacity: 0 }}
         variants={containerVariants}
         className="max-w-[390px] mx-auto px-5 space-y-6 pt-2 pb-8"
-        style={{ filter: isMoodSheetOpen ? 'blur(2px)' : 'none', transition: 'filter 0.3s ease' }}
       >
 
       {/* PWA Install Banner */}
@@ -168,7 +167,7 @@ export function HomePage() {
             loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-          <div className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur-sm text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
+          <div className="absolute top-4 right-4 z-10 bg-white text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
             {currentMood}
           </div>
         </div>
@@ -244,7 +243,7 @@ export function HomePage() {
           </div>
 
           {horoscopeTab === 'detailed' && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-3 pt-1">
+            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-3 pt-1">
               <div className="flex items-center gap-3 opacity-80">
                 <span className="material-symbols-outlined text-primary flex-shrink-0">dark_mode</span>
                 <p className="text-sm"><span className="font-bold">Луна:</span> {horoscope.moon}</p>

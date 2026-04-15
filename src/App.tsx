@@ -31,12 +31,15 @@ function AppLayout() {
   }, [setHydrated])
 
   return (
-    <div className="bg-surface text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-x-hidden overflow-y-auto overscroll-none">
+    <div className="bg-surface text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden">
       {/* Mobile container constraint */}
-      <div className="w-full max-w-[390px] mx-auto h-full relative shadow-sm bg-background flex flex-col">
+      <div className="w-full max-w-[390px] mx-auto h-full relative shadow-sm bg-background flex flex-col overflow-hidden">
 
-        {/* Main Content Area — scrolls internally, pb-24 clears the fixed BottomNav */}
-        <main className="flex-1 w-full overflow-y-auto pb-24 touch-pan-y">
+        {/* Main Content Area — sole scroll container, pb-24 clears the fixed BottomNav */}
+        <main
+          className="flex-1 w-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {isHydrated
             ? <Outlet />
             : <div style={{ background: '#fcf9f4', height: '100%' }} />
