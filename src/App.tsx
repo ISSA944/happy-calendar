@@ -21,6 +21,8 @@ import {
 } from './pages'
 import { BottomNav } from './components/BottomNav'
 
+const APP_SHELL_ROUTES = ['/home', '/bookmarks', '/settings', '/notifications-list']
+
 function AppLayout() {
   const location = useLocation()
   const mainRef = useRef<HTMLElement>(null)
@@ -64,8 +66,12 @@ function AppLayout() {
 function AppRoutes() {
   const location = useLocation()
 
+  // Stable key for app-shell routes → AppLayout never remounts on tab switch.
+  // Unique key for standalone pages → AnimatePresence can coordinate their exit.
+  const routeKey = APP_SHELL_ROUTES.includes(location.pathname) ? 'app-shell' : location.key
+
   return (
-    <Routes location={location}>
+    <Routes location={location} key={routeKey}>
       <Route path="/" element={<WelcomePage />} />
       <Route path="/register" element={<RegistrationPage />} />
       <Route path="/otp" element={<OtpPage />} />
