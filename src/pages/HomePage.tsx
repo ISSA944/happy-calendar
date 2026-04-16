@@ -231,25 +231,16 @@ export function HomePage() {
       <motion.section variants={itemVariants} className="bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-headline text-xl font-bold text-on-surface">Гороскоп на сегодня</h2>
-          <div className="flex bg-surface-container rounded-full p-1 relative flex-shrink-0">
-            <motion.div
-              className="absolute top-1 bottom-1 rounded-full bg-white shadow-sm"
-              initial={false}
-              animate={{
-                left: horoscopeTab === 'short' ? '4px' : '50%',
-                right: horoscopeTab === 'short' ? '50%' : '4px',
-              }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            />
+          <div className="flex bg-surface-container rounded-full p-1 flex-shrink-0">
             <button
               onClick={() => setHoroscopeTab('short')}
-              className={`relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${horoscopeTab === 'short' ? 'text-primary' : 'text-on-surface-variant'}`}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${horoscopeTab === 'short' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'}`}
             >
               Сжато
             </button>
             <button
               onClick={() => setHoroscopeTab('detailed')}
-              className={`relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${horoscopeTab === 'detailed' ? 'text-primary' : 'text-on-surface-variant'}`}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${horoscopeTab === 'detailed' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'}`}
             >
               Подробнее
             </button>
