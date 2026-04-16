@@ -61,7 +61,7 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
           if (offset.y > 50 || velocity.y > 200) onClose()
         }}
         initial={{ y: '100%' }}
-        animate={{ y: 0, transition: { type: 'spring', damping: 28, stiffness: 300 } }}
+        animate={{ y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
         exit={{ y: '100%', transition: { duration: 0.15, ease: 'easeIn' } }}
         className="relative w-full max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[24px] shadow-2xl flex flex-col max-h-[85vh]"
         style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))', willChange: 'transform' }}

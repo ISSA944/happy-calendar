@@ -174,7 +174,7 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0, transition: { type: 'spring', damping: 26, stiffness: 240 } }}
+        animate={{ opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
         exit={{ opacity: 0, y: 40, transition: { duration: 0.15, ease: 'easeIn' } }}
         style={{ willChange: 'transform' }}
         className="relative w-full max-w-[390px] mx-auto h-full max-h-[844px] bg-background flex flex-col overflow-hidden"

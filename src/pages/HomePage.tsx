@@ -19,11 +19,11 @@ import {
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.02 } }
+  show: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.05 } }
 }
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 380, damping: 28 } }
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }
 }
 
 export function HomePage() {
@@ -208,16 +208,18 @@ export function HomePage() {
         </AnimatePresence>
 
         <div className="flex gap-3 pt-2">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.97 }}
             onClick={handleNewQuote}
-            className="flex-1 h-12 bg-primary-container text-white rounded-xl font-semibold text-sm transition-transform active:scale-95"
+            className="flex-1 h-12 bg-primary-container text-white rounded-xl font-semibold text-sm"
           >
             Другая фраза
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
             onClick={handleSaveQuote}
             disabled={savedQuote}
-            className={`flex-1 h-12 border rounded-xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all ${
+            className={`flex-1 h-12 border rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
               savedQuote
                 ? 'border-primary/30 text-primary bg-primary/5'
                 : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
@@ -225,7 +227,7 @@ export function HomePage() {
           >
             <span className="material-symbols-outlined text-lg" style={savedQuote ? { fontVariationSettings: "'FILL' 1" } : undefined}>bookmark</span>
             {savedQuote ? 'Сохранено' : 'Сохранить'}
-          </button>
+          </motion.button>
         </div>
       </motion.section>
 
@@ -234,18 +236,20 @@ export function HomePage() {
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-headline text-xl font-bold text-on-surface">Гороскоп на сегодня</h2>
           <div className="flex bg-surface-container rounded-full p-1 flex-shrink-0">
-            <button
+            <motion.button
+              whileTap={{ scale: 0.97 }}
               onClick={() => setHoroscopeTab('short')}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${horoscopeTab === 'short' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'}`}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${horoscopeTab === 'short' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'}`}
             >
               Сжато
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
               onClick={() => setHoroscopeTab('detailed')}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${horoscopeTab === 'detailed' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'}`}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${horoscopeTab === 'detailed' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'}`}
             >
               Подробнее
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -279,30 +283,32 @@ export function HomePage() {
         </div>
 
         <div className="flex justify-center pt-2">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.97 }}
             onClick={handleSaveHoroscope}
             disabled={savedHoroscope}
-            className={`font-semibold text-sm flex items-center gap-2 transition-all active:scale-95 px-4 py-2 rounded-full ${
+            className={`font-semibold text-sm flex items-center gap-2 transition-colors px-4 py-2 rounded-full ${
               savedHoroscope ? 'text-primary/50' : 'text-primary hover:opacity-80'
             }`}
           >
             <span className="material-symbols-outlined text-lg" style={savedHoroscope ? { fontVariationSettings: "'FILL' 1" } : undefined}>bookmark_add</span>
             {savedHoroscope ? 'Сохранено' : 'Сохранить в закладки'}
-          </button>
+          </motion.button>
         </div>
       </motion.section>
 
       {/* Change Mood */}
       <motion.section variants={itemVariants} className="pb-4">
-        <button
+        <motion.button
+          whileTap={{ scale: 0.97 }}
           onClick={() => setIsMoodSheetOpen(true)}
-          className="w-full bg-surface-container-lowest border border-outline-variant/30 shadow-sm rounded-[24px] px-5 py-4 flex items-center gap-3 active:scale-[0.98] transition-all duration-300 hover:bg-surface-container-low"
+          className="w-full bg-surface-container-lowest border border-outline-variant/30 shadow-sm rounded-[24px] px-5 py-4 flex items-center gap-3 transition-colors duration-300 hover:bg-surface-container-low"
         >
           <span className="material-symbols-outlined text-primary text-xl">tune</span>
           <span className="text-sm font-semibold text-on-surface flex-grow text-left">Сменить настроение</span>
           <div className="px-2.5 py-0.5 bg-primary-container/10 rounded-full text-[11px] font-bold text-primary uppercase tracking-tight">{getMoodLabel(currentMood, gender)}</div>
           <span className="material-symbols-outlined text-on-surface-variant text-xl">expand_more</span>
-        </button>
+        </motion.button>
       </motion.section>
       </motion.div>
 
@@ -331,7 +337,7 @@ export function HomePage() {
                 }
               }}
               initial={{ y: '100%' }}
-              animate={{ y: 0, transition: { type: 'spring', damping: 28, stiffness: 300 } }}
+              animate={{ y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
               exit={{ y: '100%', transition: { duration: 0.15, ease: 'easeIn' } }}
               className="fixed bottom-0 left-0 right-0 z-[60] max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[28px] shadow-2xl"
               style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', willChange: 'transform' }}
@@ -367,12 +373,13 @@ export function HomePage() {
                     </div>
                   ))}
                 </div>
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => { setShowIOSModal(false); dismissInstallBanner() }}
-                  className="w-full py-4 bg-primary-container text-white rounded-full font-headline font-bold text-sm active:scale-[0.98] transition-transform"
+                  className="w-full py-4 bg-primary-container text-white rounded-full font-headline font-bold text-sm"
                 >
                   Понятно
-                </button>
+                </motion.button>
               </div>
             </motion.div>
           </>
