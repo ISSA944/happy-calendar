@@ -88,26 +88,26 @@ export const useAppStore = create<AppState>()(
       initDailyPack: (zodiacSign: string, mood: string) => {
         const today = getTodayDateStr()
         const current = get().dailyPack
-        // Не регенерируем если пак актуален (тот же день и тот же знак)
         if (current?.date === today && current?.zodiacSign === zodiacSign) return
+        const { gender } = get()
         set({
           dailyPack: {
             date: today,
             zodiacSign,
             horoscope: getHoroscope(zodiacSign).main,
             holiday: getTodayHoliday()?.name ?? '',
-            supportPhrase: getRandomQuote(mood).text,
+            supportPhrase: getRandomQuote(mood, undefined, gender).text,
           },
         })
       },
 
       setMood: (mood: string) => {
         const pack = get().dailyPack
+        const { gender } = get()
         set({
           currentMood: mood,
-          // Обновляем ТОЛЬКО фразу поддержки — гороскоп и праздник не трогаем
           dailyPack: pack
-            ? { ...pack, supportPhrase: getRandomQuote(mood).text }
+            ? { ...pack, supportPhrase: getRandomQuote(mood, undefined, gender).text }
             : pack,
         })
       },

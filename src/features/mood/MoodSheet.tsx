@@ -1,25 +1,27 @@
 import { useEffect } from 'react'
 import { motion, useDragControls } from 'framer-motion'
 import { useAppStore } from '../../store'
+import { getMoodLabel } from '../../services/content.service'
 
 interface MoodSheetProps {
   onClose: () => void
 }
 
 const MOODS = [
-  { id: 'Воодушевлена', label: 'Воодушевлена', icon: 'sunny' },
-  { id: 'Спокойна', label: 'Спокойна', icon: 'waves' },
-  { id: 'Счастлива', label: 'Счастлива', icon: 'sentiment_very_satisfied' },
-  { id: 'Нейтрально', label: 'Нейтрально', icon: 'fiber_manual_record' },
-  { id: 'Устала', label: 'Устала', icon: 'nights_stay' },
-  { id: 'Тревога', label: 'Тревога', icon: 'cloud' },
-  { id: 'Грусть', label: 'Грусть', icon: 'water_drop' },
-  { id: 'Злость', label: 'Злость', icon: 'local_fire_department' },
+  { id: 'Воодушевлена', icon: 'sunny' },
+  { id: 'Спокойна',     icon: 'waves' },
+  { id: 'Счастлива',    icon: 'sentiment_very_satisfied' },
+  { id: 'Нейтрально',   icon: 'fiber_manual_record' },
+  { id: 'Устала',       icon: 'nights_stay' },
+  { id: 'Тревога',      icon: 'cloud' },
+  { id: 'Грусть',       icon: 'water_drop' },
+  { id: 'Злость',       icon: 'local_fire_department' },
 ]
 
 export function MoodSheet({ onClose }: MoodSheetProps) {
   const currentMood = useAppStore((state) => state.currentMood)
   const setMood = useAppStore((state) => state.setMood)
+  const gender = useAppStore((state) => state.gender)
   const dragControls = useDragControls()
 
   // Body scroll lock — lock when mounted, release when unmounted
@@ -76,7 +78,7 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
           <div className="flex justify-between items-start mb-5">
             <div className="space-y-0.5">
               <h2 className="font-headline text-2xl font-bold text-on-surface">Сменить настроение</h2>
-              <p className="text-on-surface-variant text-sm font-medium">Сейчас: {currentMood}</p>
+              <p className="text-on-surface-variant text-sm font-medium">Сейчас: {getMoodLabel(currentMood, gender)}</p>
             </div>
             {/* pointer-events-auto ensures the button stays tappable inside touch-none zone */}
             <button
@@ -106,7 +108,7 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
                         {mood.icon}
                       </span>
                     </div>
-                    <span className="font-bold text-primary font-headline">{mood.label}</span>
+                    <span className="font-bold text-primary font-headline">{getMoodLabel(mood.id, gender)}</span>
                   </div>
                   <span className="material-symbols-outlined text-primary text-xl font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>
                     check_circle
@@ -126,7 +128,7 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
                     {mood.icon}
                   </span>
                 </div>
-                <span className="font-semibold text-on-surface font-headline">{mood.label}</span>
+                <span className="font-semibold text-on-surface font-headline">{getMoodLabel(mood.id, gender)}</span>
               </button>
             )
           })}

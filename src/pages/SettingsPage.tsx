@@ -1,25 +1,27 @@
-import { useRef } from 'react'
-import { motion } from 'framer-motion'
+import { useRef, useState, startTransition } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useAppStore } from '../store'
+import { CalendarSheet } from '../features/auth/CalendarSheet'
+import { TimePickerSheet } from '../features/auth/TimePickerSheet'
 
 export function SettingsPage() {
   const {
     userName,
-    email,
-    birthDate,
-    horoscopeTime,
-    profilePhoto,
-    setProfilePhoto,
-    showHoroscope,
-    showHolidays,
-    showSupport,
-    toggleHoroscope,
-    toggleHolidays,
-    toggleSupport
+    email, setEmail,
+    birthDate, setBirthDate,
+    horoscopeTime, setHoroscopeTime,
+    profilePhoto, setProfilePhoto,
+    showHoroscope, showHolidays, showSupport,
+    toggleHoroscope, toggleHolidays, toggleSupport,
   } = useAppStore()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [editingEmail, setEditingEmail] = useState(false)
+  const [emailDraft, setEmailDraft] = useState(email)
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
 
   const handlePhotoClick = () => fileInputRef.current?.click()
 
@@ -29,8 +31,12 @@ export function SettingsPage() {
     const reader = new FileReader()
     reader.onload = () => setProfilePhoto(reader.result as string)
     reader.readAsDataURL(file)
-    // reset so same file can be re-selected
     e.target.value = ''
+  }
+
+  const handleSaveEmail = () => {
+    setEmail(emailDraft.trim())
+    setEditingEmail(false)
   }
 
   const containerVariants: Variants = {
@@ -101,24 +107,69 @@ export function SettingsPage() {
         {/* Account Section */}
         <motion.section variants={itemVariants} className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
           <div className="flex flex-col gap-5">
+
+            {/* Email */}
             <div className="flex flex-col gap-2">
               <label className="text-xs font-semibold text-on-surface-variant px-1">Электронная почта</label>
-              <div className="bg-surface-container-low rounded-xl px-5 py-3.5 text-on-surface-variant border border-transparent">
-                {email}
-              </div>
+              {editingEmail ? (
+                <div className="flex gap-2 items-center">
+                  <input
+                    autoFocus
+                    type="email"
+                    value={emailDraft}
+                    onChange={(e) => setEmailDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEmail() }}
+                    style={{ fontSize: '16px' }}
+                    className="flex-1 bg-surface-container-low rounded-xl px-5 py-3.5 text-on-surface border border-primary/40 outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                  />
+                  <button
+                    onClick={handleSaveEmail}
+                    className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"
+                  >
+                    <span className="material-symbols-outlined text-white text-[18px]">check</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5">
+                  <span className="text-on-surface-variant text-sm">{email || '—'}</span>
+                  <button
+                    onClick={() => { setEmailDraft(email); setEditingEmail(true) }}
+                    className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-all ml-3 flex-shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* Birth Date */}
             <div className="flex flex-col gap-2">
               <label className="text-xs font-semibold text-on-surface-variant px-1">Дата рождения</label>
-              <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5 text-on-surface border border-transparent">
-                {birthDate}
+              <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5">
+                <span className="text-on-surface text-sm">{birthDate || '—'}</span>
+                <button
+                  onClick={() => setIsCalendarOpen(true)}
+                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-all ml-3 flex-shrink-0"
+                >
+                  <span className="material-symbols-outlined text-[18px]">edit</span>
+                </button>
               </div>
             </div>
+
+            {/* Horoscope Time */}
             <div className="flex flex-col gap-2">
               <label className="text-xs font-semibold text-on-surface-variant px-1">Время гороскопа</label>
-              <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5 text-on-surface border border-transparent">
-                {horoscopeTime}
+              <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5">
+                <span className="text-on-surface text-sm">{horoscopeTime || '—'}</span>
+                <button
+                  onClick={() => setIsTimePickerOpen(true)}
+                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-all ml-3 flex-shrink-0"
+                >
+                  <span className="material-symbols-outlined text-[18px]">edit</span>
+                </button>
               </div>
             </div>
+
           </div>
         </motion.section>
 
@@ -134,11 +185,41 @@ export function SettingsPage() {
 
         <div className="h-6" />
       </main>
+
+      {/* CalendarSheet */}
+      <AnimatePresence>
+        {isCalendarOpen && (
+          <CalendarSheet
+            isOpen={isCalendarOpen}
+            onClose={() => setIsCalendarOpen(false)}
+            onSelect={(dateStr) => {
+              setIsCalendarOpen(false)
+              startTransition(() => setBirthDate(dateStr))
+            }}
+            currentValue={birthDate}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* TimePickerSheet */}
+      <AnimatePresence>
+        {isTimePickerOpen && (
+          <TimePickerSheet
+            isOpen={isTimePickerOpen}
+            initialTime={horoscopeTime || '09:00'}
+            onSave={(time) => {
+              setIsTimePickerOpen(false)
+              startTransition(() => setHoroscopeTime(time))
+            }}
+            onCancel={() => setIsTimePickerOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
 
-function ToggleItem({ label, isActive, onToggle }: { label: string, isActive: boolean, onToggle: () => void }) {
+function ToggleItem({ label, isActive, onToggle }: { label: string; isActive: boolean; onToggle: () => void }) {
   return (
     <div className="flex items-center justify-between">
       <span className="font-medium text-on-surface">{label}</span>

@@ -13,6 +13,7 @@ import {
   getRandomQuote,
   getHoroscope,
   getMoodImage,
+  getMoodLabel,
   getFullDateStr,
 } from '../services/content.service'
 
@@ -29,6 +30,7 @@ export function HomePage() {
   const navigate = useNavigate()
 
   const currentMood = useAppStore(s => s.currentMood)
+  const gender = useAppStore(s => s.gender)
   const zodiacSign = useAppStore(s => s.zodiacSign)
   const dailyPack = useAppStore(s => s.dailyPack)
   const initDailyPack = useAppStore(s => s.initDailyPack)
@@ -62,10 +64,10 @@ export function HomePage() {
   const savedHoroscope = bookmarks.some(b => b.type === 'гороскоп' && b.date === todayStr)
 
   const handleNewQuote = useCallback(() => {
-    const { text, index } = getRandomQuote(currentMood, quoteIdxRef.current)
+    const { text, index } = getRandomQuote(currentMood, quoteIdxRef.current, gender)
     quoteIdxRef.current = index
     setSupportPhrase(text)
-  }, [currentMood, setSupportPhrase])
+  }, [currentMood, gender, setSupportPhrase])
 
   const handleSaveQuote = useCallback(() => {
     if (!supportPhrase || savedQuote) return
@@ -181,7 +183,7 @@ export function HomePage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
         <div className="absolute top-4 right-4 z-10 bg-white/90 text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
-          {currentMood}
+          {getMoodLabel(currentMood, gender)}
         </div>
       </motion.section>
 
@@ -189,7 +191,7 @@ export function HomePage() {
       <motion.section variants={itemVariants} className="bg-surface-container-low p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-4">
         <div className="flex justify-between items-start gap-3">
           <h2 className="font-headline text-xl font-bold text-on-surface">Поддержка на сегодня</h2>
-          <span className="flex-shrink-0 bg-primary-container/20 text-on-primary-container px-3 py-1 rounded-full text-xs font-semibold tracking-wide">{currentMood}</span>
+          <span className="flex-shrink-0 bg-primary-container/20 text-on-primary-container px-3 py-1 rounded-full text-xs font-semibold tracking-wide">{getMoodLabel(currentMood, gender)}</span>
         </div>
 
         <AnimatePresence mode="wait">
@@ -298,7 +300,7 @@ export function HomePage() {
         >
           <span className="material-symbols-outlined text-primary text-xl">tune</span>
           <span className="text-sm font-semibold text-on-surface flex-grow text-left">Сменить настроение</span>
-          <div className="px-2.5 py-0.5 bg-primary-container/10 rounded-full text-[11px] font-bold text-primary uppercase tracking-tight">{currentMood}</div>
+          <div className="px-2.5 py-0.5 bg-primary-container/10 rounded-full text-[11px] font-bold text-primary uppercase tracking-tight">{getMoodLabel(currentMood, gender)}</div>
           <span className="material-symbols-outlined text-on-surface-variant text-xl">expand_more</span>
         </button>
       </motion.section>

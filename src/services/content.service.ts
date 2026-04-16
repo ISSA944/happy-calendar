@@ -323,6 +323,50 @@ export const HOLIDAYS: Record<string, Holiday> = {
   '31.12': { name: 'Канун Нового года', description: 'Загадай желание — оно обязательно сбудется!', icon: 'auto_awesome' },
 }
 
+// ══════════ GENDER-AWARE MOOD LABELS ══════════
+
+// Male forms differ from female base keys
+export const MOOD_LABELS_M: Record<string, string> = {
+  'Воодушевлена': 'Воодушевлён',
+  'Спокойна':     'Спокоен',
+  'Счастлива':    'Счастлив',
+  'Нейтрально':   'Нейтрально',
+  'Устала':       'Устал',
+  'Тревога':      'Тревога',
+  'Грусть':       'Грусть',
+  'Злость':       'Злость',
+}
+
+export function getMoodLabel(id: string, gender: 'F' | 'M' | 'UNKNOWN'): string {
+  if (gender === 'M') return MOOD_LABELS_M[id] ?? id
+  return id
+}
+
+// Male-form quote overrides — only phrases that contain gendered Russian endings
+const MOOD_QUOTES_M: Record<string, string[]> = {
+  'Воодушевлена': [
+    '«Твоя внутренняя сила подобна тихому океану — в ней скрыта энергия, способная менять миры.»',
+    '«Вдохновение — это когда душа напоминает тебе, кем ты можешь стать.»',
+    '«Каждый шаг, сделанный с верой, открывает двери, о которых ты даже не мечтал.»',
+    '«Ты — магнит для чудес. Доверяй своей внутренней силе.»',
+    '«Сегодня — идеальный день, чтобы начать то, о чём давно мечтаешь.»',
+  ],
+  'Устала': [
+    '«Отдых — это не слабость, а мудрость. Позволь себе восстановиться.»',
+    '«Даже самые сильные деревья склоняются перед ветром. Ты заслуживаешь паузу.»',
+    '«Сегодня можно просто быть. Без подвигов. Без рекордов.»',
+    '«Усталость — это знак, что ты отдавал миру больше, чем брал.»',
+    '«Закрой глаза. Мир подождёт.»',
+  ],
+  'Грусть': [
+    '«Грусть — это дождь души. После него всё расцветает ярче.»',
+    '«Разрешай себе грустить. Это не слабость — это глубина.»',
+    '«Ты не один в этом. Где-то прямо сейчас кто-то думает о тебе.»',
+    '«Даже в самый серый день ты несёшь свет внутри себя.»',
+    '«Каждая слеза поливает семена будущей радости.»',
+  ],
+}
+
 // ══════════ HELPERS ══════════
 
 export function getTodayDateStr(): string {
@@ -348,8 +392,8 @@ export function getTodayHoliday(): Holiday | null {
   return HOLIDAYS[getTodayDateStr()] ?? null
 }
 
-export function getRandomQuote(mood: string, excludeIndex?: number): { text: string; index: number } {
-  const pool = MOOD_QUOTES[mood] ?? MOOD_QUOTES['Нейтрально']
+export function getRandomQuote(mood: string, excludeIndex?: number, gender?: 'F' | 'M' | 'UNKNOWN'): { text: string; index: number } {
+  const pool = (gender === 'M' ? MOOD_QUOTES_M[mood] : null) ?? MOOD_QUOTES[mood] ?? MOOD_QUOTES['Нейтрально']
   let idx: number
   if (pool.length <= 1) {
     idx = 0
