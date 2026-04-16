@@ -37,9 +37,11 @@ export function HomePage() {
   const bookmarks = useAppStore(s => s.bookmarks)
   const profilePhoto = useAppStore(s => s.profilePhoto)
 
+  const installBannerDismissed = useAppStore(s => s.installBannerDismissed)
+  const dismissInstallBanner = useAppStore(s => s.dismissInstallBanner)
+
   const [horoscopeTab, setHoroscopeTab] = useState<'short' | 'detailed'>('short')
   const [isMoodSheetOpen, setIsMoodSheetOpen] = useState(false)
-  const [installDismissed, setInstallDismissed] = useState(false)
   const [showIOSModal, setShowIOSModal] = useState(false)
   const iosDragControls = useDragControls()
 
@@ -77,7 +79,7 @@ export function HomePage() {
   }, [addBookmark, horoscope, horoscopeTab, savedHoroscope, zodiacSign, todayStr])
 
   const { isInstallable, isInstalled, isIOS, triggerInstall } = usePWAInstall()
-  const showInstallBanner = isInstallable && !isInstalled && !installDismissed
+  const showInstallBanner = isInstallable && !isInstalled && !installBannerDismissed
 
   const handleInstallClick = () => {
     if (isIOS) {
@@ -108,7 +110,7 @@ export function HomePage() {
             className="bg-surface-container-low rounded-[24px] p-4 border border-white/40 flex items-center gap-4 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)]"
           >
             <button
-              onClick={() => setInstallDismissed(true)}
+              onClick={() => dismissInstallBanner()}
               className="absolute top-3 right-3 text-on-surface-variant/30 hover:text-on-surface-variant transition-colors active:scale-90"
               aria-label="Закрыть"
             >
@@ -321,7 +323,7 @@ export function HomePage() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setShowIOSModal(false)}
-              className="fixed inset-0 z-50 bg-black/40"
+              className="fixed inset-0 z-[60] bg-black/40"
             />
             <motion.div
               drag="y"
@@ -332,14 +334,13 @@ export function HomePage() {
               onDragEnd={(_, { offset, velocity }) => {
                 if (offset.y > 60 || velocity.y > 200) {
                   setShowIOSModal(false)
-                  setInstallDismissed(true)
+                  dismissInstallBanner()
                 }
               }}
               initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[28px] shadow-2xl"
+              animate={{ y: 0, transition: { type: 'spring', damping: 28, stiffness: 300 } }}
+              exit={{ y: '100%', transition: { duration: 0.15, ease: 'easeIn' } }}
+              className="fixed bottom-0 left-0 right-0 z-[60] max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[28px] shadow-2xl"
               style={{ paddingBottom: 'max(32px, env(safe-area-inset-bottom))' }}
             >
               {/* Drag zone — pill only */}
@@ -374,7 +375,7 @@ export function HomePage() {
                   ))}
                 </div>
                 <button
-                  onClick={() => { setShowIOSModal(false); setInstallDismissed(true) }}
+                  onClick={() => { setShowIOSModal(false); dismissInstallBanner() }}
                   className="w-full py-4 bg-primary-container text-white rounded-full font-headline font-bold text-sm active:scale-[0.98] transition-transform"
                 >
                   Понятно

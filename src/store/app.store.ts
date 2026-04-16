@@ -57,6 +57,10 @@ type AppState = {
   horoscopeTime: string
   setHoroscopeTime: (time: string) => void
 
+  // Install banner
+  installBannerDismissed: boolean
+  dismissInstallBanner: () => void
+
   // Content Preferences
   showHoroscope: boolean
   toggleHoroscope: () => void
@@ -131,6 +135,9 @@ export const useAppStore = create<AppState>()(
       setBirthDate: (birthDate) => set({ birthDate }),
       horoscopeTime: '09:00',
       setHoroscopeTime: (horoscopeTime) => set({ horoscopeTime }),
+
+      installBannerDismissed: false,
+      dismissInstallBanner: () => set({ installBannerDismissed: true }),
 
       showHoroscope: true,
       toggleHoroscope: () => set((state) => ({ showHoroscope: !state.showHoroscope })),
