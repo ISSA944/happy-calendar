@@ -20,8 +20,15 @@ import {
   WelcomePage,
 } from './pages'
 import { BottomNav } from './components/BottomNav'
+import { useAppStore } from './store'
 
 const APP_SHELL_ROUTES = ['/home', '/bookmarks', '/settings', '/notifications-list']
+
+// Redirect to /home if onboarding is already complete
+function RootGuard() {
+  const hasCompletedOnboarding = useAppStore(s => s.hasCompletedOnboarding)
+  return hasCompletedOnboarding ? <Navigate to="/home" replace /> : <WelcomePage />
+}
 
 function AppLayout() {
   const location = useLocation()
@@ -72,7 +79,7 @@ function AppRoutes() {
 
   return (
     <Routes location={location} key={routeKey}>
-      <Route path="/" element={<WelcomePage />} />
+      <Route path="/" element={<RootGuard />} />
       <Route path="/register" element={<RegistrationPage />} />
       <Route path="/otp" element={<OtpPage />} />
       <Route path="/notifications" element={<NotificationsPage />} />

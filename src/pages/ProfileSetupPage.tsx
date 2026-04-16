@@ -45,7 +45,7 @@ export function ProfileSetupPage() {
   const setProfilePhoto = useAppStore((s) => s.setProfilePhoto)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [birthDate, setBirthDate] = useState('15.08.1995')
+  const [birthDate, setBirthDate] = useState('')
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [gender, setGender] = useState<'F' | 'M' | 'UNKNOWN'>('UNKNOWN')
 
@@ -210,17 +210,17 @@ export function ProfileSetupPage() {
       <div className="fixed bottom-[-5%] left-[-5%] w-[250px] h-[250px] bg-primary/5 rounded-full blur-[60px] -z-10 pointer-events-none"></div>
 
       <AnimatePresence>
-        <CalendarSheet
-          isOpen={isCalendarOpen}
-          onClose={() => setIsCalendarOpen(false)}
-          onSelect={(dateStr) => {
-            setIsCalendarOpen(false)
-            startTransition(() => {
-              setBirthDate(dateStr)
-            })
-          }}
-          currentValue={birthDate}
-        />
+        {isCalendarOpen && (
+          <CalendarSheet
+            isOpen={isCalendarOpen}
+            onClose={() => setIsCalendarOpen(false)}
+            onSelect={(dateStr) => {
+              setIsCalendarOpen(false)
+              startTransition(() => setBirthDate(dateStr))
+            }}
+            currentValue={birthDate}
+          />
+        )}
       </AnimatePresence>
     </motion.div>
   )

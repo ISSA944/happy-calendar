@@ -117,8 +117,6 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
     onSelect(`${dd}.${mm}.${currentYear}`)
   }
 
-  if (!isOpen) return null
-
   const leadingNextDays = Array.from({ length: 42 - (prevMonthDays.length + days.length) }, (_, i) => i + 1)
 
   const slideVariants: Variants = {
