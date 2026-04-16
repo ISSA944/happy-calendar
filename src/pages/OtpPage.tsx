@@ -1,61 +1,169 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback, memo } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+
+// ── Isolated timer so its setInterval never re-renders OTP boxes ──
+const CountdownTimer = memo(function CountdownTimer({
+  initialSeconds,
+  onExpire,
+  onResend,
+}: {
+  initialSeconds: number
+  onExpire: () => void
+  onResend: () => void
+}) {
+  const [timeLeft, setTimeLeft] = useState(initialSeconds)
+  const expiredRef = useRef(false)
+
+  useEffect(() => {
+    expiredRef.current = false
+    setTimeLeft(initialSeconds)
+  }, [initialSeconds])
+
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      if (!expiredRef.current) {
+        expiredRef.current = true
+        onExpire()
+      }
+      return
+    }
+    const t = setInterval(() => setTimeLeft(prev => prev - 1), 1000)
+    return () => clearInterval(t)
+  }, [timeLeft, onExpire])
+
+  const formatTime = (s: number) =>
+    `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
+
+  return (
+    <div className="text-center">
+      <button
+        onClick={timeLeft === 0 ? onResend : undefined}
+        disabled={timeLeft > 0}
+        className={`text-sm font-bold transition-colors ${timeLeft === 0 ? 'text-primary hover:text-primary/80 cursor-pointer active:scale-95' : 'text-on-surface-variant/40 cursor-not-allowed'}`}
+      >
+        Отправить код ещё раз
+      </button>
+      {timeLeft > 0 && (
+        <p className="text-[13px] font-medium text-on-surface-variant/60 mt-1">
+          через {formatTime(timeLeft)}
+        </p>
+      )}
+    </div>
+  )
+})
+
+// ── Single OTP box — memo so siblings don't re-render on unrelated state ──
+const OtpBox = memo(function OtpBox({
+  index,
+  digit,
+  isActive,
+  inputRef,
+  onChange,
+  onKeyDown,
+  onFocus,
+  onBlur,
+}: {
+  index: number
+  digit: string
+  isActive: boolean
+  inputRef: (el: HTMLInputElement | null) => void
+  onChange: (index: number, value: string) => void
+  onKeyDown: (index: number, e: React.KeyboardEvent<HTMLInputElement>) => void
+  onFocus: (index: number) => void
+  onBlur: () => void
+}) {
+  return (
+    <div
+      className={`w-[72px] h-[72px] bg-surface-container-lowest rounded-[24px] flex items-center justify-center shadow-sm transition-all duration-200 relative overflow-hidden ${
+        isActive
+          ? 'border-2 border-primary ring-4 ring-primary/5'
+          : 'border border-outline-variant'
+      }`}
+    >
+      {/* font-size: 16px prevents Safari zoom on focus */}
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="numeric"
+        maxLength={4}
+        value={digit}
+        onChange={(e) => onChange(index, e.target.value)}
+        onKeyDown={(e) => onKeyDown(index, e)}
+        onFocus={() => onFocus(index)}
+        onBlur={onBlur}
+        style={{ fontSize: '16px' }}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
+      />
+      {digit !== '' ? (
+        <span className="text-2xl font-headline font-bold text-on-surface pointer-events-none">
+          {digit}
+        </span>
+      ) : (
+        <span className={`w-2 h-2 rounded-full pointer-events-none transition-colors ${isActive ? 'bg-on-surface' : 'bg-on-surface-variant/30'}`} />
+      )}
+    </div>
+  )
+})
 
 export function OtpPage() {
   const navigate = useNavigate()
 
   const [code, setCode] = useState(['', '', '', ''])
-  const [timeLeft, setTimeLeft] = useState(30)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [resendKey, setResendKey] = useState(0) // bumping resets CountdownTimer
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-
-  useEffect(() => {
-    if (timeLeft <= 0) return
-    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000)
-    return () => clearInterval(timer)
-  }, [timeLeft])
 
   const isValid = code.every(digit => digit !== '')
 
-  const handleChange = (index: number, value: string) => {
+  const handleChange = useCallback((index: number, value: string) => {
     if (value && !/^\d+$/.test(value)) return
 
     if (value.length > 1) {
       const digits = value.slice(0, 4).split('')
-      const newCode = [...code]
-      digits.forEach((d, i) => { if (index + i < 4) newCode[index + i] = d })
-      setCode(newCode)
+      setCode(prev => {
+        const next = [...prev]
+        digits.forEach((d, i) => { if (index + i < 4) next[index + i] = d })
+        return next
+      })
       inputRefs.current[Math.min(index + digits.length, 3)]?.focus()
       return
     }
 
-    const newCode = [...code]
-    newCode[index] = value
-    setCode(newCode)
+    setCode(prev => {
+      const next = [...prev]
+      next[index] = value
+      return next
+    })
     if (value && index < 3) inputRefs.current[index + 1]?.focus()
-  }
+  }, [])
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = useCallback((index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && !code[index] && index > 0) {
-      const newCode = [...code]
-      newCode[index - 1] = ''
-      setCode(newCode)
+      setCode(prev => {
+        const next = [...prev]
+        next[index - 1] = ''
+        return next
+      })
       inputRefs.current[index - 1]?.focus()
     }
-  }
+  }, [code])
 
-  const handleSubmit = () => { if (isValid) navigate('/notifications') }
+  const handleFocus = useCallback((index: number) => setActiveIndex(index), [])
+  const handleBlur = useCallback(() => setActiveIndex(null), [])
 
-  const handleResend = () => {
-    if (timeLeft === 0) {
-      setTimeLeft(30)
-      setCode(['', '', '', ''])
-      inputRefs.current[0]?.focus()
-    }
-  }
+  const handleSubmit = useCallback(() => {
+    if (isValid) navigate('/notifications')
+  }, [isValid, navigate])
 
-  const formatTime = (s: number) =>
-    `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
+  const handleExpire = useCallback(() => {}, [])
+
+  const handleResend = useCallback(() => {
+    setCode(['', '', '', ''])
+    setResendKey(k => k + 1)
+    // slight rAF so state flushes before focus
+    requestAnimationFrame(() => inputRefs.current[0]?.focus())
+  }, [])
 
   return (
     <motion.div
@@ -63,8 +171,6 @@ export function OtpPage() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      // h-[100dvh] = viewport excluding keyboard on iOS 15.4+
-      // overflow-y-hidden = no scroll; elastic spacers handle the squeeze
       className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto"
     >
       {/* TopAppBar */}
@@ -81,17 +187,6 @@ export function OtpPage() {
         </div>
       </header>
 
-      {/*
-        Layout strategy:
-          headline (shrink-0)
-          ↕ elastic gap 1 (flex-1, min 20px)
-          OTP boxes (shrink-0)
-          ↕ elastic gap 2 (flex-1, min 20px)
-          button + resend (shrink-0)
-
-        When keyboard opens, dvh shrinks and both gaps collapse equally.
-        Neither the boxes nor the button ever get clipped.
-      */}
       <main className="flex-1 flex flex-col px-5 pt-10 pb-10">
         {/* ── Headline ── */}
         <motion.section
@@ -116,46 +211,23 @@ export function OtpPage() {
           className="mb-10 shrink-0"
         >
           <div className="flex justify-between gap-3">
-            {code.map((digit, index) => {
-              const isFilled = digit !== ''
-              const isActive = inputRefs.current[index] === document.activeElement
-
-              return (
-                <div
-                  key={index}
-                  onClick={() => inputRefs.current[index]?.focus()}
-                  className={`w-[72px] h-[72px] bg-surface-container-lowest rounded-[24px] flex items-center justify-center shadow-sm transition-all duration-200 relative overflow-hidden ${
-                    isActive
-                      ? 'border-2 border-primary ring-4 ring-primary/5'
-                      : 'border border-outline-variant'
-                  }`}
-                >
-                  {/* font-size: 16px prevents Safari zoom on focus */}
-                  <input
-                    ref={(el) => { inputRefs.current[index] = el }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={4}
-                    value={digit}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
-                    style={{ fontSize: '16px' }}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
-                  />
-                  {isFilled ? (
-                    <span className="text-2xl font-headline font-bold text-on-surface pointer-events-none">
-                      {digit}
-                    </span>
-                  ) : (
-                    <span className={`w-2 h-2 rounded-full pointer-events-none transition-colors ${isActive ? 'bg-on-surface' : 'bg-on-surface-variant/30'}`} />
-                  )}
-                </div>
-              )
-            })}
+            {code.map((digit, index) => (
+              <OtpBox
+                key={index}
+                index={index}
+                digit={digit}
+                isActive={activeIndex === index}
+                inputRef={(el) => { inputRefs.current[index] = el }}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+              />
+            ))}
           </div>
         </motion.section>
 
-        {/* ── Bottom actions — always pinned above keyboard ── */}
+        {/* ── Bottom actions ── */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -174,22 +246,13 @@ export function OtpPage() {
             Продолжить
           </button>
 
-          <div className="text-center">
-            <button
-              onClick={handleResend}
-              disabled={timeLeft > 0}
-              className={`text-sm font-bold transition-colors ${timeLeft === 0 ? 'text-primary hover:text-primary/80 cursor-pointer active:scale-95' : 'text-on-surface-variant/40 cursor-not-allowed'}`}
-            >
-              Отправить код ещё раз
-            </button>
-            {timeLeft > 0 && (
-              <p className="text-[13px] font-medium text-on-surface-variant/60 mt-1">
-                через {formatTime(timeLeft)}
-              </p>
-            )}
-          </div>
+          <CountdownTimer
+            key={resendKey}
+            initialSeconds={30}
+            onExpire={handleExpire}
+            onResend={handleResend}
+          />
         </motion.div>
-
       </main>
 
       {/* Glassmorphism blobs */}
