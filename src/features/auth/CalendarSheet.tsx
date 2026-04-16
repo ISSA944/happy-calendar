@@ -42,16 +42,6 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
 
   const [isQuickPickerOpen, setIsQuickPickerOpen] = useState(false)
 
-  // Body scroll lock
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [isOpen])
-
   // Sync state to parsed currentValue string "15.08.1995"
   useEffect(() => {
     if (isOpen && currentValue && currentValue.length === 10) {
@@ -145,7 +135,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
         transition={{ duration: 0.3 }}
         className="absolute inset-0 bg-black/50 cursor-pointer touch-none"
         onClick={onClose}
@@ -163,11 +153,10 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
           if (offset.y > 50 || velocity.y > 200) onClose()
         }}
         initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        animate={{ y: 0, transition: { type: 'spring', damping: 28, stiffness: 300 } }}
+        exit={{ y: '100%', transition: { duration: 0.15, ease: 'easeIn' } }}
         className="relative bg-surface-container-lowest rounded-t-[24px] shadow-[0_-8px_40px_rgba(0,0,0,0.12)] flex flex-col w-full max-w-[390px] mx-auto z-20 min-h-[520px]"
-        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))', willChange: 'transform' }}
       >
         {/* Quick Picker Overlay */}
         <AnimatePresence>

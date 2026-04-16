@@ -41,7 +41,7 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
         transition={{ duration: 0.3 }}
         onClick={onClose}
         className="absolute inset-0 bg-black/50 cursor-pointer touch-none"
@@ -59,11 +59,10 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
           if (offset.y > 50 || velocity.y > 200) onClose()
         }}
         initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        animate={{ y: 0, transition: { type: 'spring', damping: 28, stiffness: 300 } }}
+        exit={{ y: '100%', transition: { duration: 0.15, ease: 'easeIn' } }}
         className="relative w-full max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[24px] shadow-2xl flex flex-col max-h-[85vh]"
-        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))', willChange: 'transform' }}
       >
         {/* Drag zone: pill + header — wide grab area, no scrolling inside */}
         <div

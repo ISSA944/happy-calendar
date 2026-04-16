@@ -311,7 +311,7 @@ export function HomePage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
               transition={{ duration: 0.2 }}
               onClick={() => setShowIOSModal(false)}
               className="fixed inset-0 z-[60] bg-black/40"
@@ -332,11 +332,11 @@ export function HomePage() {
               animate={{ y: 0, transition: { type: 'spring', damping: 28, stiffness: 300 } }}
               exit={{ y: '100%', transition: { duration: 0.15, ease: 'easeIn' } }}
               className="fixed bottom-0 left-0 right-0 z-[60] max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[28px] shadow-2xl"
-              style={{ paddingBottom: 'max(32px, env(safe-area-inset-bottom))' }}
+              style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', willChange: 'transform' }}
             >
-              {/* Drag zone — pill only */}
+              {/* Drag zone — pill + top area for easy grab */}
               <div
-                className="pt-5 pb-2 touch-none select-none cursor-grab flex justify-center"
+                className="pt-4 pb-4 touch-none select-none cursor-grab flex justify-center"
                 onPointerDown={(e) => iosDragControls.start(e)}
               >
                 <div className="w-10 h-1 bg-surface-container-highest rounded-full" />

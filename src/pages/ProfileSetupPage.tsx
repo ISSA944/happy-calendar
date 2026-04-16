@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, startTransition } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
@@ -41,10 +41,24 @@ export function ProfileSetupPage() {
   const storeGender = useAppStore((s) => s.setGender)
   const storeZodiac = useAppStore((s) => s.setZodiacSign)
   const setHasCompletedOnboarding = useAppStore((s) => s.setHasCompletedOnboarding)
+  const profilePhoto = useAppStore((s) => s.profilePhoto)
+  const setProfilePhoto = useAppStore((s) => s.setProfilePhoto)
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [birthDate, setBirthDate] = useState('15.08.1995')
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [gender, setGender] = useState<'F' | 'M' | 'UNKNOWN'>('UNKNOWN')
+
+  const handlePhotoClick = () => fileInputRef.current?.click()
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setProfilePhoto(reader.result as string)
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
 
   const zodiacSign = useMemo(() => getZodiac(birthDate), [birthDate])
 
@@ -78,24 +92,40 @@ export function ProfileSetupPage() {
         </div>
       </header>
 
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       <main className="flex-1 flex flex-col pt-24 px-5">
-        
+
         {/* Avatar Section */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
           className="flex flex-col items-center mb-10"
         >
-          <div className="relative w-28 h-28">
+          <button
+            onClick={handlePhotoClick}
+            className="relative w-28 h-28 active:scale-95 transition-transform"
+            aria-label="Сменить фото профиля"
+          >
             <div className="w-full h-full rounded-full bg-surface shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-outline-variant/20 flex items-center justify-center overflow-hidden text-outline-variant">
-              <span className="material-symbols-outlined text-[48px]" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
+              {profilePhoto
+                ? <img src={profilePhoto} className="w-full h-full object-cover" alt="Фото профиля" />
+                : <span className="material-symbols-outlined text-[48px]" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
+              }
             </div>
-            <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-lg border-2 border-background active:scale-90 transition-transform">
+            <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-lg border-2 border-background pointer-events-none">
               <span className="material-symbols-outlined text-[16px]">add_a_photo</span>
-            </button>
-          </div>
-          <button className="mt-3 text-sm font-semibold text-primary">Добавить фото</button>
+            </div>
+          </button>
+          <button onClick={handlePhotoClick} className="mt-3 text-sm font-semibold text-primary">Добавить фото</button>
         </motion.div>
 
         {/* Input Section */}
@@ -136,34 +166,22 @@ export function ProfileSetupPage() {
           {/* Gender Section */}
           <div className="space-y-3 pt-2">
             <p className="text-[15px] font-semibold text-on-surface-variant ml-1">Пол (необязательно)</p>
-            <div className="relative flex p-1 bg-surface-container rounded-full h-[56px] shadow-sm overflow-hidden box-border">
-              {/* Background animate pill */}
-              <motion.div 
-                layout
-                className="absolute top-1 bottom-1 bg-white rounded-full shadow-sm shadow-black/5"
-                initial={false}
-                animate={{
-                  left: gender === 'F' ? '4px' : gender === 'M' ? 'calc(33.33% + 2px)' : 'calc(66.66% + 2px)',
-                  width: 'calc(33.33% - 6px)'
-                }}
-                transition={{ type: "spring", stiffness: 450, damping: 35 }}
-              />
-
-              <button 
+            <div className="flex p-1 bg-surface-container rounded-full h-[56px] shadow-sm gap-1">
+              <button
                 onClick={() => setGender('F')}
-                className={`relative flex-1 rounded-full text-[15px] font-semibold transition-colors z-10 ${gender === 'F' ? 'text-on-surface' : 'text-on-surface-variant'}`}
+                className={`flex-1 rounded-full text-[15px] font-semibold transition-all duration-200 ${gender === 'F' ? 'bg-white text-on-surface shadow-sm' : 'text-on-surface-variant'}`}
               >
                 Ж
               </button>
-              <button 
+              <button
                 onClick={() => setGender('M')}
-                className={`relative flex-1 rounded-full text-[15px] font-semibold transition-colors z-10 ${gender === 'M' ? 'text-on-surface' : 'text-on-surface-variant'}`}
+                className={`flex-1 rounded-full text-[15px] font-semibold transition-all duration-200 ${gender === 'M' ? 'bg-white text-on-surface shadow-sm' : 'text-on-surface-variant'}`}
               >
                 М
               </button>
-              <button 
+              <button
                 onClick={() => setGender('UNKNOWN')}
-                className={`relative flex-1 rounded-full text-[13px] font-semibold transition-colors z-10 px-2 ${gender === 'UNKNOWN' ? 'text-on-surface' : 'text-on-surface-variant'}`}
+                className={`flex-1 rounded-full text-[13px] font-semibold transition-all duration-200 px-2 ${gender === 'UNKNOWN' ? 'bg-white text-on-surface shadow-sm' : 'text-on-surface-variant'}`}
               >
                 Не указывать
               </button>
@@ -192,14 +210,16 @@ export function ProfileSetupPage() {
       <div className="fixed bottom-[-5%] left-[-5%] w-[250px] h-[250px] bg-primary/5 rounded-full blur-[60px] -z-10 pointer-events-none"></div>
 
       <AnimatePresence>
-        <CalendarSheet 
-          isOpen={isCalendarOpen} 
-          onClose={() => setIsCalendarOpen(false)} 
+        <CalendarSheet
+          isOpen={isCalendarOpen}
+          onClose={() => setIsCalendarOpen(false)}
           onSelect={(dateStr) => {
-            setBirthDate(dateStr)
-            setTimeout(() => setIsCalendarOpen(false), 200) // slight delay to show selection
-          }} 
-          currentValue={birthDate} 
+            setIsCalendarOpen(false)
+            startTransition(() => {
+              setBirthDate(dateStr)
+            })
+          }}
+          currentValue={birthDate}
         />
       </AnimatePresence>
     </motion.div>
