@@ -25,14 +25,14 @@ export function BookmarksPage() {
   return (
     <motion.div initial="hidden" animate="show" variants={containerVariants} className="flex flex-col min-h-full bg-background">
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
-        <div className="flex items-center gap-4 h-16">
-          <button 
+        <div className="flex items-center h-16 relative">
+          <button
             onClick={() => navigate(-1)}
-            className="w-10 h-10 -ml-1 text-on-surface-variant hover:bg-black/5 rounded-full transition-colors active:scale-95 flex items-center justify-center"
+            className="w-10 h-10 -ml-1 text-on-surface-variant hover:bg-black/5 rounded-full transition-colors active:scale-95 flex items-center justify-center shrink-0"
           >
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
-          <h1 className="font-headline font-bold text-lg tracking-tight text-on-surface truncate">Закладки</h1>
+          <h1 className="absolute left-1/2 -translate-x-1/2 font-headline font-bold text-lg tracking-tight text-on-surface">Закладки</h1>
         </div>
       </header>
 

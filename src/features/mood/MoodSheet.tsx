@@ -63,24 +63,20 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
         initial={{ y: '100%' }}
         animate={{ y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
         exit={{ y: '100%', transition: { duration: 0.15, ease: 'easeIn' } }}
-        className="relative w-full max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[24px] shadow-2xl flex flex-col max-h-[85vh]"
-        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))', willChange: 'transform' }}
+        className="relative w-full max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[24px] shadow-2xl flex flex-col"
+        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))', willChange: 'transform' }}
       >
         {/* Drag zone: pill + header — wide grab area, no scrolling inside */}
         <div
-          className="px-6 pt-5 pb-0 touch-none select-none cursor-grab"
+          className="px-6 pt-4 pb-3 touch-none select-none cursor-grab"
           onPointerDown={(e) => dragControls.start(e)}
         >
-          {/* Handle pill */}
-          <div className="w-10 h-1 bg-surface-container-highest rounded-full mx-auto mb-5" />
-
-          {/* Header */}
-          <div className="flex justify-between items-start mb-5">
-            <div className="space-y-0.5">
-              <h2 className="font-headline text-2xl font-bold text-on-surface">Сменить настроение</h2>
-              <p className="text-on-surface-variant text-sm font-medium">Сейчас: {getMoodLabel(currentMood, gender)}</p>
+          <div className="w-10 h-1 bg-surface-container-highest rounded-full mx-auto mb-4" />
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="font-headline text-xl font-bold text-on-surface">Сменить настроение</h2>
+              <p className="text-on-surface-variant text-sm font-medium mt-0.5">Сейчас: {getMoodLabel(currentMood, gender)}</p>
             </div>
-            {/* pointer-events-auto ensures the button stays tappable inside touch-none zone */}
             <button
               onClick={onClose}
               className="text-primary font-semibold text-sm py-1 hover:opacity-70 transition-opacity active:scale-95 pointer-events-auto"
@@ -90,45 +86,38 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
           </div>
         </div>
 
-        {/* Scrollable mood list — outside drag zone so scroll works normally */}
-        <div className="flex flex-col gap-2 overflow-y-auto px-6 pb-2">
+        {/* Mood list — compact, fits all 8 without scrolling */}
+        <div className="flex flex-col px-5 pb-2">
           {MOODS.map((mood) => {
             const isSelected = currentMood === mood.id
-
-            if (isSelected) {
-              return (
-                <button
-                  key={mood.id}
-                  onClick={() => handleSelect(mood.id)}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-accent/10 border border-accent/30 transition-all text-left shadow-sm active:scale-[0.98]"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 flex-shrink-0 rounded-full bg-accent/20 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1", fontSize: '20px' }}>
-                        {mood.icon}
-                      </span>
-                    </div>
-                    <span className="font-bold text-primary font-headline">{getMoodLabel(mood.id, gender)}</span>
-                  </div>
-                  <span className="material-symbols-outlined text-primary text-xl font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    check_circle
-                  </span>
-                </button>
-              )
-            }
-
             return (
               <button
                 key={mood.id}
                 onClick={() => handleSelect(mood.id)}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-transparent border border-transparent hover:bg-surface-container/50 transition-all text-left active:scale-[0.98]"
+                className={`flex items-center justify-between px-3 py-2.5 rounded-2xl text-left active:scale-[0.98] transition-colors ${
+                  isSelected ? 'bg-accent/10' : 'hover:bg-surface-container/50'
+                }`}
               >
-                <div className="w-12 h-12 flex-shrink-0 rounded-full bg-accent/10 flex items-center justify-center transition-colors">
-                  <span className="material-symbols-outlined text-accent" style={{ fontSize: '20px' }}>
-                    {mood.icon}
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center ${
+                    isSelected ? 'bg-accent/20' : 'bg-accent/10'
+                  }`}>
+                    <span
+                      className="material-symbols-outlined"
+                      style={{ fontSize: '18px', color: isSelected ? '#006a65' : '#2FA7A0', fontVariationSettings: isSelected ? "'FILL' 1" : "'FILL' 0" }}
+                    >
+                      {mood.icon}
+                    </span>
+                  </div>
+                  <span className={`font-semibold font-headline text-[15px] ${isSelected ? 'text-primary' : 'text-on-surface'}`}>
+                    {getMoodLabel(mood.id, gender)}
                   </span>
                 </div>
-                <span className="font-semibold text-on-surface font-headline">{getMoodLabel(mood.id, gender)}</span>
+                {isSelected && (
+                  <span className="material-symbols-outlined text-primary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    check_circle
+                  </span>
+                )}
               </button>
             )
           })}

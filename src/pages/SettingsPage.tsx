@@ -1,11 +1,13 @@
 import { useRef, useState, startTransition } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
 import { CalendarSheet } from '../features/auth/CalendarSheet'
 import { TimePickerSheet } from '../features/auth/TimePickerSheet'
 
 export function SettingsPage() {
+  const navigate = useNavigate()
   const {
     userName,
     email, setEmail,
@@ -67,9 +69,15 @@ export function SettingsPage() {
 
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
-        <div className="flex items-center gap-4 h-16">
-          <div className="w-10" />
-          <h1 className="font-headline font-bold text-lg tracking-tight text-primary truncate">Настройки</h1>
+        <div className="flex items-center h-16 relative">
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Назад"
+            className="w-10 h-10 -ml-1 text-primary hover:bg-black/5 rounded-full transition-colors active:scale-95 flex items-center justify-center shrink-0"
+          >
+            <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+          </button>
+          <h1 className="absolute left-1/2 -translate-x-1/2 font-headline font-bold text-lg tracking-tight text-primary">Настройки</h1>
         </div>
       </header>
 
