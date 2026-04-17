@@ -321,10 +321,11 @@ export function HomePage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
+              exit={{ opacity: 0, transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
               transition={{ duration: 0.2 }}
               onClick={() => setShowIOSModal(false)}
               className="fixed inset-0 z-[100] bg-black/40"
+              style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
             />
             <motion.div
               drag="y"
@@ -340,9 +341,9 @@ export function HomePage() {
               }}
               initial={{ y: '100%' }}
               animate={{ y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
-              exit={{ y: '100%', transition: { duration: 0.15, ease: 'easeIn' } }}
+              exit={{ y: '100%', transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
               className="fixed bottom-0 left-0 right-0 z-[100] max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[28px] shadow-2xl"
-              style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', willChange: 'transform' }}
+              style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', willChange: 'transform', transform: 'translateZ(0)' }}
             >
               {/* Drag zone — pill + top area for easy grab */}
               <div

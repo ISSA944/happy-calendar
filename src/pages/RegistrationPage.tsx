@@ -31,12 +31,7 @@ export function RegistrationPage() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      /*
-        overflow-y-auto (NOT hidden): a registration form with 2 inputs + 2 checkboxes
-        will never fully fit above the keyboard on iPhone SE (375×667). Using auto lets
-        the user scroll just enough to reach the button; in idle state (no keyboard)
-        there is nothing to scroll because the content fills exactly 100dvh.
-      */
+      style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
       className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
     >
       {/* TopAppBar */}

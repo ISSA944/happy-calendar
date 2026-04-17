@@ -168,15 +168,16 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
+        exit={{ opacity: 0, transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
         className="absolute inset-0 bg-background"
+        style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
       />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
-        exit={{ opacity: 0, y: 40, transition: { duration: 0.15, ease: 'easeIn' } }}
-        style={{ willChange: 'transform' }}
+        exit={{ opacity: 0, y: 40, transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
+        style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
         className="relative w-full max-w-[390px] mx-auto h-full max-h-[844px] bg-background flex flex-col overflow-hidden"
       >
         {/* Soft background glow */}

@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -32,33 +31,30 @@ function RootGuard() {
 
 function AppLayout() {
   const location = useLocation()
-  const mainRef = useRef<HTMLElement>(null)
-
-  // Reset scroll to top on every tab switch
-  useEffect(() => {
-    if (mainRef.current) mainRef.current.scrollTop = 0
-  }, [location.pathname])
 
   return (
     <div className="bg-surface text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden">
       <div className="w-full max-w-[390px] mx-auto h-full relative shadow-sm bg-background flex flex-col overflow-hidden">
 
-        {/* Page content crossfades — BottomNav sits below and never remounts */}
+        {/* Main area: pages absolutely positioned, crossfade synchronously on top of each other */}
         <main
-          ref={mainRef}
-          className="flex-1 w-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain bg-background"
-          style={{ WebkitOverflowScrolling: 'touch', background: '#fcf9f4' }}
+          className="flex-1 w-full relative overflow-hidden bg-background"
+          style={{ background: '#fcf9f4' }}
         >
-          {/* mode="wait": one page in DOM at a time, pure opacity crossfade */}
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence initial={false}>
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
-              className="bg-background"
-              style={{ willChange: 'opacity', background: '#fcf9f4' }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain bg-background"
+              style={{
+                WebkitOverflowScrolling: 'touch',
+                background: '#fcf9f4',
+                willChange: 'opacity',
+                transform: 'translateZ(0)',
+              }}
             >
               <Outlet />
             </motion.div>
