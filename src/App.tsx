@@ -33,8 +33,8 @@ function AppLayout() {
   const location = useLocation()
 
   return (
-    <div className="bg-surface text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden">
-      <div className="w-full max-w-[390px] mx-auto h-full relative shadow-sm bg-background flex flex-col overflow-hidden">
+    <div className="bg-background text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden" style={{ background: '#fcf9f4' }}>
+      <div className="w-full max-w-[430px] mx-auto h-full relative bg-background flex flex-col overflow-hidden" style={{ background: '#fcf9f4' }}>
 
         {/* Main area: pages absolutely positioned, crossfade synchronously on top of each other */}
         <main

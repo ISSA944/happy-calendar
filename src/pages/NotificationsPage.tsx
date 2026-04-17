@@ -101,7 +101,7 @@ export function NotificationsPage() {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
       style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none scroll-smooth"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none scroll-smooth"
     >
       <AnimatePresence>
         {isTimePickerOpen && (
@@ -195,7 +195,7 @@ export function NotificationsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3 }}
-        className="w-full max-w-[390px] mx-auto px-5 pb-[env(safe-area-inset-bottom,24px)] pt-4 flex flex-col items-center space-y-4"
+        className="w-full max-w-[430px] mx-auto px-5 pb-[env(safe-area-inset-bottom,24px)] pt-4 flex flex-col items-center space-y-4"
       >
         <button
           onClick={handleAllow}

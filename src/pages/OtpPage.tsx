@@ -180,7 +180,7 @@ export function OtpPage() {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
       style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto"
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
@@ -241,7 +241,8 @@ export function OtpPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-auto pb-6 flex flex-col items-center gap-6 shrink-0"
+          className="mt-auto flex flex-col items-center gap-6 shrink-0"
+          style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
         >
           <button
             onClick={handleSubmit}

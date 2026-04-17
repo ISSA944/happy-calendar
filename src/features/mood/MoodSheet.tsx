@@ -64,7 +64,7 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
         initial={{ y: '100%' }}
         animate={{ y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
         exit={{ y: '100%', transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
-        className="relative w-full max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[24px] shadow-2xl flex flex-col"
+        className="relative w-full max-w-[430px] mx-auto bg-surface-container-lowest rounded-t-[24px] shadow-2xl flex flex-col"
         style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))', willChange: 'transform', transform: 'translateZ(0)' }}
       >
         {/* Drag zone: pill + header — wide grab area, no scrolling inside */}

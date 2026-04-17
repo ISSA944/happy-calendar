@@ -32,7 +32,7 @@ export function RegistrationPage() {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
       style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
@@ -48,7 +48,10 @@ export function RegistrationPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col px-5 pt-4 pb-6 min-h-0">
+      <main
+        className="flex-1 flex flex-col px-5 pt-4 min-h-0"
+        style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+      >
 
         {/* ── Headline ── shrinks its bottom margin on tiny screens */}
         <motion.section

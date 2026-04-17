@@ -178,7 +178,7 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
         animate={{ opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
         exit={{ opacity: 0, y: 40, transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
         style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
-        className="relative w-full max-w-[390px] mx-auto h-full max-h-[844px] bg-background flex flex-col overflow-hidden"
+        className="relative w-full max-w-[430px] mx-auto h-full max-h-[844px] bg-background flex flex-col overflow-hidden"
       >
         {/* Soft background glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />

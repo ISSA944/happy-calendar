@@ -98,7 +98,7 @@ export function HomePage() {
         initial="hidden"
         animate="show"
         variants={containerVariants}
-        className="max-w-[390px] mx-auto px-5 space-y-8 pt-2 pb-8"
+        className="max-w-[430px] mx-auto px-5 space-y-8 pt-2 pb-8"
       >
 
       {/* PWA Install Banner */}
@@ -342,7 +342,7 @@ export function HomePage() {
               initial={{ y: '100%' }}
               animate={{ y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
               exit={{ y: '100%', transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
-              className="fixed bottom-0 left-0 right-0 z-[100] max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[28px] shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 z-[100] max-w-[430px] mx-auto bg-surface-container-lowest rounded-t-[28px] shadow-2xl"
               style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', willChange: 'transform', transform: 'translateZ(0)' }}
             >
               {/* Drag zone — pill + top area for easy grab */}

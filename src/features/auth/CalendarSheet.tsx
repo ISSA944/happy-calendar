@@ -154,7 +154,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
         initial={{ y: '100%' }}
         animate={{ y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
         exit={{ y: '100%', transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
-        className="relative bg-surface-container-lowest rounded-t-[24px] shadow-[0_-8px_40px_rgba(0,0,0,0.12)] flex flex-col w-full max-w-[390px] mx-auto z-20 min-h-[520px]"
+        className="relative bg-surface-container-lowest rounded-t-[24px] shadow-[0_-8px_40px_rgba(0,0,0,0.12)] flex flex-col w-full max-w-[430px] mx-auto z-20 min-h-[520px]"
         style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))', willChange: 'transform', transform: 'translateZ(0)' }}
       >
         {/* Quick Picker Overlay */}

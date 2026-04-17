@@ -145,6 +145,7 @@
 
 html {
   overscroll-behavior: none;
+  height: 100%;
 }
 
 body {
@@ -152,12 +153,19 @@ body {
   background-color: #fcf9f4;
   height: 100dvh;
   width: 100vw;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   overscroll-behavior: none;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   -webkit-overflow-scrolling: touch;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  position: fixed;
+  inset: 0;
+}
+
+#root {
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
 }

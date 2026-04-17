@@ -10,8 +10,13 @@ export function WelcomePage() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
-      className="relative h-[100dvh] w-full max-w-[390px] mx-auto overflow-x-hidden overflow-y-auto flex flex-col justify-between p-8 overscroll-none scroll-smooth"
+      style={{
+        willChange: 'opacity',
+        transform: 'translateZ(0)',
+        paddingTop: 'max(2rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(2rem, env(safe-area-inset-bottom))',
+      }}
+      className="relative h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto flex flex-col justify-between px-8 overscroll-none scroll-smooth"
     >
       {/* Background Blobs */}
       <div className="absolute inset-0 z-0 pointer-events-none">
