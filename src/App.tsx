@@ -53,7 +53,6 @@ function AppLayout() {
                 WebkitOverflowScrolling: 'touch',
                 background: '#fcf9f4',
                 willChange: 'opacity',
-                transform: 'translateZ(0)',
               }}
             >
               <Outlet />

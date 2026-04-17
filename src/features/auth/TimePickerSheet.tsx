@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
+import { motion, useDragControls } from 'framer-motion'
 
 interface TimePickerSheetProps {
   isOpen: boolean
@@ -8,16 +9,22 @@ interface TimePickerSheetProps {
   onCancel: () => void
 }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
-const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'))
+const HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'))
+const MINUTES = Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, '0'))
 
-const ITEM_H = 60
+const ITEM_HEIGHT = 60
 const VISIBLE_ITEMS = 5
-const SPACER = ITEM_H * 2  // 2 spacer items top/bottom so first/last reach center
+const SPACER_HEIGHT = ITEM_HEIGHT * 2
 
-// ──────────────────────────────────────────
-// WheelColumn — native CSS scroll-snap
-// ──────────────────────────────────────────
+const scrollStyle: CSSProperties = {
+  height: ITEM_HEIGHT * VISIBLE_ITEMS,
+  overflowY: 'scroll',
+  scrollSnapType: 'y mandatory',
+  overscrollBehaviorY: 'contain',
+  scrollbarWidth: 'none',
+  msOverflowStyle: 'none',
+}
+
 function WheelColumn({
   items,
   selectedIndex,
@@ -28,94 +35,84 @@ function WheelColumn({
   onChange: (index: number) => void
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const isScrollingRef = useRef(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const programmaticRef = useRef(false)
+  const userScrollingRef = useRef(false)
 
-  // Scroll to selectedIndex on mount and on external change (e.g. initialTime parsed)
   useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    if (isScrollingRef.current) return  // don't interfere while user is swiping
+    const element = scrollRef.current
+    if (!element || userScrollingRef.current) return
 
-    programmaticRef.current = true
-    el.scrollTo({ top: selectedIndex * ITEM_H, behavior: 'instant' })
-
-    // Clear programmatic flag after a short delay
-    const t = setTimeout(() => { programmaticRef.current = false }, 50)
-    return () => clearTimeout(t)
+    element.scrollTo({
+      top: selectedIndex * ITEM_HEIGHT,
+      behavior: 'auto',
+    })
   }, [selectedIndex])
 
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
   const handleScroll = useCallback(() => {
-    isScrollingRef.current = true
+    userScrollingRef.current = true
 
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
-      isScrollingRef.current = false
-      const el = scrollRef.current
-      if (!el) return
-      const idx = Math.round(el.scrollTop / ITEM_H)
-      const clamped = Math.max(0, Math.min(items.length - 1, idx))
-      onChange(clamped)
+      const element = scrollRef.current
+      if (!element) return
+
+      userScrollingRef.current = false
+      const rawIndex = Math.round(element.scrollTop / ITEM_HEIGHT)
+      const clampedIndex = Math.max(0, Math.min(items.length - 1, rawIndex))
+      onChange(clampedIndex)
     }, 80)
   }, [items.length, onChange])
 
   return (
-    <div className="relative" style={{ width: 110, height: ITEM_H * VISIBLE_ITEMS }}>
-      {/* Highlight band — dead center */}
+    <div className="relative" style={{ width: 108, height: ITEM_HEIGHT * VISIBLE_ITEMS }}>
       <div
-        className="absolute left-0 right-0 bg-[#006a65]/[0.07] rounded-2xl pointer-events-none z-10"
-        style={{ top: ITEM_H * 2, height: ITEM_H }}
+        className="pointer-events-none absolute left-0 right-0 z-10 rounded-2xl bg-primary/[0.07]"
+        style={{ top: ITEM_HEIGHT * 2, height: ITEM_HEIGHT }}
       />
 
-      {/* Gradient mask top */}
       <div
-        className="absolute top-0 left-0 right-0 pointer-events-none z-20"
+        className="pointer-events-none absolute left-0 right-0 top-0 z-20"
         style={{
-          height: ITEM_H * 2 + 10,
-          background: 'linear-gradient(to bottom, #fcf9f4 20%, rgba(252,249,244,0) 100%)',
+          height: ITEM_HEIGHT * 2 + 8,
+          background: 'linear-gradient(to bottom, #fcf9f4 20%, rgba(252, 249, 244, 0) 100%)',
         }}
       />
 
-      {/* Gradient mask bottom */}
       <div
-        className="absolute bottom-0 left-0 right-0 pointer-events-none z-20"
+        className="pointer-events-none absolute bottom-0 left-0 right-0 z-20"
         style={{
-          height: ITEM_H * 2 + 10,
-          background: 'linear-gradient(to top, #fcf9f4 20%, rgba(252,249,244,0) 100%)',
+          height: ITEM_HEIGHT * 2 + 8,
+          background: 'linear-gradient(to top, #fcf9f4 20%, rgba(252, 249, 244, 0) 100%)',
         }}
       />
 
-      {/* Scroll container */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
         className="[&::-webkit-scrollbar]:hidden relative z-0"
-        style={{
-          height: ITEM_H * VISIBLE_ITEMS,
-          overflowY: 'scroll',
-          scrollSnapType: 'y mandatory',
-          overscrollBehaviorY: 'contain',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-        } as React.CSSProperties}
+        style={scrollStyle}
       >
-        {/* Top spacer */}
-        <div style={{ height: SPACER, flexShrink: 0 }} />
+        <div style={{ height: SPACER_HEIGHT, flexShrink: 0 }} />
 
-        {items.map((label, i) => {
-          const dist = Math.abs(i - selectedIndex)
-          const opacity = dist === 0 ? 1 : dist === 1 ? 0.45 : 0.12
-          const scale = dist === 0 ? 1 : dist === 1 ? 0.82 : 0.62
-          const color = dist === 0 ? '#006a65' : '#6d7a78'
-          const fontWeight = dist === 0 ? 800 : dist === 1 ? 500 : 400
-          const fontSize = dist === 0 ? 56 : dist === 1 ? 40 : 30
+        {items.map((label, index) => {
+          const distance = Math.abs(index - selectedIndex)
+          const opacity = distance === 0 ? 1 : distance === 1 ? 0.45 : 0.12
+          const scale = distance === 0 ? 1 : distance === 1 ? 0.82 : 0.62
+          const color = distance === 0 ? '#006a65' : '#6d7a78'
+          const fontWeight = distance === 0 ? 800 : distance === 1 ? 600 : 400
+          const fontSize = distance === 0 ? 54 : distance === 1 ? 40 : 30
 
           return (
             <div
-              key={i}
+              key={label}
               style={{
-                height: ITEM_H,
+                height: ITEM_HEIGHT,
                 scrollSnapAlign: 'center',
                 display: 'flex',
                 alignItems: 'center',
@@ -125,7 +122,6 @@ function WheelColumn({
                 color,
                 fontWeight,
                 fontSize,
-                fontFamily: 'inherit',
                 lineHeight: 1,
                 transition: 'opacity 0.15s ease, transform 0.15s ease, color 0.15s ease',
                 userSelect: 'none',
@@ -136,118 +132,140 @@ function WheelColumn({
           )
         })}
 
-        {/* Bottom spacer */}
-        <div style={{ height: SPACER, flexShrink: 0 }} />
+        <div style={{ height: SPACER_HEIGHT, flexShrink: 0 }} />
       </div>
     </div>
   )
 }
 
-// ──────────────────────────────────────────
-// Main sheet
-// ──────────────────────────────────────────
-
 export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimePickerSheetProps) {
-  const [hIdx, setHIdx] = useState(7)
-  const [mIdx, setMIdx] = useState(6)
+  const dragControls = useDragControls()
+  const [hourIndex, setHourIndex] = useState(7)
+  const [minuteIndex, setMinuteIndex] = useState(6)
 
   useEffect(() => {
-    if (isOpen && initialTime) {
-      const [h, m] = initialTime.split(':')
-      const hi = HOURS.indexOf(h)
-      if (hi >= 0) setHIdx(hi)
-      const mi = Math.round(parseInt(m, 10) / 5)
-      setMIdx(Math.min(mi, MINUTES.length - 1))
+    if (!isOpen || !initialTime) return
+
+    const [hours, minutes] = initialTime.split(':')
+    const nextHourIndex = HOURS.indexOf(hours)
+    if (nextHourIndex >= 0) setHourIndex(nextHourIndex)
+
+    const nextMinuteIndex = Math.round(Number(minutes) / 5)
+    setMinuteIndex(Math.max(0, Math.min(MINUTES.length - 1, nextMinuteIndex)))
+  }, [initialTime, isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
     }
-  }, [isOpen, initialTime])
+  }, [isOpen])
 
   if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 z-[60]">
+  const content = (
+    <div className="fixed inset-0 z-[70]">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0, transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
-        className="absolute inset-0 bg-background"
-        style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        onClick={onCancel}
+        className="absolute inset-0 bg-black/45"
+        aria-hidden="true"
       />
 
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
-        exit={{ opacity: 0, y: 40, transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
-        style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
-        className="relative w-full max-w-[430px] mx-auto h-full max-h-[844px] bg-background flex flex-col overflow-hidden"
+        drag="y"
+        dragControls={dragControls}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.18 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 72 || info.velocity.y > 320) onCancel()
+        }}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', stiffness: 340, damping: 32 }}
+        className="absolute bottom-0 left-0 right-0 mx-auto flex w-full max-w-[430px] flex-col overflow-hidden rounded-t-[28px] bg-background shadow-[0_-8px_32px_rgba(0,0,0,0.12)]"
+        style={{
+          paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
+          maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 12px)',
+        }}
       >
-        {/* Soft background glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+        <div
+          className="touch-none select-none px-6 pb-4 pt-3"
+          onPointerDown={(event) => dragControls.start(event)}
+        >
+          <div className="mx-auto h-1 w-10 rounded-full bg-on-surface/15" />
+          <div className="mt-4 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-primary active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[22px]">close</span>
+            </button>
+            <h2 className="font-headline text-lg font-bold text-on-surface">Установить время</h2>
+            <div className="w-10" />
+          </div>
+        </div>
 
-        {/* Header */}
-        <header className="flex items-center justify-between px-6 py-4 w-full relative z-10">
-          <button
-            onClick={onCancel}
-            className="p-2 -ml-2 text-[#006a65] hover:bg-stone-100 transition-colors rounded-full active:scale-95 duration-200"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-          <h1 className="font-headline font-semibold text-lg text-[#006a65] absolute left-1/2 -translate-x-1/2">
-            Установить время
-          </h1>
-          <div className="w-10" />
-        </header>
+        <div className="relative px-6 pb-2 pt-1">
+          <div className="pointer-events-none absolute left-1/2 top-16 h-56 w-56 -translate-x-1/2 rounded-full bg-primary/5 blur-[90px]" />
 
-        {/* Body */}
-        <div className="flex-1 flex flex-col items-center justify-center px-8 relative">
-          <div className="text-center mb-12">
-            <p className="text-on-surface-variant font-medium text-xs tracking-[0.2em] uppercase opacity-70">
+          <div className="relative z-10 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/65">
               ВРЕМЯ ПРАКТИКИ
             </p>
           </div>
 
-          {/* Wheels */}
-          <div className="relative flex items-center justify-center">
-            {/* Cross-wheel highlight band */}
-            <div className="absolute left-0 right-0 h-[60px] bg-[#006a65]/[0.04] rounded-2xl pointer-events-none z-0" />
+          <div className="relative z-10 mt-6 flex items-center justify-center">
+            <div className="pointer-events-none absolute left-0 right-0 h-[60px] rounded-2xl bg-primary/[0.04]" />
 
-            <div className="flex items-center justify-center z-10 gap-2">
-              <WheelColumn items={HOURS} selectedIndex={hIdx} onChange={setHIdx} />
+            <div className="flex items-center justify-center gap-2">
+              <WheelColumn items={HOURS} selectedIndex={hourIndex} onChange={setHourIndex} />
               <div
-                className="text-[#006a65] font-headline font-bold select-none opacity-90"
-                style={{ fontSize: 64, lineHeight: 1, marginBottom: 4 }}
+                className="select-none font-headline font-bold text-primary"
+                style={{ fontSize: 60, lineHeight: 1, marginBottom: 4 }}
               >
                 :
               </div>
-              <WheelColumn items={MINUTES} selectedIndex={mIdx} onChange={setMIdx} />
+              <WheelColumn items={MINUTES} selectedIndex={minuteIndex} onChange={setMinuteIndex} />
             </div>
           </div>
 
-          <div className="mt-14 text-center max-w-[280px]">
-            <p className="text-on-surface-variant/60 text-[13.5px] font-medium italic leading-relaxed">
-              Выберите удобное время для ваших ежедневных напоминаний об осознанности.
+          <div className="relative z-10 mt-8 px-4 text-center">
+            <p className="text-[13px] font-medium italic leading-relaxed text-on-surface-variant/70">
+              Выберите спокойное время для ежедневного напоминания об осознанности.
             </p>
           </div>
         </div>
 
-        {/* Actions */}
-        <footer className="p-8 space-y-4">
+        <footer className="px-6 pt-5">
           <button
-            onClick={() => onSave(`${HOURS[hIdx]}:${MINUTES[mIdx]}`)}
-            className="w-full bg-[#006a65] hover:opacity-90 active:scale-[0.98] transition-all text-white font-headline font-bold py-5 rounded-xl shadow-lg shadow-primary/10"
+            type="button"
+            onClick={() => onSave(`${HOURS[hourIndex]}:${MINUTES[minuteIndex]}`)}
+            className="w-full rounded-2xl bg-primary py-4 font-headline text-base font-bold text-white shadow-lg shadow-primary/20 transition-transform active:scale-[0.98]"
           >
             Сохранить
           </button>
           <button
+            type="button"
             onClick={onCancel}
-            className="w-full text-[#914946] hover:bg-secondary-container/10 active:scale-[0.98] transition-all font-headline font-semibold py-4 rounded-xl"
+            className="mt-3 w-full rounded-2xl py-4 font-headline text-base font-semibold text-[#914946] transition-colors active:scale-[0.98]"
           >
             Отмена
           </button>
         </footer>
-
-        {/* Decorative glow */}
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-tertiary-container/5 rounded-full blur-[100px] pointer-events-none" />
       </motion.div>
     </div>
   )
+
+  return createPortal(content, document.body)
 }

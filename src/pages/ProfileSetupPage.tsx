@@ -33,6 +33,22 @@ function getZodiac(dateStr: string): string | null {
   return null
 }
 
+function isValidBirthDate(dateStr: string): boolean {
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(dateStr)
+  if (!match) return false
+
+  const day = Number(match[1])
+  const month = Number(match[2]) - 1
+  const year = Number(match[3])
+  const candidate = new Date(year, month, day)
+
+  return (
+    candidate.getFullYear() === year &&
+    candidate.getMonth() === month &&
+    candidate.getDate() === day
+  )
+}
+
 import { CalendarSheet } from '../features/auth/CalendarSheet'
 
 export function ProfileSetupPage() {
@@ -61,8 +77,8 @@ export function ProfileSetupPage() {
   }
 
   const zodiacSign = useMemo(() => getZodiac(birthDate), [birthDate])
-
-  const isValid = !!birthDate && !!zodiacSign
+  const hasSelectedBirthDate = useMemo(() => isValidBirthDate(birthDate), [birthDate])
+  const isValid = hasSelectedBirthDate && !!zodiacSign
 
   const handleSubmit = () => {
     if (!isValid) return
