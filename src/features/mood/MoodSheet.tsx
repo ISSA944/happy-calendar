@@ -38,7 +38,7 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+    <div className="fixed inset-0 z-[100] flex flex-col justify-end">
       {/* Backdrop — touch-none prevents swipes from bleeding through to the page */}
       <motion.div
         initial={{ opacity: 0 }}

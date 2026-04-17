@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useDragControls } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import type { Variants } from 'framer-motion'
@@ -312,7 +313,8 @@ export function HomePage() {
       </motion.section>
       </motion.div>
 
-      {/* iOS Install Modal */}
+      {/* iOS Install Modal — rendered via portal to escape AppLayout stacking context */}
+      {createPortal(
       <AnimatePresence>
         {showIOSModal && (
           <>
@@ -322,7 +324,7 @@ export function HomePage() {
               exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeIn' } }}
               transition={{ duration: 0.2 }}
               onClick={() => setShowIOSModal(false)}
-              className="fixed inset-0 z-[60] bg-black/40"
+              className="fixed inset-0 z-[100] bg-black/40"
             />
             <motion.div
               drag="y"
@@ -339,7 +341,7 @@ export function HomePage() {
               initial={{ y: '100%' }}
               animate={{ y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
               exit={{ y: '100%', transition: { duration: 0.15, ease: 'easeIn' } }}
-              className="fixed bottom-0 left-0 right-0 z-[60] max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[28px] shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 z-[100] max-w-[390px] mx-auto bg-surface-container-lowest rounded-t-[28px] shadow-2xl"
               style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', willChange: 'transform' }}
             >
               {/* Drag zone — pill + top area for easy grab */}
@@ -384,14 +386,19 @@ export function HomePage() {
             </motion.div>
           </>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+      )}
 
-      {/* MoodSheet */}
+      {/* MoodSheet — also portaled for z-index consistency */}
+      {createPortal(
       <AnimatePresence>
         {isMoodSheetOpen && (
           <MoodSheet onClose={() => setIsMoodSheetOpen(false)} />
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+      )}
     </>
   )
 }

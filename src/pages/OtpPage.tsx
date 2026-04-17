@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, memo } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 
@@ -75,9 +75,9 @@ const OtpBox = memo(function OtpBox({
 }) {
   return (
     <div
-      className={`w-[72px] h-[72px] bg-surface-container-lowest rounded-[24px] flex items-center justify-center shadow-sm transition-all duration-200 relative overflow-hidden ${
+      className={`w-[72px] h-[72px] bg-surface-container-lowest rounded-[24px] flex items-center justify-center shadow-sm transition-colors duration-150 relative overflow-hidden ${
         isActive
-          ? 'border-2 border-primary ring-4 ring-primary/5'
+          ? 'border-2 border-primary'
           : 'border border-outline-variant'
       }`}
     >
@@ -113,6 +113,14 @@ export function OtpPage() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [resendKey, setResendKey] = useState(0) // bumping resets CountdownTimer
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  // Stable ref callbacks — recreating these inline each render defeats OtpBox memo
+  const refCallbacks = useMemo(
+    () => Array.from({ length: 4 }, (_, i) => (el: HTMLInputElement | null) => {
+      inputRefs.current[i] = el
+    }),
+    []
+  )
 
   const isValid = code.every(digit => digit !== '')
 
@@ -217,7 +225,7 @@ export function OtpPage() {
                 index={index}
                 digit={digit}
                 isActive={activeIndex === index}
-                inputRef={(el) => { inputRefs.current[index] = el }}
+                inputRef={refCallbacks[index]}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 onFocus={handleFocus}

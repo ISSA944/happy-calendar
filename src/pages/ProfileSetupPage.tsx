@@ -62,7 +62,10 @@ export function ProfileSetupPage() {
 
   const zodiacSign = useMemo(() => getZodiac(birthDate), [birthDate])
 
+  const isValid = !!birthDate && !!zodiacSign
+
   const handleSubmit = () => {
+    if (!isValid) return
     storeBirthDate(birthDate)
     storeGender(gender)
     storeZodiac(zodiacSign ?? '')
@@ -197,9 +200,14 @@ export function ProfileSetupPage() {
         transition={{ duration: 0.6, delay: 0.3 }}
         className="p-5 pb-10 mt-auto"
       >
-        <button 
+        <button
           onClick={handleSubmit}
-          className="w-full h-16 bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white rounded-full font-headline font-bold text-lg shadow-lg shadow-[#2fa7a0]/30 active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer"
+          disabled={!isValid}
+          className={`w-full h-16 rounded-full font-headline font-bold text-lg flex items-center justify-center transition-all ${
+            isValid
+              ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 active:scale-[0.98] cursor-pointer'
+              : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
+          }`}
         >
           Продолжить
         </button>

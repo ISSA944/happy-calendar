@@ -46,8 +46,8 @@ function AppLayout() {
         {/* Page content crossfades — BottomNav sits below and never remounts */}
         <main
           ref={mainRef}
-          className="flex-1 w-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
-          style={{ WebkitOverflowScrolling: 'touch' }}
+          className="flex-1 w-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain bg-background"
+          style={{ WebkitOverflowScrolling: 'touch', background: '#fcf9f4' }}
         >
           {/* mode="wait": one page in DOM at a time, pure opacity crossfade */}
           <AnimatePresence mode="wait" initial={false}>
@@ -57,7 +57,8 @@ function AppLayout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: 'easeInOut' }}
-              style={{ willChange: 'opacity' }}
+              className="bg-background"
+              style={{ willChange: 'opacity', background: '#fcf9f4' }}
             >
               <Outlet />
             </motion.div>
