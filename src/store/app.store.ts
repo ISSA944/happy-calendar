@@ -73,6 +73,9 @@ type AppState = {
   bookmarks: Bookmark[]
   addBookmark: (bookmark: Bookmark) => void
   removeBookmark: (id: string) => void
+
+  // Reset entire app state (logout / re-onboard)
+  resetApp: () => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -154,6 +157,19 @@ export const useAppStore = create<AppState>()(
       removeBookmark: (id) => set((state) => ({
         bookmarks: state.bookmarks.filter((b) => b.id !== id),
       })),
+
+      resetApp: () => set({
+        hasCompletedOnboarding: false,
+        userName: '',
+        email: '',
+        birthDate: '',
+        zodiacSign: '',
+        gender: 'UNKNOWN',
+        profilePhoto: '',
+        currentMood: 'Воодушевлена',
+        dailyPack: null,
+        bookmarks: [],
+      }),
     }),
     { name: 'happy-calendar-store' }
   )

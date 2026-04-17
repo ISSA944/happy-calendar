@@ -183,7 +183,7 @@ export function OtpPage() {
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
-        <div className="flex items-center gap-4 h-16">
+        <div className="flex items-center h-16 relative">
           <button
             onClick={() => navigate(-1)}
             aria-label="Назад"
@@ -191,7 +191,7 @@ export function OtpPage() {
           >
             <span className="material-symbols-outlined text-[24px]">arrow_back</span>
           </button>
-          <h1 className="font-headline font-bold text-lg text-primary tracking-tight truncate">Подтверждение</h1>
+          <h1 className="absolute left-1/2 -translate-x-1/2 font-headline font-bold text-lg text-primary tracking-tight">Ввод кода</h1>
         </div>
       </header>
 

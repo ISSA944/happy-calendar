@@ -16,7 +16,13 @@ export function SettingsPage() {
     profilePhoto, setProfilePhoto,
     showHoroscope, showHolidays, showSupport,
     toggleHoroscope, toggleHolidays, toggleSupport,
+    resetApp,
   } = useAppStore()
+
+  const handleReset = () => {
+    resetApp()
+    navigate('/', { replace: true })
+  }
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -189,6 +195,16 @@ export function SettingsPage() {
             <ToggleItem label="Праздники" isActive={showHolidays} onToggle={toggleHolidays} />
             <ToggleItem label="Поддержка на сегодня" isActive={showSupport} onToggle={toggleSupport} />
           </div>
+        </motion.section>
+
+        {/* Reset */}
+        <motion.section variants={itemVariants} className="mb-6">
+          <button
+            onClick={handleReset}
+            className="w-full py-4 rounded-[1.5rem] border border-red-200 text-red-500 font-semibold text-sm active:scale-[0.98] transition-all hover:bg-red-50"
+          >
+            Сбросить профиль и начать заново
+          </button>
         </motion.section>
 
         <div className="h-6" />
