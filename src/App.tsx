@@ -1,12 +1,12 @@
+import { useEffect, useState, type ReactNode } from 'react'
 import {
   BrowserRouter,
   Navigate,
-  Outlet,
   Route,
   Routes,
   useLocation,
 } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import {
   BookmarksPage,
   HomePage,
@@ -24,41 +24,62 @@ import { useAppStore } from './store'
 
 const APP_SHELL_ROUTES = ['/home', '/bookmarks', '/settings', '/notifications-list']
 
-// Redirect to /home if onboarding is already complete
 function RootGuard() {
   const hasCompletedOnboarding = useAppStore(s => s.hasCompletedOnboarding)
   return hasCompletedOnboarding ? <Navigate to="/home" replace /> : <WelcomePage />
 }
 
-function AppLayout() {
-  const location = useLocation()
+// Keep-alive tab: mounts once on first visit, then stays in DOM. Zero remount cost.
+function ShellTab({ visible, children }: { visible: boolean; children: ReactNode }) {
+  const [hasMounted, setHasMounted] = useState(visible)
+
+  useEffect(() => {
+    if (visible && !hasMounted) setHasMounted(true)
+  }, [visible, hasMounted])
+
+  if (!hasMounted) return null
 
   return (
-    <div className="bg-background text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden" style={{ background: '#fcf9f4' }}>
-      <div className="w-full max-w-[430px] mx-auto h-full relative bg-background flex flex-col overflow-hidden" style={{ background: '#fcf9f4' }}>
+    <div
+      aria-hidden={!visible}
+      className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain bg-background"
+      style={{
+        background: '#fcf9f4',
+        opacity: visible ? 1 : 0,
+        pointerEvents: visible ? 'auto' : 'none',
+        transition: 'opacity 0.18s ease-out',
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'manipulation',
+        willChange: 'opacity',
+        zIndex: visible ? 1 : 0,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
 
-        {/* Tab crossfade: old+new overlap on the cream bg — no mode="wait" gap, no transform */}
+function AppLayout() {
+  const location = useLocation()
+  const { pathname } = location
+
+  return (
+    <div
+      className="bg-background text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden"
+      style={{ background: '#fcf9f4' }}
+    >
+      <div
+        className="w-full max-w-[430px] mx-auto h-full relative bg-background flex flex-col overflow-hidden"
+        style={{ background: '#fcf9f4' }}
+      >
         <main
           className="flex-1 w-full relative overflow-hidden bg-background"
           style={{ background: '#fcf9f4' }}
         >
-          <AnimatePresence initial={false}>
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, transition: { duration: 0.25, ease: 'easeOut' } }}
-              exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeOut' } }}
-              className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain bg-background"
-              style={{
-                WebkitOverflowScrolling: 'touch',
-                background: '#fcf9f4',
-                willChange: 'opacity',
-                touchAction: 'manipulation',
-              }}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          <ShellTab visible={pathname === '/home'}><HomePage /></ShellTab>
+          <ShellTab visible={pathname === '/bookmarks'}><BookmarksPage /></ShellTab>
+          <ShellTab visible={pathname === '/settings'}><SettingsPage /></ShellTab>
+          <ShellTab visible={pathname === '/notifications-list'}><NotificationsListPage /></ShellTab>
         </main>
 
         <BottomNav />
@@ -70,8 +91,7 @@ function AppLayout() {
 function AppRoutes() {
   const location = useLocation()
 
-  // Stable key for app-shell routes → AppLayout never remounts on tab switch.
-  // Unique key for standalone pages → AnimatePresence can coordinate their exit.
+  // Stable key for all app-shell routes → AppLayout never remounts on tab switch.
   const routeKey = APP_SHELL_ROUTES.includes(location.pathname) ? 'app-shell' : location.key
 
   return (
@@ -84,10 +104,10 @@ function AppRoutes() {
         <Route path="/profile-setup" element={<ProfileSetupPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route element={<AppLayout />}>
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/bookmarks" element={<BookmarksPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/notifications-list" element={<NotificationsListPage />} />
+          <Route path="/home" element={null} />
+          <Route path="/bookmarks" element={null} />
+          <Route path="/settings" element={null} />
+          <Route path="/notifications-list" element={null} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
