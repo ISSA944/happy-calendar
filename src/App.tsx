@@ -13,6 +13,7 @@ import {
   NotificationsListPage,
   NotificationsPage,
   OtpPage,
+  PrivacyPolicyPage,
   ProfileSetupPage,
   RegistrationPage,
   SettingsPage,
@@ -80,6 +81,7 @@ function AppRoutes() {
       <Route path="/otp" element={<OtpPage />} />
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route path="/profile-setup" element={<ProfileSetupPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       <Route element={<AppLayout />}>
         <Route path="/home" element={<HomePage />} />
         <Route path="/bookmarks" element={<BookmarksPage />} />

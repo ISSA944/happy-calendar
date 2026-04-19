@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
 
 export function RegistrationPage() {
@@ -132,9 +132,13 @@ export function RegistrationPage() {
                 </div>
                 <span className="text-[13px] font-medium text-on-surface-variant leading-snug">
                   Я согласен(а) на обработку персональных данных (обязательно){' '}
-                  <a className="text-primary font-bold underline underline-offset-4 decoration-primary/50 hover:text-primary/80 transition-colors" href="#">
+                  <Link
+                    to="/privacy-policy"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-primary font-bold underline underline-offset-4 decoration-primary/50 hover:text-primary/80 transition-colors"
+                  >
                     Политика
-                  </a>
+                  </Link>
                 </span>
               </label>
 
