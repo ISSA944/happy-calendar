@@ -55,6 +55,22 @@ export function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Hard scroll lock when iOS install sheet is open (body + html + overscroll)
+  useEffect(() => {
+    if (!showIOSModal) return
+    const previousBodyOverflow = document.body.style.overflow
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    const previousBodyOverscroll = document.body.style.overscrollBehavior
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    document.body.style.overscrollBehavior = 'none'
+    return () => {
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
+      document.body.style.overscrollBehavior = previousBodyOverscroll
+    }
+  }, [showIOSModal])
+
   const supportPhrase = dailyPack?.supportPhrase ?? ''
   const holiday = getTodayHoliday()
   const horoscope = getHoroscope(zodiacSign)
@@ -324,8 +340,9 @@ export function HomePage() {
               exit={{ opacity: 0, transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
               transition={{ duration: 0.2 }}
               onClick={() => setShowIOSModal(false)}
-              className="fixed inset-0 z-[100] bg-black/40"
+              className="fixed inset-0 z-[100] bg-black/60 touch-none"
               style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
+              aria-hidden="true"
             />
             <motion.div
               drag="y"
@@ -340,10 +357,10 @@ export function HomePage() {
                 }
               }}
               initial={{ y: '100%' }}
-              animate={{ y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
-              exit={{ y: '100%', transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
-              className="fixed bottom-0 left-0 right-0 z-[100] max-w-[430px] mx-auto bg-surface-container-lowest rounded-t-[28px] shadow-2xl"
-              style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', willChange: 'transform', transform: 'translateZ(0)' }}
+              animate={{ y: 0, transition: { duration: 0.3, ease: 'easeOut' } }}
+              exit={{ y: '100%', transition: { duration: 0.3, ease: 'easeOut' } }}
+              className="fixed bottom-0 left-0 right-0 z-[100] max-w-[430px] mx-auto rounded-t-[28px] shadow-2xl"
+              style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', background: '#fcf9f4', willChange: 'transform', transform: 'translateZ(0)' }}
             >
               {/* Drag zone — pill + top area for easy grab */}
               <div
