@@ -47,10 +47,11 @@ function ShellTab({ visible, children }: { visible: boolean; children: ReactNode
         background: '#fcf9f4',
         opacity: visible ? 1 : 0,
         pointerEvents: visible ? 'auto' : 'none',
-        transition: 'opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+        transition: 'opacity 0.15s ease-out, transform 0.15s ease-out',
+        transform: visible ? 'scale(1)' : 'scale(0.98)',
         WebkitOverflowScrolling: 'touch',
         touchAction: 'manipulation',
-        willChange: 'opacity',
+        willChange: 'opacity, transform',
         zIndex: visible ? 1 : 0,
       }}
     >

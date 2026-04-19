@@ -118,3 +118,4 @@ export function BookmarksPage() {
     </motion.div>
   )
 }
+

@@ -6,13 +6,13 @@ export function WelcomePage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
       style={{
-        willChange: 'opacity',
-        transform: 'translateZ(0)',
+        willChange: 'opacity, transform',
+        transformOrigin: 'center',
         paddingTop: 'max(2rem, env(safe-area-inset-top))',
         paddingBottom: 'max(2rem, env(safe-area-inset-bottom))',
       }}
@@ -124,3 +124,4 @@ export function WelcomePage() {
     </motion.div>
   )
 }
+
