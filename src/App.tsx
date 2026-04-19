@@ -76,21 +76,23 @@ function AppRoutes() {
   const routeKey = APP_SHELL_ROUTES.includes(location.pathname) ? 'app-shell' : location.key
 
   return (
-    <Routes location={location} key={routeKey}>
-      <Route path="/" element={<RootGuard />} />
-      <Route path="/register" element={<RegistrationPage />} />
-      <Route path="/otp" element={<OtpPage />} />
-      <Route path="/notifications" element={<NotificationsPage />} />
-      <Route path="/profile-setup" element={<ProfileSetupPage />} />
-      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-      <Route element={<AppLayout />}>
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/bookmarks" element={<BookmarksPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/notifications-list" element={<NotificationsListPage />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={routeKey}>
+        <Route path="/" element={<RootGuard />} />
+        <Route path="/register" element={<RegistrationPage />} />
+        <Route path="/otp" element={<OtpPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/profile-setup" element={<ProfileSetupPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route element={<AppLayout />}>
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/bookmarks" element={<BookmarksPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/notifications-list" element={<NotificationsListPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AnimatePresence>
   )
 }
 

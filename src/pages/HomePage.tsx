@@ -357,8 +357,8 @@ export function HomePage() {
                 }
               }}
               initial={{ y: '100%' }}
-              animate={{ y: 0, transition: { type: 'tween', duration: 0.35, ease: [0.32, 0.72, 0, 1] } }}
-              exit={{ y: '100%', transition: { type: 'tween', duration: 0.35, ease: [0.32, 0.72, 0, 1] } }}
+              animate={{ y: 0, transition: { type: 'tween', duration: 0.4, ease: [0.32, 0.72, 0, 1] } }}
+              exit={{ y: '100%', transition: { type: 'tween', duration: 0.4, ease: [0.32, 0.72, 0, 1] } }}
               className="fixed bottom-0 left-0 right-0 z-[100] max-w-[430px] mx-auto rounded-t-[28px] shadow-2xl"
               style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', background: '#fcf9f4', willChange: 'transform', transform: 'translateZ(0)' }}
             >

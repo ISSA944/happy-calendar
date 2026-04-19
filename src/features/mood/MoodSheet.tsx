@@ -70,8 +70,8 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
           if (offset.y > 50 || velocity.y > 200) onClose()
         }}
         initial={{ y: '100%' }}
-        animate={{ y: 0, transition: { type: 'tween', duration: 0.35, ease: [0.32, 0.72, 0, 1] } }}
-        exit={{ y: '100%', transition: { type: 'tween', duration: 0.35, ease: [0.32, 0.72, 0, 1] } }}
+        animate={{ y: 0, transition: { type: 'tween', duration: 0.4, ease: [0.32, 0.72, 0, 1] } }}
+        exit={{ y: '100%', transition: { type: 'tween', duration: 0.4, ease: [0.32, 0.72, 0, 1] } }}
         className="relative w-full max-w-[430px] mx-auto rounded-t-[24px] shadow-2xl flex flex-col"
         style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))', background: '#fcf9f4', willChange: 'transform', transform: 'translateZ(0)' }}
       >
