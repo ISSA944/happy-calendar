@@ -232,14 +232,14 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
   }, [changeMonth])
 
   const content = (
-    <div className="fixed inset-0 z-[70]">
+    <div className="fixed inset-0 z-[100]">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
         onClick={onClose}
-        className="absolute inset-0 bg-black/45"
+        className="absolute inset-0 bg-black/60"
         aria-hidden="true"
       />
 

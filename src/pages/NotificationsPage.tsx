@@ -190,26 +190,28 @@ export function NotificationsPage() {
         </motion.section>
       </main>
 
-      {/* Bottom Action Area — in flow at the end of content */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="w-full max-w-[430px] mx-auto px-5 pb-[env(safe-area-inset-bottom,24px)] pt-4 flex flex-col items-center space-y-4"
-      >
-        <button
-          onClick={handleAllow}
-          className="w-full h-14 bg-[#2FA7A0] hover:bg-[#006a65] text-white font-headline font-bold text-base rounded-full shadow-lg shadow-[#2FA7A0]/20 transition-all active:scale-[0.98]"
+      {/* Bottom Action Area — unmounted while TimePicker is open so nothing peeks through the sheet */}
+      {!isTimePickerOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="w-full max-w-[430px] mx-auto px-5 pb-[env(safe-area-inset-bottom,24px)] pt-4 flex flex-col items-center space-y-4"
         >
-          Разрешить уведомления
-        </button>
-        <button
-          onClick={handleSkip}
-          className="text-[#5A5A66] font-body font-medium text-sm hover:text-[#1B1B1F] transition-colors"
-        >
-          Настрою позже
-        </button>
-      </motion.div>
+          <button
+            onClick={handleAllow}
+            className="w-full h-14 bg-[#2FA7A0] hover:bg-[#006a65] text-white font-headline font-bold text-base rounded-full shadow-lg shadow-[#2FA7A0]/20 transition-all active:scale-[0.98]"
+          >
+            Разрешить уведомления
+          </button>
+          <button
+            onClick={handleSkip}
+            className="text-[#5A5A66] font-body font-medium text-sm hover:text-[#1B1B1F] transition-colors"
+          >
+            Настрою позже
+          </button>
+        </motion.div>
+      )}
     </motion.div>
   )
 }
