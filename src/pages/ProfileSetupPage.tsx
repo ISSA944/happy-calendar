@@ -186,25 +186,33 @@ export function ProfileSetupPage() {
           {/* Gender Section */}
           <div className="space-y-3 pt-2">
             <p className="text-[15px] font-semibold text-on-surface-variant ml-1">Пол (необязательно)</p>
-            <div className="flex p-1 bg-surface-container rounded-full h-[56px] shadow-sm gap-1">
-              <button
-                onClick={() => setGender('F')}
-                className={`flex-1 rounded-full text-[15px] font-semibold transition-all duration-200 ${gender === 'F' ? 'bg-white text-on-surface shadow-sm' : 'text-on-surface-variant'}`}
-              >
-                Ж
-              </button>
-              <button
-                onClick={() => setGender('M')}
-                className={`flex-1 rounded-full text-[15px] font-semibold transition-all duration-200 ${gender === 'M' ? 'bg-white text-on-surface shadow-sm' : 'text-on-surface-variant'}`}
-              >
-                М
-              </button>
-              <button
-                onClick={() => setGender('UNKNOWN')}
-                className={`flex-1 rounded-full text-[13px] font-semibold transition-all duration-200 px-2 ${gender === 'UNKNOWN' ? 'bg-white text-on-surface shadow-sm' : 'text-on-surface-variant'}`}
-              >
-                Не указывать
-              </button>
+            <div className="relative flex p-1 bg-surface-container rounded-full h-[56px] shadow-sm gap-1">
+              {[
+                { id: 'F', label: 'Ж' },
+                { id: 'M', label: 'М' },
+                { id: 'UNKNOWN', label: 'Не указывать', extraClass: 'text-[13px]' }
+              ].map((g) => {
+                const isSelected = gender === g.id;
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => setGender(g.id as "F" | "M" | "UNKNOWN")}
+                    className={`relative flex-1 rounded-full font-semibold transition-colors duration-200 z-10 select-none touch-manipulation active:scale-95 ${
+                      g.extraClass || 'text-[15px]'
+                    } ${isSelected ? 'text-on-surface' : 'text-on-surface-variant hover:text-on-surface/80'}`}
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    {isSelected && (
+                      <motion.div
+                        layoutId="gender-pill"
+                        className="absolute inset-0 bg-white rounded-full shadow-sm -z-10"
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10">{g.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </motion.div>

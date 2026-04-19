@@ -67,8 +67,8 @@ export function BottomSheet({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: closeDuration, ease: [0.32, 0.72, 0, 1] } }}
-            transition={{ duration: openDuration, ease: [0.32, 0.72, 0, 1] }}
+            exit={{ opacity: 0, transition: { duration: closeDuration, ease: [0.16, 1, 0.3, 1] } }}
+            transition={{ duration: openDuration, ease: [0.16, 1, 0.3, 1] }}
             onClick={onClose}
             className="absolute inset-0 bg-black/55 cursor-pointer touch-none"
             style={{
@@ -86,7 +86,7 @@ export function BottomSheet({
             dragListener={false}
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 1 }}
-            dragTransition={{ bounceStiffness: 400, bounceDamping: 25 }}
+            dragTransition={{ bounceStiffness: 250, bounceDamping: 25 }}
             onDragEnd={(_, { offset, velocity }) => {
               if (offset.y > 120 || velocity.y > 350) {
                 onClose()
@@ -94,8 +94,8 @@ export function BottomSheet({
             }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%', transition: { duration: closeDuration, ease: [0.32, 0.72, 0, 1] } }}
-            transition={{ duration: openDuration, ease: [0.32, 0.72, 0, 1] }}
+            exit={{ y: '100%', transition: { duration: closeDuration, ease: [0.16, 1, 0.3, 1] } }}
+            transition={{ duration: openDuration, ease: [0.16, 1, 0.3, 1] }}
             className="relative w-full max-w-[430px] mx-auto rounded-t-[28px] shadow-2xl flex flex-col overflow-hidden"
             style={{
               paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
