@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import type { PanInfo, Variants } from 'framer-motion'
@@ -24,6 +24,7 @@ type ParsedDate = {
 
 const WEEK_DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
+const MONTHS_SHORT = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
 const CURRENT_YEAR = new Date().getFullYear()
 const YEARS = Array.from({ length: 90 }, (_, index) => CURRENT_YEAR - index)
 
@@ -85,6 +86,141 @@ function buildCalendarCells(year: number, month: number): CalendarCell[] {
   return cells
 }
 
+/* ─── Wheel Picker Column (Apple-style drum picker) ─── */
+
+const WHEEL_ITEM_HEIGHT = 44
+const WHEEL_VISIBLE_ITEMS = 5
+const WHEEL_SPACER_HEIGHT = WHEEL_ITEM_HEIGHT * 2
+
+const wheelScrollStyle: CSSProperties = {
+  height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ITEMS,
+  overflowY: 'scroll',
+  scrollSnapType: 'y mandatory',
+  overscrollBehaviorY: 'contain',
+  scrollbarWidth: 'none',
+  msOverflowStyle: 'none',
+  WebkitOverflowScrolling: 'touch',
+}
+
+function WheelColumn({
+  items,
+  selectedIndex,
+  onChange,
+}: {
+  items: string[]
+  selectedIndex: number
+  onChange: (index: number) => void
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const userScrollingRef = useRef(false)
+
+  useEffect(() => {
+    const element = scrollRef.current
+    if (!element || userScrollingRef.current) return
+
+    element.scrollTo({
+      top: selectedIndex * WHEEL_ITEM_HEIGHT,
+      behavior: 'auto',
+    })
+  }, [selectedIndex])
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
+  const handleScroll = useCallback(() => {
+    userScrollingRef.current = true
+
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      const element = scrollRef.current
+      if (!element) return
+
+      userScrollingRef.current = false
+      const rawIndex = Math.round(element.scrollTop / WHEEL_ITEM_HEIGHT)
+      const clampedIndex = Math.max(0, Math.min(items.length - 1, rawIndex))
+      onChange(clampedIndex)
+    }, 80)
+  }, [items.length, onChange])
+
+  return (
+    <div className="relative flex-1" style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ITEMS }}>
+      {/* Selection highlight */}
+      <div
+        className="pointer-events-none absolute left-0 right-0 z-10 rounded-xl bg-primary/[0.07]"
+        style={{ top: WHEEL_ITEM_HEIGHT * 2, height: WHEEL_ITEM_HEIGHT }}
+      />
+
+      {/* Top fade */}
+      <div
+        className="pointer-events-none absolute left-0 right-0 top-0 z-20"
+        style={{
+          height: WHEEL_ITEM_HEIGHT * 2,
+          background: 'linear-gradient(to bottom, #fcf9f4 15%, rgba(252, 249, 244, 0) 100%)',
+        }}
+      />
+
+      {/* Bottom fade */}
+      <div
+        className="pointer-events-none absolute bottom-0 left-0 right-0 z-20"
+        style={{
+          height: WHEEL_ITEM_HEIGHT * 2,
+          background: 'linear-gradient(to top, #fcf9f4 15%, rgba(252, 249, 244, 0) 100%)',
+        }}
+      />
+
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="[&::-webkit-scrollbar]:hidden relative z-0"
+        style={wheelScrollStyle}
+      >
+        <div style={{ height: WHEEL_SPACER_HEIGHT, flexShrink: 0 }} />
+
+        {items.map((label, index) => {
+          const distance = Math.abs(index - selectedIndex)
+          const opacity = distance === 0 ? 1 : distance === 1 ? 0.5 : 0.15
+          const scale = distance === 0 ? 1 : distance === 1 ? 0.9 : 0.75
+          const color = distance === 0 ? '#006a65' : '#6d7a78'
+          const fontWeight = distance === 0 ? 700 : 500
+          const fontSize = distance === 0 ? 18 : distance === 1 ? 16 : 14
+
+          return (
+            <div
+              key={label}
+              style={{
+                height: WHEEL_ITEM_HEIGHT,
+                scrollSnapAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity,
+                transform: `scale(${scale})`,
+                color,
+                fontWeight,
+                fontSize,
+                lineHeight: 1,
+                transition: 'opacity 0.15s ease, transform 0.15s ease, color 0.15s ease',
+                willChange: 'opacity, transform',
+                userSelect: 'none',
+              }}
+            >
+              {label}
+            </div>
+          )
+        })}
+
+        <div style={{ height: WHEEL_SPACER_HEIGHT, flexShrink: 0 }} />
+      </div>
+    </div>
+  )
+}
+
+/* ─── Calendar Grid ─── */
+
 const CalendarGrid = memo(function CalendarGrid({
   cells,
   selectedValue,
@@ -129,6 +265,8 @@ const CalendarGrid = memo(function CalendarGrid({
   )
 })
 
+/* ─── Main CalendarSheet ─── */
+
 export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: CalendarSheetProps) {
   const parsedCurrentValue = useMemo(() => parseDate(currentValue), [currentValue])
   const [currentYear, setCurrentYear] = useState(parsedCurrentValue?.year ?? CURRENT_YEAR)
@@ -136,6 +274,10 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
   const [selectedDate, setSelectedDate] = useState<ParsedDate | null>(parsedCurrentValue)
   const [direction, setDirection] = useState(0)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+
+  // Local wheel state (only committed when user closes the picker)
+  const [pickerYear, setPickerYear] = useState(currentYear)
+  const [pickerMonth, setPickerMonth] = useState(currentMonth)
 
   useEffect(() => {
     if (!isOpen) return
@@ -168,16 +310,21 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
     updateDisplayedMonth(nextDate.getFullYear(), nextDate.getMonth(), delta)
   }, [currentMonth, currentYear, updateDisplayedMonth])
 
-  const handleMonthSelect = useCallback((month: number) => {
-    const nextDirection = month === currentMonth ? 0 : month > currentMonth ? 1 : -1
-    setIsPickerOpen(false)
-    updateDisplayedMonth(currentYear, month, nextDirection)
-  }, [currentMonth, currentYear, updateDisplayedMonth])
+  const handleOpenPicker = useCallback(() => {
+    setPickerYear(currentYear)
+    setPickerMonth(currentMonth)
+    setIsPickerOpen(true)
+  }, [currentMonth, currentYear])
 
-  const handleYearSelect = useCallback((year: number) => {
-    const nextDirection = year === currentYear ? 0 : year > currentYear ? 1 : -1
-    updateDisplayedMonth(year, currentMonth, nextDirection)
-  }, [currentMonth, currentYear, updateDisplayedMonth])
+  const handlePickerConfirm = useCallback(() => {
+    const yr = YEARS[pickerYear]
+    const mo = pickerMonth
+    const nextDirection = yr === currentYear
+      ? (mo === currentMonth ? 0 : mo > currentMonth ? 1 : -1)
+      : (yr > currentYear ? 1 : -1)
+    setIsPickerOpen(false)
+    updateDisplayedMonth(yr, mo, nextDirection)
+  }, [pickerYear, pickerMonth, currentYear, currentMonth, updateDisplayedMonth])
 
   const handleDaySelect = useCallback((cell: CalendarCell) => {
     const nextDate = new Date(currentYear, currentMonth + cell.monthOffset, cell.day)
@@ -213,79 +360,63 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
     </button>
   )
 
+  // Find index of current year in YEARS array for wheel
+  const yearWheelIndex = useMemo(() => {
+    const idx = YEARS.indexOf(currentYear)
+    return idx >= 0 ? idx : 0
+  }, [currentYear])
+
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={title} headerRight={headerRight}>
       <div className="relative pb-5">
+        {/* ── Wheel Picker Overlay (Apple-style) ── */}
         <AnimatePresence>
           {isPickerOpen && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
-              transition={{ duration: 0.18 }}
+              transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
               className="absolute inset-0 z-20 flex flex-col bg-surface-container-lowest"
+              style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
             >
-              <div className="flex items-center justify-between border-b border-outline-variant/25 px-5 pb-4 pt-1 mt-1">
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 pb-3 pt-2">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-on-surface-variant/60">Быстрый выбор</p>
-                  <h3 className="mt-1 font-headline text-lg font-bold text-on-surface">Год и месяц</h3>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant/60">Быстрый выбор</p>
+                  <h3 className="mt-0.5 font-headline text-base font-bold text-on-surface">Год и месяц</h3>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsPickerOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container text-primary active:scale-95"
+                  onClick={handlePickerConfirm}
+                  className="font-headline text-sm font-bold text-primary active:opacity-70 px-3 py-1"
                 >
-                  <span className="material-symbols-outlined text-[20px]">close</span>
+                  Готово
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-5 pb-6 pt-5 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
-                <section>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant/70">Год</p>
-                  <div className="mt-4 grid grid-cols-4 gap-3">
-                    {YEARS.map((year) => (
-                      <button
-                        key={year}
-                        type="button"
-                        onClick={() => handleYearSelect(year)}
-                        className={`flex items-center justify-center rounded-2xl py-3 text-[15px] font-semibold transition-colors active:scale-95 ${
-                          currentYear === year
-                            ? 'bg-primary text-white shadow-md shadow-primary/25'
-                            : 'bg-surface-container text-on-surface-variant'
-                        }`}
-                      >
-                        {year}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <div className="my-7 h-px bg-outline-variant/25" aria-hidden="true" />
-
-                <section className="pb-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant/70">Месяц</p>
-                  <div className="mt-4 grid grid-cols-3 gap-3">
-                    {MONTHS.map((month, index) => (
-                      <button
-                        key={month}
-                        type="button"
-                        onClick={() => handleMonthSelect(index)}
-                        className={`flex items-center justify-center rounded-2xl py-3 text-[15px] font-semibold transition-colors active:scale-95 ${
-                          currentMonth === index
-                            ? 'bg-primary text-white shadow-md shadow-primary/25'
-                            : 'bg-surface-container text-on-surface-variant'
-                        }`}
-                      >
-                        {month}
-                      </button>
-                    ))}
-                  </div>
-                </section>
+              {/* Dual Wheel Picker */}
+              <div className="flex-1 flex items-center px-5 pb-4">
+                <div className="flex w-full gap-3">
+                  {/* Month Wheel */}
+                  <WheelColumn
+                    items={MONTHS_SHORT}
+                    selectedIndex={pickerMonth}
+                    onChange={setPickerMonth}
+                  />
+                  {/* Year Wheel */}
+                  <WheelColumn
+                    items={YEARS.map(String)}
+                    selectedIndex={pickerYear}
+                    onChange={setPickerYear}
+                  />
+                </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* ── Month Navigation ── */}
         <div className="px-5">
           <div className="mb-4 flex items-center justify-between">
             <button
@@ -298,7 +429,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
 
             <button
               type="button"
-              onClick={() => setIsPickerOpen(true)}
+              onClick={handleOpenPicker}
               className="flex items-center gap-1.5 rounded-full px-3 py-2 active:bg-surface-container"
             >
               <span className="font-headline text-base font-bold text-on-surface">
@@ -316,6 +447,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
             </button>
           </div>
 
+          {/* ── Weekday Headers ── */}
           <div className="grid grid-cols-7 pb-2">
             {WEEK_DAYS.map((day) => (
               <div
@@ -327,6 +459,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
             ))}
           </div>
 
+          {/* ── Calendar Grid with swipe ── */}
           <div className="relative h-[240px] overflow-hidden">
             <AnimatePresence initial={false} custom={direction} mode="wait">
               <motion.div
@@ -336,12 +469,13 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+                transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.08}
                 onDragEnd={handleCalendarDragEnd}
                 className="absolute inset-0"
+                style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
               >
                 <CalendarGrid
                   cells={cells}
