@@ -262,7 +262,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
+        transition={{ type: 'tween', duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
         className="absolute bottom-0 left-0 right-0 mx-auto w-full max-w-[430px] overflow-hidden rounded-t-[28px] shadow-[0_-8px_32px_rgba(0,0,0,0.12)]"
         style={{
           paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
