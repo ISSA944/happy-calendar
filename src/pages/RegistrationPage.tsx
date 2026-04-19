@@ -1,20 +1,18 @@
-import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAppStore } from '../store'
+import { useAppStore, useRegistrationDraft } from '../store'
 
 export function RegistrationPage() {
   const navigate = useNavigate()
   const setUserName = useAppStore((s) => s.setUserName)
   const setEmail = useAppStore((s) => s.setEmail)
-  const draft = useAppStore((s) => s.registrationDraft)
-  const updateDraft = useAppStore((s) => s.updateRegistrationDraft)
-  const clearDraft = useAppStore((s) => s.clearRegistrationDraft)
 
-  const [name, setName] = useState(draft.name)
-  const [emailInput, setEmailInput] = useState(draft.email)
-  const [consent, setConsent] = useState(draft.consent)
-  const [marketing, setMarketing] = useState(draft.marketing)
+  const name = useRegistrationDraft((s) => s.name)
+  const emailInput = useRegistrationDraft((s) => s.email)
+  const consent = useRegistrationDraft((s) => s.consent)
+  const marketing = useRegistrationDraft((s) => s.marketing)
+  const updateDraft = useRegistrationDraft((s) => s.update)
+  const clearDraft = useRegistrationDraft((s) => s.clear)
 
   const isValidEmail = (v: string) => /\S+@\S+\.\S+/.test(v)
   const canSubmit = isValidEmail(emailInput) && consent
@@ -92,7 +90,7 @@ export function RegistrationPage() {
                 placeholder="Как к тебе обращаться?"
                 type="text"
                 value={name}
-                onChange={(e) => { setName(e.target.value); updateDraft({ name: e.target.value }) }}
+                onChange={(e) => updateDraft({ name: e.target.value })}
               />
             </div>
 
@@ -106,7 +104,7 @@ export function RegistrationPage() {
                 placeholder="example@mail.com"
                 type="email"
                 value={emailInput}
-                onChange={(e) => { setEmailInput(e.target.value); updateDraft({ email: e.target.value }) }}
+                onChange={(e) => updateDraft({ email: e.target.value })}
               />
               <p className="text-xs text-on-surface-variant/60 ml-1">Мы пришлём код подтверждения на эту почту.</p>
             </div>
@@ -131,7 +129,7 @@ export function RegistrationPage() {
                     required
                     type="checkbox"
                     checked={consent}
-                    onChange={(e) => { setConsent(e.target.checked); updateDraft({ consent: e.target.checked }) }}
+                    onChange={(e) => updateDraft({ consent: e.target.checked })}
                   />
                 </div>
                 <span className="text-[13px] font-medium text-on-surface-variant leading-snug">
@@ -153,7 +151,7 @@ export function RegistrationPage() {
                     id="marketing"
                     type="checkbox"
                     checked={marketing}
-                    onChange={(e) => { setMarketing(e.target.checked); updateDraft({ marketing: e.target.checked }) }}
+                    onChange={(e) => updateDraft({ marketing: e.target.checked })}
                   />
                 </div>
                 <div>

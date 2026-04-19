@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useDragControls } from 'framer-motion'
 
@@ -83,14 +83,15 @@ export function BottomSheet({
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'tween', duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            transition={{ type: 'tween', duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="relative w-full max-w-[430px] mx-auto rounded-t-[28px] shadow-2xl flex flex-col overflow-hidden"
             style={{
               paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
               maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 12px)',
               background: '#fcf9f4',
-              willChange: 'transform',
+              willChange: 'transform, opacity',
               transform: 'translateZ(0)',
+              touchAction: 'none',
             }}
           >
             <div

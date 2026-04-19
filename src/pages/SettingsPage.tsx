@@ -54,7 +54,7 @@ export function SettingsPage() {
 
   const itemVariants: Variants = {
     hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 380, damping: 28 } }
+    show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' as const } }
   }
 
   return (
@@ -253,7 +253,7 @@ function ToggleItem({ label, isActive, onToggle }: { label: string; isActive: bo
       >
         <motion.span
           animate={{ x: isActive ? 24 : 4 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           className="absolute left-0 top-1 w-4 h-4 bg-white rounded-full shadow-sm"
         />
       </button>

@@ -55,6 +55,7 @@ function AppLayout() {
                 background: '#fcf9f4',
                 willChange: 'opacity, transform',
                 transform: 'translateZ(0)',
+                touchAction: 'manipulation',
               }}
             >
               <Outlet />
@@ -99,7 +100,10 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="relative w-full h-[100dvh] overflow-hidden bg-background">
+      <div
+        className="relative w-full h-[100dvh] overflow-hidden bg-background"
+        style={{ background: '#fcf9f4' }}
+      >
         <AppRoutes />
       </div>
     </BrowserRouter>

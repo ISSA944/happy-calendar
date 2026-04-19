@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
-import { motion } from 'framer-motion'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 
 interface TimePickerSheetProps {

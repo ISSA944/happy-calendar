@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { createPortal } from 'react-dom'
-import { motion, AnimatePresence, useDragControls } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import type { Variants } from 'framer-motion'
 import { useAppStore } from '../store'
@@ -47,7 +46,6 @@ export function HomePage() {
   const [horoscopeTab, setHoroscopeTab] = useState<'short' | 'detailed'>('short')
   const [isMoodSheetOpen, setIsMoodSheetOpen] = useState(false)
   const [showIOSModal, setShowIOSModal] = useState(false)
-  const iosDragControls = useDragControls()
 
   const quoteIdxRef = useRef<number>(-1)
 

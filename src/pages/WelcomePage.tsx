@@ -62,7 +62,7 @@ export function WelcomePage() {
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", delay: 0.2 }}
+            transition={{ duration: 0.3, ease: 'easeOut', delay: 0.2 }}
             className="relative w-40 h-40 bg-gradient-to-tr from-[#006a65] to-[#2fa7a0] rounded-full shadow-2xl shadow-[#2fa7a0]/30 flex items-center justify-center overflow-hidden"
           >
             <img 

@@ -43,7 +43,7 @@ function ToggleRow({
         <motion.div
           initial={false}
           animate={{ x: checked ? 24 : 0 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow-sm"
         ></motion.div>
       </div>
