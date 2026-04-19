@@ -63,8 +63,8 @@ export function BottomSheet({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.35, ease: [0.32, 0.72, 0, 1] } }}
-            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+            exit={{ opacity: 0, transition: { duration: 0.5, ease: [0.32, 0.72, 0, 1] } }}
+            transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
             onClick={onClose}
             className="absolute inset-0 bg-black/55 cursor-pointer touch-none"
             style={{
@@ -87,8 +87,8 @@ export function BottomSheet({
             }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%', transition: { type: 'tween', duration: 0.35, ease: [0.32, 0.72, 0, 1] } }}
-            transition={{ type: 'tween', duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+            exit={{ y: '100%', transition: { type: 'tween', duration: 0.5, ease: [0.32, 0.72, 0, 1] } }}
+            transition={{ type: 'tween', duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
             className="relative w-full max-w-[430px] mx-auto rounded-t-[28px] shadow-2xl flex flex-col overflow-hidden"
             style={{
               paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
