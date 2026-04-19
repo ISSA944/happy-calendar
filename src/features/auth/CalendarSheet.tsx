@@ -250,11 +250,10 @@ const CalendarGrid = memo(function CalendarGrid({
             <button
               type="button"
               onClick={() => onSelectDay(cell)}
-              className={`flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-full text-sm font-medium transition-colors active:scale-95 ${
-                isSelected
+              className={`flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-full text-sm font-medium transition-colors active:scale-95 ${isSelected
                   ? 'bg-primary text-white shadow-md shadow-primary/30'
                   : 'text-on-surface hover:bg-surface-container'
-              }`}
+                }`}
             >
               {cell.day}
             </button>
@@ -359,13 +358,6 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
       Готово
     </button>
   )
-
-  // Find index of current year in YEARS array for wheel
-  const yearWheelIndex = useMemo(() => {
-    const idx = YEARS.indexOf(currentYear)
-    return idx >= 0 ? idx : 0
-  }, [currentYear])
-
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={title} headerRight={headerRight}>
       <div className="relative pb-5">
