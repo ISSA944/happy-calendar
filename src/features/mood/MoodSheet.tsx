@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, useDragControls } from 'framer-motion'
 import { useAppStore } from '../../store'
 import { getMoodLabel } from '../../services/content.service'
@@ -37,7 +38,7 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
     setTimeout(() => onClose(), 150)
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex flex-col justify-end">
       {/* Backdrop — touch-none prevents swipes from bleeding through to the page */}
       <motion.div
@@ -124,6 +125,7 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
           })}
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   )
 }

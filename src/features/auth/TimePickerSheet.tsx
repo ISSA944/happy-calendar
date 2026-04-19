@@ -23,6 +23,7 @@ const scrollStyle: CSSProperties = {
   overscrollBehaviorY: 'contain',
   scrollbarWidth: 'none',
   msOverflowStyle: 'none',
+  WebkitOverflowScrolling: 'touch',
 }
 
 function WheelColumn({
@@ -124,6 +125,7 @@ function WheelColumn({
                 fontSize,
                 lineHeight: 1,
                 transition: 'opacity 0.15s ease, transform 0.15s ease, color 0.15s ease',
+                willChange: 'opacity, transform',
                 userSelect: 'none',
               }}
             >
