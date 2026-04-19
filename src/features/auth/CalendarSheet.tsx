@@ -364,8 +364,8 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
       onClose={onClose} 
       title={title} 
       headerRight={headerRight}
-      openDuration={0.7}
-      closeDuration={0.5}
+      openDuration={0.5}
+      closeDuration={0.4}
     >
       <div className="relative pb-5">
         {/* ── Wheel Picker Overlay (Apple-style) ── */}
@@ -375,7 +375,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
               className="absolute inset-0 z-20 flex flex-col bg-surface-container-lowest"
               style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
             >
@@ -468,7 +468,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.08}

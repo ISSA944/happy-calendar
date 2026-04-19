@@ -67,8 +67,8 @@ export function BottomSheet({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: closeDuration, ease: [0.16, 1, 0.3, 1] } }}
-            transition={{ duration: openDuration, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ opacity: 0, transition: { type: 'spring', bounce: 0, duration: closeDuration } }}
+            transition={{ type: 'spring', bounce: 0, duration: openDuration }}
             onClick={onClose}
             className="absolute inset-0 bg-black/55 cursor-pointer touch-none"
             style={{
@@ -94,8 +94,8 @@ export function BottomSheet({
             }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%', transition: { duration: closeDuration, ease: [0.16, 1, 0.3, 1] } }}
-            transition={{ duration: openDuration, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ y: '100%', transition: { type: 'spring', bounce: 0, duration: closeDuration } }}
+            transition={{ type: 'spring', bounce: 0, duration: openDuration }}
             className="relative w-full max-w-[430px] mx-auto rounded-t-[28px] shadow-2xl flex flex-col overflow-hidden"
             style={{
               paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
