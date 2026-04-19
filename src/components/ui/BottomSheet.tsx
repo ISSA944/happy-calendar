@@ -39,12 +39,21 @@ export function BottomSheet({
     const originalRootUserSelect = root ? root.style.userSelect : ''
     const originalBodyOverflow = document.body.style.overflow
     const originalHtmlOverflow = document.documentElement.style.overflow
+    const originalBodyBg = document.body.style.backgroundColor
+    const originalHtmlBg = document.documentElement.style.backgroundColor
 
-    // Hard lock background
+    // Hard lock background and apply Apple iOS 3D Push-Back effect
     if (root) {
       root.style.pointerEvents = 'none'
       root.style.userSelect = 'none'
+      root.style.transition = `transform ${openDuration}s cubic-bezier(0.32, 0.72, 0, 1), border-radius ${openDuration}s cubic-bezier(0.32, 0.72, 0, 1)`
+      root.style.transform = 'scale(0.93) translateY(8px)'
+      root.style.borderRadius = '24px'
+      root.style.overflow = 'hidden'
+      root.style.transformOrigin = 'center top'
     }
+    document.body.style.backgroundColor = '#000'
+    document.documentElement.style.backgroundColor = '#000'
     document.body.style.overflow = 'hidden'
     document.documentElement.style.overflow = 'hidden'
 
@@ -52,11 +61,24 @@ export function BottomSheet({
       if (root) {
         root.style.pointerEvents = originalRootPointerEvents
         root.style.userSelect = originalRootUserSelect
+        root.style.transition = `transform ${closeDuration}s cubic-bezier(0.32, 0.72, 0, 1), border-radius ${closeDuration}s cubic-bezier(0.32, 0.72, 0, 1)`
+        root.style.transform = 'scale(1) translateY(0)'
+        root.style.borderRadius = '0px'
+        
+        setTimeout(() => {
+          if (root.style.transform === 'scale(1) translateY(0)') {
+            root.style.transition = ''
+            root.style.overflow = ''
+            root.style.transformOrigin = ''
+          }
+        }, closeDuration * 1000 + 50)
       }
+      document.body.style.backgroundColor = originalBodyBg
+      document.documentElement.style.backgroundColor = originalHtmlBg
       document.body.style.overflow = originalBodyOverflow
       document.documentElement.style.overflow = originalHtmlOverflow
     }
-  }, [isOpen])
+  }, [isOpen, openDuration, closeDuration])
 
   if (!mounted) return null
 
@@ -74,8 +96,6 @@ export function BottomSheet({
             style={{
               willChange: 'opacity',
               transform: 'translateZ(0)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
             }}
             aria-hidden="true"
           />
