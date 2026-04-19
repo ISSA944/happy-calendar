@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Variants } from 'framer-motion'
 import { useAppStore } from '../store'
 import { MoodSheet } from '../features/mood/MoodSheet'
+import { BottomSheet } from '../components/ui/BottomSheet'
 import { usePWAInstall } from '../hooks'
 import { useState } from 'react'
 import {
@@ -329,94 +330,51 @@ export function HomePage() {
       </motion.section>
       </motion.div>
 
-      {/* iOS Install Modal — rendered via portal to escape AppLayout stacking context */}
-      {createPortal(
-      <AnimatePresence>
-        {showIOSModal && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setShowIOSModal(false)}
-              className="fixed inset-0 z-[100] bg-black/55 backdrop-blur-sm touch-none"
-              style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
-              aria-hidden="true"
-            />
-            <motion.div
-              drag="y"
-              dragControls={iosDragControls}
-              dragListener={false}
-              dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={{ top: 0, bottom: 0.25 }}
-              onDragEnd={(_, { offset, velocity }) => {
-                if (offset.y > 60 || velocity.y > 200) {
-                  setShowIOSModal(false)
-                  dismissInstallBanner()
-                }
-              }}
-              initial={{ y: '100%' }}
-              animate={{ y: 0, transition: { type: 'tween', duration: 0.4, ease: [0.32, 0.72, 0, 1] } }}
-              exit={{ y: '100%', transition: { type: 'tween', duration: 0.4, ease: [0.32, 0.72, 0, 1] } }}
-              className="fixed bottom-0 left-0 right-0 z-[100] max-w-[430px] mx-auto rounded-t-[28px] shadow-2xl"
-              style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', background: '#fcf9f4', willChange: 'transform', transform: 'translateZ(0)' }}
-            >
-              {/* Drag zone — pill + top area for easy grab */}
-              <div
-                className="pt-4 pb-4 touch-none select-none cursor-grab flex justify-center"
-                onPointerDown={(e) => iosDragControls.start(e)}
-              >
-                <div className="w-10 h-1 bg-surface-container-highest rounded-full" />
-              </div>
-              <div className="px-6 pb-2 flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_today</span>
+      {/* iOS Install Modal */}
+      <BottomSheet
+        isOpen={showIOSModal}
+        onClose={() => {
+          setShowIOSModal(false)
+          dismissInstallBanner()
+        }}
+        hideDragIndicator={false}
+      >
+        <div className="px-6 pb-2 flex items-center gap-4 mb-6 mt-2">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_today</span>
+          </div>
+          <div>
+            <p className="font-headline font-bold text-on-surface text-base">Установить на iPhone</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">3 простых шага в Safari</p>
+          </div>
+        </div>
+        <div className="px-6 pb-8">
+          <div className="space-y-4 mb-8">
+            {[
+              { icon: 'ios_share', text: 'Нажмите иконку "Поделиться" внизу Safari' },
+              { icon: 'add_box', text: 'Выберите "На экран «Домой»"' },
+              { icon: 'check_circle', text: 'Нажмите "Добавить" — готово!' },
+            ].map((step, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-primary text-lg">{step.icon}</span>
                 </div>
-                <div>
-                  <p className="font-headline font-bold text-on-surface text-base">Установить на iPhone</p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">3 простых шага в Safari</p>
-                </div>
+                <p className="text-sm text-on-surface font-medium">{step.text}</p>
               </div>
-              <div className="px-6">
-                <div className="space-y-4 mb-8">
-                  {[
-                    { icon: 'ios_share', text: 'Нажмите иконку "Поделиться" внизу Safari' },
-                    { icon: 'add_box', text: 'Выберите "На экран «Домой»"' },
-                    { icon: 'check_circle', text: 'Нажмите "Добавить" — готово!' },
-                  ].map((step, i) => (
-                    <div key={i} className="flex items-center gap-4">
-                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="material-symbols-outlined text-primary text-lg">{step.icon}</span>
-                      </div>
-                      <p className="text-sm text-on-surface font-medium">{step.text}</p>
-                    </div>
-                  ))}
-                </div>
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => { setShowIOSModal(false); dismissInstallBanner() }}
-                  className="w-full py-4 bg-primary-container text-white rounded-full font-headline font-bold text-sm"
-                >
-                  Понятно
-                </motion.button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>,
-      document.body
-      )}
+            ))}
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => { setShowIOSModal(false); dismissInstallBanner() }}
+            className="w-full py-4 bg-primary-container text-white rounded-full font-headline font-bold text-sm"
+          >
+            Понятно
+          </motion.button>
+        </div>
+      </BottomSheet>
 
-      {/* MoodSheet — also portaled for z-index consistency */}
-      {createPortal(
-      <AnimatePresence>
-        {isMoodSheetOpen && (
-          <MoodSheet onClose={() => setIsMoodSheetOpen(false)} />
-        )}
-      </AnimatePresence>,
-      document.body
-      )}
+      {/* MoodSheet */}
+      <MoodSheet isOpen={isMoodSheetOpen} onClose={() => setIsMoodSheetOpen(false)} />
     </>
   )
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
-import { createPortal } from 'react-dom'
-import { motion, useDragControls } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { BottomSheet } from '../../components/ui/BottomSheet'
 
 interface TimePickerSheetProps {
   isOpen: boolean
@@ -141,7 +141,6 @@ function WheelColumn({
 }
 
 export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimePickerSheetProps) {
-  const dragControls = useDragControls()
   const [hourIndex, setHourIndex] = useState(7)
   const [minuteIndex, setMinuteIndex] = useState(6)
 
@@ -156,127 +155,66 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
     setMinuteIndex(Math.max(0, Math.min(MINUTES.length - 1, nextMinuteIndex)))
   }, [initialTime, isOpen])
 
-  useEffect(() => {
-    if (!isOpen) return
-
-    const previousBodyOverflow = document.body.style.overflow
-    const previousHtmlOverflow = document.documentElement.style.overflow
-    const previousBodyOverscroll = document.body.style.overscrollBehavior
-    document.body.style.overflow = 'hidden'
-    document.documentElement.style.overflow = 'hidden'
-    document.body.style.overscrollBehavior = 'none'
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow
-      document.documentElement.style.overflow = previousHtmlOverflow
-      document.body.style.overscrollBehavior = previousBodyOverscroll
-    }
-  }, [isOpen])
-
-  if (!isOpen) return null
-
-  const content = (
-    <div className="fixed inset-0 z-[100]">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        onClick={onCancel}
-        className="absolute inset-0 bg-black/55 backdrop-blur-sm"
-        aria-hidden="true"
-      />
-
-      <motion.div
-        drag="y"
-        dragControls={dragControls}
-        dragListener={false}
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.18 }}
-        onDragEnd={(_, info) => {
-          if (info.offset.y > 72 || info.velocity.y > 320) onCancel()
-        }}
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'tween', duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-        className="absolute bottom-0 left-0 right-0 mx-auto flex w-full max-w-[430px] flex-col overflow-hidden rounded-t-[28px] shadow-[0_-8px_32px_rgba(0,0,0,0.12)]"
-        style={{
-          paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
-          maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 12px)',
-          background: '#fcf9f4',
-          willChange: 'transform',
-          transform: 'translateZ(0)',
-        }}
-      >
-        <div
-          className="touch-none select-none px-6 pb-4 pt-3"
-          onPointerDown={(event) => dragControls.start(event)}
-        >
-          <div className="mx-auto h-1 w-10 rounded-full bg-on-surface/15" />
-          <div className="mt-4 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-primary active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[22px]">close</span>
-            </button>
-            <h2 className="font-headline text-lg font-bold text-on-surface">Установить время</h2>
-            <div className="w-10" />
-          </div>
-        </div>
-
-        <div className="relative px-6 pb-2 pt-1">
-          <div className="pointer-events-none absolute left-1/2 top-16 h-56 w-56 -translate-x-1/2 rounded-full bg-primary/5 blur-[90px]" />
-
-          <div className="relative z-10 text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/65">
-              ВРЕМЯ ПРАКТИКИ
-            </p>
-          </div>
-
-          <div className="relative z-10 mt-6 flex items-center justify-center">
-            <div className="pointer-events-none absolute left-0 right-0 h-[60px] rounded-2xl bg-primary/[0.04]" />
-
-            <div className="flex items-center justify-center gap-2">
-              <WheelColumn items={HOURS} selectedIndex={hourIndex} onChange={setHourIndex} />
-              <div
-                className="select-none font-headline font-bold text-primary"
-                style={{ fontSize: 60, lineHeight: 1, marginBottom: 4 }}
-              >
-                :
-              </div>
-              <WheelColumn items={MINUTES} selectedIndex={minuteIndex} onChange={setMinuteIndex} />
-            </div>
-          </div>
-
-          <div className="relative z-10 mt-8 px-4 text-center">
-            <p className="text-[13px] font-medium italic leading-relaxed text-on-surface-variant/70">
-              Выберите спокойное время для ежедневного напоминания об осознанности.
-            </p>
-          </div>
-        </div>
-
-        <footer className="px-6 pt-5">
-          <button
-            type="button"
-            onClick={() => onSave(`${HOURS[hourIndex]}:${MINUTES[minuteIndex]}`)}
-            className="w-full rounded-2xl bg-primary py-4 font-headline text-base font-bold text-white shadow-lg shadow-primary/20 transition-transform active:scale-[0.98]"
-          >
-            Сохранить
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="mt-3 w-full rounded-2xl py-4 font-headline text-base font-semibold text-[#914946] transition-colors active:scale-[0.98]"
-          >
-            Отмена
-          </button>
-        </footer>
-      </motion.div>
-    </div>
+  const title = "Установить время"
+  const headerRight = (
+    <button
+      type="button"
+      onClick={onCancel}
+      className="flex h-10 w-10 items-center justify-center rounded-full text-primary active:scale-95 -mr-2"
+    >
+      <span className="material-symbols-outlined text-[22px]">close</span>
+    </button>
   )
 
-  return createPortal(content, document.body)
+  return (
+    <BottomSheet isOpen={isOpen} onClose={onCancel} title={title} headerRight={headerRight}>
+      <div className="relative px-6 pb-2 pt-1">
+        <div className="pointer-events-none absolute left-1/2 top-16 h-56 w-56 -translate-x-1/2 rounded-full bg-primary/5 blur-[90px]" />
+
+        <div className="relative z-10 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/65">
+            ВРЕМЯ ПРАКТИКИ
+          </p>
+        </div>
+
+        <div className="relative z-10 mt-6 flex items-center justify-center">
+          <div className="pointer-events-none absolute left-0 right-0 h-[60px] rounded-2xl bg-primary/[0.04]" />
+
+          <div className="flex items-center justify-center gap-2">
+            <WheelColumn items={HOURS} selectedIndex={hourIndex} onChange={setHourIndex} />
+            <div
+              className="select-none font-headline font-bold text-primary"
+              style={{ fontSize: 60, lineHeight: 1, marginBottom: 4 }}
+            >
+              :
+            </div>
+            <WheelColumn items={MINUTES} selectedIndex={minuteIndex} onChange={setMinuteIndex} />
+          </div>
+        </div>
+
+        <div className="relative z-10 mt-8 px-4 text-center">
+          <p className="text-[13px] font-medium italic leading-relaxed text-on-surface-variant/70">
+            Выберите спокойное время для ежедневного напоминания об осознанности.
+          </p>
+        </div>
+      </div>
+
+      <footer className="px-6 pt-5 pb-5 mt-auto">
+        <button
+          type="button"
+          onClick={() => onSave(`${HOURS[hourIndex]}:${MINUTES[minuteIndex]}`)}
+          className="w-full rounded-2xl bg-primary py-4 font-headline text-base font-bold text-white shadow-lg shadow-primary/20 transition-transform active:scale-[0.98]"
+        >
+          Сохранить
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="mt-3 w-full rounded-2xl py-4 font-headline text-base font-semibold text-[#914946] transition-colors active:scale-[0.98]"
+        >
+          Отмена
+        </button>
+      </footer>
+    </BottomSheet>
+  )
 }

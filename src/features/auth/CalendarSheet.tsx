@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, useDragControls } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
+import { BottomSheet } from '../../components/ui/BottomSheet'
 import type { PanInfo, Variants } from 'framer-motion'
 
 interface CalendarSheetProps {
@@ -130,7 +130,6 @@ const CalendarGrid = memo(function CalendarGrid({
 })
 
 export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: CalendarSheetProps) {
-  const dragControls = useDragControls()
   const parsedCurrentValue = useMemo(() => parseDate(currentValue), [currentValue])
   const [currentYear, setCurrentYear] = useState(parsedCurrentValue?.year ?? CURRENT_YEAR)
   const [currentMonth, setCurrentMonth] = useState(parsedCurrentValue?.month ?? new Date().getMonth())
@@ -153,23 +152,6 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
     setCurrentMonth(today.getMonth())
     setSelectedDate(null)
   }, [isOpen, parsedCurrentValue])
-
-  useEffect(() => {
-    if (!isOpen) return
-
-    const previousBodyOverflow = document.body.style.overflow
-    const previousHtmlOverflow = document.documentElement.style.overflow
-    const previousBodyOverscroll = document.body.style.overscrollBehavior
-    document.body.style.overflow = 'hidden'
-    document.documentElement.style.overflow = 'hidden'
-    document.body.style.overscrollBehavior = 'none'
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow
-      document.documentElement.style.overflow = previousHtmlOverflow
-      document.body.style.overscrollBehavior = previousBodyOverscroll
-    }
-  }, [isOpen])
 
   const cells = useMemo(() => buildCalendarCells(currentYear, currentMonth), [currentMonth, currentYear])
   const selectedValue = selectedDate ? formatDate(selectedDate.day, selectedDate.month, selectedDate.year) : ''
@@ -220,40 +202,20 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
     }
   }, [changeMonth])
 
-  const content = (
-    <div className="fixed inset-0 z-[100]">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        onClick={onClose}
-        className="absolute inset-0 bg-black/55 backdrop-blur-sm"
-        aria-hidden="true"
-      />
+  const title = "Дата рождения"
+  const headerRight = (
+    <button
+      type="button"
+      onClick={onClose}
+      className="text-right font-headline text-sm font-bold text-primary active:opacity-70"
+    >
+      Готово
+    </button>
+  )
 
-      <motion.div
-        drag="y"
-        dragControls={dragControls}
-        dragListener={false}
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.18 }}
-        onDragEnd={(_, info) => {
-          if (info.offset.y > 72 || info.velocity.y > 320) onClose()
-        }}
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'tween', duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-        className="absolute bottom-0 left-0 right-0 mx-auto w-full max-w-[430px] overflow-hidden rounded-t-[28px] shadow-[0_-8px_32px_rgba(0,0,0,0.12)]"
-        style={{
-          paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
-          maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 12px)',
-          background: '#fcf9f4',
-          willChange: 'transform',
-          transform: 'translateZ(0)',
-        }}
-      >
+  return (
+    <BottomSheet isOpen={isOpen} onClose={onClose} title={title} headerRight={headerRight}>
+      <div className="relative pb-5">
         <AnimatePresence>
           {isPickerOpen && (
             <motion.div
@@ -261,9 +223,9 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
               transition={{ duration: 0.18 }}
-              className="absolute inset-0 z-20 flex flex-col rounded-t-[28px] bg-surface-container-lowest"
+              className="absolute inset-0 z-20 flex flex-col bg-surface-container-lowest"
             >
-              <div className="flex items-center justify-between border-b border-outline-variant/25 px-5 pb-4 pt-5">
+              <div className="flex items-center justify-between border-b border-outline-variant/25 px-5 pb-4 pt-1 mt-1">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-on-surface-variant/60">Быстрый выбор</p>
                   <h3 className="mt-1 font-headline text-lg font-bold text-on-surface">Год и месяц</h3>
@@ -321,24 +283,6 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
             </motion.div>
           )}
         </AnimatePresence>
-
-        <div
-          className="touch-none select-none px-5 pb-4 pt-3"
-          onPointerDown={(event) => dragControls.start(event)}
-        >
-          <div className="mx-auto h-1 w-10 rounded-full bg-on-surface/15" />
-          <div className="mt-4 flex items-center justify-between">
-            <div className="w-14" />
-            <h2 className="font-headline text-lg font-bold text-on-surface">Дата рождения</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-14 text-right font-headline text-sm font-bold text-primary active:opacity-70"
-            >
-              Готово
-            </button>
-          </div>
-        </div>
 
         <div className="px-5">
           <div className="mb-4 flex items-center justify-between">
@@ -408,9 +352,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
             </AnimatePresence>
           </div>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </BottomSheet>
   )
-
-  return createPortal(content, document.body)
 }
