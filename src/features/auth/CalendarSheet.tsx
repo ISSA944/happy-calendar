@@ -364,8 +364,6 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
       onClose={onClose} 
       title={title} 
       headerRight={headerRight}
-      openDuration={0.5}
-      closeDuration={0.4}
     >
       <div className="relative pb-5">
         {/* ── Wheel Picker Overlay (Apple-style) ── */}
