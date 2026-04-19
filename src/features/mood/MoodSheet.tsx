@@ -25,11 +25,18 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
   const gender = useAppStore((state) => state.gender)
   const dragControls = useDragControls()
 
-  // Body scroll lock — lock when mounted, release when unmounted
+  // Hard scroll lock — body + html + overscroll; restore prior values on unmount
   useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    const previousBodyOverscroll = document.body.style.overscrollBehavior
     document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    document.body.style.overscrollBehavior = 'none'
     return () => {
-      document.body.style.overflow = ''
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
+      document.body.style.overscrollBehavior = previousBodyOverscroll
     }
   }, [])
 
@@ -63,10 +70,10 @@ export function MoodSheet({ onClose }: MoodSheetProps) {
           if (offset.y > 50 || velocity.y > 200) onClose()
         }}
         initial={{ y: '100%' }}
-        animate={{ y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } }}
-        exit={{ y: '100%', transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
-        className="relative w-full max-w-[430px] mx-auto bg-surface-container-lowest rounded-t-[24px] shadow-2xl flex flex-col"
-        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))', willChange: 'transform', transform: 'translateZ(0)' }}
+        animate={{ y: 0, transition: { duration: 0.3, ease: 'easeOut' } }}
+        exit={{ y: '100%', transition: { duration: 0.3, ease: 'easeOut' } }}
+        className="relative w-full max-w-[430px] mx-auto rounded-t-[24px] shadow-2xl flex flex-col"
+        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))', background: '#fcf9f4', willChange: 'transform', transform: 'translateZ(0)' }}
       >
         {/* Drag zone: pill + header — wide grab area, no scrolling inside */}
         <div

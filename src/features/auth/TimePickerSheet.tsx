@@ -159,11 +159,17 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
   useEffect(() => {
     if (!isOpen) return
 
-    const previousOverflow = document.body.style.overflow
+    const previousBodyOverflow = document.body.style.overflow
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    const previousBodyOverscroll = document.body.style.overscrollBehavior
     document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    document.body.style.overscrollBehavior = 'none'
 
     return () => {
-      document.body.style.overflow = previousOverflow
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
+      document.body.style.overscrollBehavior = previousBodyOverscroll
     }
   }, [isOpen])
 
@@ -193,11 +199,14 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
-        transition={{ type: 'spring', stiffness: 340, damping: 32 }}
-        className="absolute bottom-0 left-0 right-0 mx-auto flex w-full max-w-[430px] flex-col overflow-hidden rounded-t-[28px] bg-background shadow-[0_-8px_32px_rgba(0,0,0,0.12)]"
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className="absolute bottom-0 left-0 right-0 mx-auto flex w-full max-w-[430px] flex-col overflow-hidden rounded-t-[28px] shadow-[0_-8px_32px_rgba(0,0,0,0.12)]"
         style={{
           paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
           maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 12px)',
+          background: '#fcf9f4',
+          willChange: 'transform',
+          transform: 'translateZ(0)',
         }}
       >
         <div
