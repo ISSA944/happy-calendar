@@ -17,21 +17,11 @@ export function WelcomePage() {
       }}
       className="relative h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto flex flex-col justify-between px-8 overscroll-none scroll-smooth"
     >
-      {/* Background Blobs */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.4 }}
-          transition={{ duration: 1 }}
-          className="absolute top-[-10%] right-[-10%] w-[300px] h-[300px] rounded-full bg-primary-container abstract-blob"
-        ></motion.div>
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.4 }}
-          transition={{ duration: 1, delay: 0.2 }}
-          className="absolute bottom-[20%] left-[-20%] w-[250px] h-[250px] rounded-full bg-secondary-container abstract-blob"
-        ></motion.div>
-      </div>
+      {/* Background — lightweight static gradient instead of blur blobs */}
+      <div 
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{ background: 'radial-gradient(circle at 80% 10%, rgba(0,106,101,0.06) 0%, transparent 50%), radial-gradient(circle at 20% 70%, rgba(47,167,160,0.05) 0%, transparent 50%)' }}
+      />
 
       {/* Hero Section */}
       <motion.div 

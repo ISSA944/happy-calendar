@@ -143,7 +143,7 @@ export function HomePage() {
             </div>
             <button
               onClick={handleInstallClick}
-              className="flex-shrink-0 bg-primary-container text-white px-5 py-2 rounded-full font-bold text-xs shadow-sm active:scale-95 transition-all"
+              className="flex-shrink-0 bg-primary-container text-white px-5 py-2 rounded-full font-bold text-xs shadow-sm active:scale-95 transition-colors"
             >
               Установить
             </button>

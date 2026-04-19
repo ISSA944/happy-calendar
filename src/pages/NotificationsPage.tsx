@@ -9,7 +9,7 @@ function TimeCard({ time, selected, onClick }: { time: string, selected: boolean
   return (
     <button
       onClick={onClick}
-      className={`flex items-center justify-center h-14 rounded-2xl transition-all duration-200 active:scale-95 text-sm font-bold ${
+      className={`flex items-center justify-center h-14 rounded-2xl transition-colors duration-200 active:scale-95 text-sm font-bold ${
         selected
           ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-md shadow-[#2fa7a0]/25'
           : 'bg-[#f0ede9] text-[#6D7A78] font-medium hover:bg-[#e5e2dd]'
@@ -149,7 +149,7 @@ export function NotificationsPage() {
 
             <button
               onClick={() => setIsTimePickerOpen(true)}
-              className={`flex items-center justify-center w-full h-14 rounded-2xl transition-all duration-200 active:scale-95 text-sm font-bold ${
+              className={`flex items-center justify-center w-full h-14 rounded-2xl transition-colors duration-200 active:scale-95 text-sm font-bold ${
                 isCustomSelected
                   ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-md shadow-[#2fa7a0]/25'
                   : 'bg-[#f0ede9] text-[#6D7A78] font-medium hover:bg-[#e5e2dd]'
@@ -200,7 +200,7 @@ export function NotificationsPage() {
         >
           <button
             onClick={handleAllow}
-            className="w-full h-14 bg-[#2FA7A0] hover:bg-[#006a65] text-white font-headline font-bold text-base rounded-full shadow-lg shadow-[#2FA7A0]/20 transition-all active:scale-[0.98]"
+            className="w-full h-14 bg-[#2FA7A0] hover:bg-[#006a65] text-white font-headline font-bold text-base rounded-full shadow-lg shadow-[#2FA7A0]/20 transition-colors active:scale-[0.98]"
           >
             Разрешить уведомления
           </button>

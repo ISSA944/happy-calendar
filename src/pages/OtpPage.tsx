@@ -247,7 +247,7 @@ export function OtpPage() {
           <button
             onClick={handleSubmit}
             disabled={!isValid}
-            className={`h-14 font-headline font-bold text-lg rounded-full transition-all flex items-center justify-center w-full active:scale-[0.98] ${
+            className={`h-14 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
               isValid
                 ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 cursor-pointer'
                 : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
@@ -266,8 +266,7 @@ export function OtpPage() {
       </main>
 
       {/* Glassmorphism blobs */}
-      <div className="fixed top-[-5%] right-[-5%] w-[300px] h-[300px] bg-primary/5 rounded-full blur-[80px] -z-10 pointer-events-none" />
-      <div className="fixed bottom-[-5%] left-[-5%] w-[250px] h-[250px] bg-primary/5 rounded-full blur-[60px] -z-10 pointer-events-none" />
+
     </motion.div>
   )
 }

@@ -124,8 +124,7 @@ export function PrivacyPolicyPage() {
       </main>
 
       {/* Glassmorphism blobs */}
-      <div className="fixed top-[-5%] right-[-5%] w-[300px] h-[300px] bg-primary/5 rounded-full blur-[80px] -z-10 pointer-events-none" />
-      <div className="fixed bottom-[-5%] left-[-5%] w-[250px] h-[250px] bg-primary/5 rounded-full blur-[60px] -z-10 pointer-events-none" />
+
     </motion.div>
   )
 }

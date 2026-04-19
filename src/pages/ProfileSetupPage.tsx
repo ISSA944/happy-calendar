@@ -163,7 +163,7 @@ export function ProfileSetupPage() {
               onClick={() => setIsCalendarOpen(true)}
             >
               <input 
-                className="w-full h-[60px] px-5 rounded-2xl border-none bg-white shadow-[0_4px_20px_rgba(0,0,0,0.05)] text-lg font-medium focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline-variant transition-all outline-none cursor-pointer" 
+                className="w-full h-[60px] px-5 rounded-2xl border-none bg-white shadow-[0_4px_20px_rgba(0,0,0,0.05)] text-lg font-medium focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline-variant transition-colors outline-none cursor-pointer" 
                 placeholder="ДД.ММ.ГГГГ" 
                 value={birthDate}
                 readOnly
@@ -229,7 +229,7 @@ export function ProfileSetupPage() {
         <button
           onClick={handleSubmit}
           disabled={!isValid}
-          className={`w-full h-16 rounded-full font-headline font-bold text-lg flex items-center justify-center transition-all ${
+          className={`w-full h-16 rounded-full font-headline font-bold text-lg flex items-center justify-center transition-colors ${
             isValid
               ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 active:scale-[0.98] cursor-pointer'
               : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
@@ -240,8 +240,7 @@ export function ProfileSetupPage() {
       </motion.footer>
 
       {/* Glassmorphism Background Elements */}
-      <div className="fixed top-[-5%] right-[-5%] w-[300px] h-[300px] bg-primary/5 rounded-full blur-[80px] -z-10 pointer-events-none"></div>
-      <div className="fixed bottom-[-5%] left-[-5%] w-[250px] h-[250px] bg-primary/5 rounded-full blur-[60px] -z-10 pointer-events-none"></div>
+
 
       <AnimatePresence>
         {isCalendarOpen && (

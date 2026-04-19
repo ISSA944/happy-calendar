@@ -148,7 +148,7 @@ export function SettingsPage() {
                   <span className="text-on-surface-variant text-sm">{email || '—'}</span>
                   <button
                     onClick={() => { setEmailDraft(email); setEditingEmail(true) }}
-                    className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-all ml-3 flex-shrink-0"
+                    className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors ml-3 flex-shrink-0"
                   >
                     <span className="material-symbols-outlined text-[18px]">edit</span>
                   </button>
@@ -163,7 +163,7 @@ export function SettingsPage() {
                 <span className="text-on-surface text-sm">{birthDate || '—'}</span>
                 <button
                   onClick={() => setIsCalendarOpen(true)}
-                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-all ml-3 flex-shrink-0"
+                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors ml-3 flex-shrink-0"
                 >
                   <span className="material-symbols-outlined text-[18px]">edit</span>
                 </button>
@@ -177,7 +177,7 @@ export function SettingsPage() {
                 <span className="text-on-surface text-sm">{horoscopeTime || '—'}</span>
                 <button
                   onClick={() => setIsTimePickerOpen(true)}
-                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-all ml-3 flex-shrink-0"
+                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors ml-3 flex-shrink-0"
                 >
                   <span className="material-symbols-outlined text-[18px]">edit</span>
                 </button>
@@ -201,7 +201,7 @@ export function SettingsPage() {
         <motion.section variants={itemVariants} className="mb-6">
           <button
             onClick={handleReset}
-            className="w-full py-4 rounded-[1.5rem] border border-red-200 text-red-500 font-semibold text-sm active:scale-[0.98] transition-all hover:bg-red-50"
+            className="w-full py-4 rounded-[1.5rem] border border-red-200 text-red-500 font-semibold text-sm active:scale-[0.98] transition-colors hover:bg-red-50"
           >
             Сбросить профиль и начать заново
           </button>

@@ -84,7 +84,7 @@ export function RegistrationPage() {
             <div className="space-y-1.5">
               <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="name">Имя</label>
               <input
-                className="w-full h-14 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none text-base font-medium shadow-sm"
+                className="w-full h-14 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
                 id="name"
                 name="name"
                 placeholder="Как к тебе обращаться?"
@@ -98,7 +98,7 @@ export function RegistrationPage() {
             <div className="space-y-1.5">
               <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="email">Электронная почта</label>
               <input
-                className="w-full h-14 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none text-base font-medium shadow-sm"
+                className="w-full h-14 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
                 id="email"
                 name="email"
                 placeholder="example@mail.com"
@@ -167,7 +167,7 @@ export function RegistrationPage() {
             <button
               disabled={!canSubmit}
               type="submit"
-              className={`h-14 font-headline font-bold text-lg rounded-full transition-all flex items-center justify-center w-full active:scale-[0.98] ${
+              className={`h-14 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
                 canSubmit
                   ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 cursor-pointer'
                   : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
@@ -184,8 +184,7 @@ export function RegistrationPage() {
       </main>
 
       {/* Glassmorphism blobs */}
-      <div className="fixed top-[-5%] right-[-5%] w-[300px] h-[300px] bg-primary/5 rounded-full blur-[80px] -z-10 pointer-events-none" />
-      <div className="fixed bottom-[-5%] left-[-5%] w-[250px] h-[250px] bg-primary/5 rounded-full blur-[60px] -z-10 pointer-events-none" />
+
     </motion.div>
   )
 }

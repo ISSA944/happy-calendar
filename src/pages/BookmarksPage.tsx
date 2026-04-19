@@ -48,7 +48,7 @@ export function BookmarksPage() {
             <button
               key={type}
               onClick={() => setFilter(type)}
-              className={`flex-shrink-0 px-6 py-2 rounded-full text-sm font-medium transition-all active:scale-95 ${
+              className={`flex-shrink-0 px-6 py-2 rounded-full text-sm font-medium transition-colors active:scale-95 ${
                 filter === type
                   ? 'text-white'
                   : 'bg-white border border-outline-variant text-on-surface-variant'

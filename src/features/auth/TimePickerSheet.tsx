@@ -173,7 +173,6 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
       headerRight={headerRight}
     >
       <div className="relative px-6 pb-2 pt-1">
-        <div className="pointer-events-none absolute left-1/2 top-16 h-56 w-56 -translate-x-1/2 rounded-full bg-primary/5 blur-[90px]" />
 
         <div className="relative z-10 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/65">
