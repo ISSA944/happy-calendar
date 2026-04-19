@@ -84,10 +84,11 @@ export function BottomSheet({
             drag="y"
             dragControls={dragControls}
             dragListener={false}
-            dragConstraints={{ top: 0 }}
-            dragElastic={{ top: 0, bottom: 0.7 }}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 1 }}
+            dragTransition={{ bounceStiffness: 400, bounceDamping: 25 }}
             onDragEnd={(_, { offset, velocity }) => {
-              if (offset.y > 80 || velocity.y > 300) {
+              if (offset.y > 120 || velocity.y > 350) {
                 onClose()
               }
             }}
@@ -106,11 +107,12 @@ export function BottomSheet({
             }}
           >
             <div
-              className="px-6 pt-4 pb-3 touch-none select-none cursor-grab"
+              className="px-6 pt-2 pb-5 touch-none select-none cursor-grab active:cursor-grabbing"
               onPointerDown={(e) => dragControls.start(e)}
+              style={{ paddingBottom: title || headerRight ? '12px' : '20px' }}
             >
               {!hideDragIndicator && (
-                <div className="w-[48px] h-[5px] bg-[#E1E2E4] rounded-full mx-auto mb-4" />
+                <div className="w-[36px] h-[5px] bg-on-surface-variant/30 rounded-full mx-auto mb-4" />
               )}
               {(title || headerRight) && (
                 <div className="flex justify-between items-center mt-2">
