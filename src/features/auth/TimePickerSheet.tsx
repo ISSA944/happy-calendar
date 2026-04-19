@@ -166,7 +166,14 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
   )
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onCancel} title={title} headerRight={headerRight}>
+    <BottomSheet 
+      isOpen={isOpen} 
+      onClose={onCancel} 
+      title={title} 
+      headerRight={headerRight}
+      openDuration={0.25}
+      closeDuration={0.25}
+    >
       <div className="relative px-6 pb-2 pt-1">
         <div className="pointer-events-none absolute left-1/2 top-16 h-56 w-56 -translate-x-1/2 rounded-full bg-primary/5 blur-[90px]" />
 

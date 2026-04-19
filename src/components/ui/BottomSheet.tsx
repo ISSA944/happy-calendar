@@ -9,6 +9,8 @@ export interface BottomSheetProps {
   title?: ReactNode
   headerRight?: ReactNode
   hideDragIndicator?: boolean
+  openDuration?: number
+  closeDuration?: number
 }
 
 export function BottomSheet({
@@ -18,6 +20,8 @@ export function BottomSheet({
   title,
   headerRight,
   hideDragIndicator = false,
+  openDuration = 0.4,
+  closeDuration = 0.35,
 }: BottomSheetProps) {
   const dragControls = useDragControls()
   const [mounted, setMounted] = useState(false)
@@ -63,8 +67,8 @@ export function BottomSheet({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.4, ease: 'easeOut' } }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
+            exit={{ opacity: 0, transition: { duration: closeDuration, ease: [0.32, 0.72, 0, 1] } }}
+            transition={{ duration: openDuration, ease: [0.32, 0.72, 0, 1] }}
             onClick={onClose}
             className="absolute inset-0 bg-black/55 cursor-pointer touch-none"
             style={{
@@ -81,14 +85,16 @@ export function BottomSheet({
             dragControls={dragControls}
             dragListener={false}
             dragConstraints={{ top: 0 }}
-            dragElastic={{ top: 0, bottom: 1 }}
+            dragElastic={{ top: 0, bottom: 0.7 }}
             onDragEnd={(_, { offset, velocity }) => {
-              if (offset.y > 60 || velocity.y > 250) onClose()
+              if (offset.y > 80 || velocity.y > 300) {
+                onClose()
+              }
             }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%', transition: { type: 'spring', bounce: 0, duration: 0.5 } }}
-            transition={{ type: 'spring', bounce: 0, duration: 0.65 }}
+            exit={{ y: '100%', transition: { duration: closeDuration, ease: [0.32, 0.72, 0, 1] } }}
+            transition={{ duration: openDuration, ease: [0.32, 0.72, 0, 1] }}
             className="relative w-full max-w-[430px] mx-auto rounded-t-[28px] shadow-2xl flex flex-col overflow-hidden"
             style={{
               paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
