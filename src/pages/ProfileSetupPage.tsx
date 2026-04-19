@@ -91,11 +91,11 @@ export function ProfileSetupPage() {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
-      style={{ willChange: 'opacity, transform', transformOrigin: 'center' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+      style={{ willChange: 'opacity' }}
       className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none scroll-smooth"
     >
       {/* TopAppBar */}
@@ -126,7 +126,7 @@ export function ProfileSetupPage() {
         {/* Avatar Section */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
           className="flex flex-col items-center mb-10"
         >
