@@ -183,7 +183,7 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
         onClick={onCancel}
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-black/55 backdrop-blur-sm"
         aria-hidden="true"
       />
 

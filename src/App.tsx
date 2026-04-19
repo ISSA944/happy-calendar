@@ -42,18 +42,19 @@ function AppLayout() {
           className="flex-1 w-full relative overflow-hidden bg-background"
           style={{ background: '#fcf9f4' }}
         >
-          <AnimatePresence initial={false}>
+          <AnimatePresence initial={false} mode="wait">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain bg-background"
               style={{
                 WebkitOverflowScrolling: 'touch',
                 background: '#fcf9f4',
-                willChange: 'opacity',
+                willChange: 'opacity, transform',
+                transform: 'translateZ(0)',
               }}
             >
               <Outlet />

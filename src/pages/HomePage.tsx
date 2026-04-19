@@ -340,7 +340,7 @@ export function HomePage() {
               exit={{ opacity: 0, transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
               transition={{ duration: 0.2 }}
               onClick={() => setShowIOSModal(false)}
-              className="fixed inset-0 z-[100] bg-black/60 touch-none"
+              className="fixed inset-0 z-[100] bg-black/55 backdrop-blur-sm touch-none"
               style={{ willChange: 'opacity', transform: 'translateZ(0)' }}
               aria-hidden="true"
             />
