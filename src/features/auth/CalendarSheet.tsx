@@ -119,9 +119,12 @@ const CalendarGrid = memo(function CalendarGrid({
   return (
     <div className="grid grid-cols-7 auto-rows-[40px]">
       {cells.map((cell) => {
-        const date = new Date(baseYear, baseMonth + cell.monthOffset, cell.day)
-        const value = formatDate(date.getDate(), date.getMonth(), date.getFullYear())
-        const isCurrentMonth = cell.monthOffset === 0
+        // Days from prev/next months: transparent placeholders that preserve grid offset but render no text/button
+        if (cell.monthOffset !== 0) {
+          return <div key={cell.key} aria-hidden="true" />
+        }
+
+        const value = formatDate(cell.day, baseMonth, baseYear)
         const isSelected = value === selectedValue
 
         return (
@@ -132,9 +135,7 @@ const CalendarGrid = memo(function CalendarGrid({
               className={`flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-full text-sm font-medium transition-colors active:scale-95 ${
                 isSelected
                   ? 'bg-primary text-white shadow-md shadow-primary/30'
-                  : isCurrentMonth
-                    ? 'text-on-surface hover:bg-surface-container'
-                    : 'text-on-surface/28'
+                  : 'text-on-surface hover:bg-surface-container'
               }`}
             >
               {cell.day}
