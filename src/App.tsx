@@ -37,24 +37,22 @@ function AppLayout() {
     <div className="bg-background text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden" style={{ background: '#fcf9f4' }}>
       <div className="w-full max-w-[430px] mx-auto h-full relative bg-background flex flex-col overflow-hidden" style={{ background: '#fcf9f4' }}>
 
-        {/* Main area: pages absolutely positioned, crossfade synchronously on top of each other */}
+        {/* Tab crossfade: old+new overlap on the cream bg — no mode="wait" gap, no transform */}
         <main
           className="flex-1 w-full relative overflow-hidden bg-background"
           style={{ background: '#fcf9f4' }}
         >
-          <AnimatePresence initial={false} mode="wait">
+          <AnimatePresence initial={false}>
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { duration: 0.25, ease: 'easeOut' } }}
+              exit={{ opacity: 0, transition: { duration: 0.15, ease: 'easeOut' } }}
               className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain bg-background"
               style={{
                 WebkitOverflowScrolling: 'touch',
                 background: '#fcf9f4',
-                willChange: 'opacity, transform',
-                transform: 'translateZ(0)',
+                willChange: 'opacity',
                 touchAction: 'manipulation',
               }}
             >
