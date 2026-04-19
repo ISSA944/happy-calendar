@@ -57,6 +57,11 @@ type AppState = {
   horoscopeTime: string
   setHoroscopeTime: (time: string) => void
 
+  // Registration draft — persists form inputs across navigation (e.g. → /privacy-policy and back)
+  registrationDraft: { name: string; email: string; consent: boolean; marketing: boolean }
+  updateRegistrationDraft: (patch: Partial<AppState['registrationDraft']>) => void
+  clearRegistrationDraft: () => void
+
   // Install banner
   installBannerDismissed: boolean
   dismissInstallBanner: () => void
@@ -139,6 +144,12 @@ export const useAppStore = create<AppState>()(
       horoscopeTime: '09:00',
       setHoroscopeTime: (horoscopeTime) => set({ horoscopeTime }),
 
+      registrationDraft: { name: '', email: '', consent: false, marketing: false },
+      updateRegistrationDraft: (patch) =>
+        set((state) => ({ registrationDraft: { ...state.registrationDraft, ...patch } })),
+      clearRegistrationDraft: () =>
+        set({ registrationDraft: { name: '', email: '', consent: false, marketing: false } }),
+
       installBannerDismissed: false,
       dismissInstallBanner: () => set({ installBannerDismissed: true }),
 
@@ -169,6 +180,7 @@ export const useAppStore = create<AppState>()(
         currentMood: 'Воодушевлена',
         dailyPack: null,
         bookmarks: [],
+        registrationDraft: { name: '', email: '', consent: false, marketing: false },
       }),
     }),
     { name: 'happy-calendar-store' }

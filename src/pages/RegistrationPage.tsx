@@ -7,11 +7,14 @@ export function RegistrationPage() {
   const navigate = useNavigate()
   const setUserName = useAppStore((s) => s.setUserName)
   const setEmail = useAppStore((s) => s.setEmail)
+  const draft = useAppStore((s) => s.registrationDraft)
+  const updateDraft = useAppStore((s) => s.updateRegistrationDraft)
+  const clearDraft = useAppStore((s) => s.clearRegistrationDraft)
 
-  const [name, setName] = useState('')
-  const [emailInput, setEmailInput] = useState('')
-  const [consent, setConsent] = useState(false)
-  const [marketing, setMarketing] = useState(false)
+  const [name, setName] = useState(draft.name)
+  const [emailInput, setEmailInput] = useState(draft.email)
+  const [consent, setConsent] = useState(draft.consent)
+  const [marketing, setMarketing] = useState(draft.marketing)
 
   const isValidEmail = (v: string) => /\S+@\S+\.\S+/.test(v)
   const canSubmit = isValidEmail(emailInput) && consent
@@ -21,6 +24,7 @@ export function RegistrationPage() {
     if (canSubmit) {
       setUserName(name.trim())
       setEmail(emailInput.trim())
+      clearDraft()
       navigate('/otp')
     }
   }
@@ -88,7 +92,7 @@ export function RegistrationPage() {
                 placeholder="Как к тебе обращаться?"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); updateDraft({ name: e.target.value }) }}
               />
             </div>
 
@@ -102,7 +106,7 @@ export function RegistrationPage() {
                 placeholder="example@mail.com"
                 type="email"
                 value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
+                onChange={(e) => { setEmailInput(e.target.value); updateDraft({ email: e.target.value }) }}
               />
               <p className="text-xs text-on-surface-variant/60 ml-1">Мы пришлём код подтверждения на эту почту.</p>
             </div>
@@ -127,7 +131,7 @@ export function RegistrationPage() {
                     required
                     type="checkbox"
                     checked={consent}
-                    onChange={(e) => setConsent(e.target.checked)}
+                    onChange={(e) => { setConsent(e.target.checked); updateDraft({ consent: e.target.checked }) }}
                   />
                 </div>
                 <span className="text-[13px] font-medium text-on-surface-variant leading-snug">
@@ -149,7 +153,7 @@ export function RegistrationPage() {
                     id="marketing"
                     type="checkbox"
                     checked={marketing}
-                    onChange={(e) => setMarketing(e.target.checked)}
+                    onChange={(e) => { setMarketing(e.target.checked); updateDraft({ marketing: e.target.checked }) }}
                   />
                 </div>
                 <div>
