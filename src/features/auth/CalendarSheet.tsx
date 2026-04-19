@@ -203,8 +203,7 @@ function WheelColumn({
                 fontWeight,
                 fontSize,
                 lineHeight: 1,
-                transition: 'opacity 0.3s ease, transform 0.3s ease, color 0.3s ease',
-                willChange: 'opacity, transform',
+                transition: 'opacity 0.15s ease, transform 0.15s ease, color 0.15s ease',
                 userSelect: 'none',
               }}
             >
