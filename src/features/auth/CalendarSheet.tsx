@@ -65,39 +65,21 @@ function parseDate(value: string): ParsedDate | null {
 }
 
 function buildCalendarCells(year: number, month: number): CalendarCell[] {
+  // Monday-first week: Sunday (getDay === 0) sits at column 6, otherwise getDay - 1
   const firstDayOfMonth = new Date(year, month, 1).getDay()
   const startOffset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1
-
-  const prevMonthDate = new Date(year, month - 1, 1)
-  const prevMonthDaysCount = getDaysInMonth(prevMonthDate.getFullYear(), prevMonthDate.getMonth())
   const currentMonthDaysCount = getDaysInMonth(year, month)
 
   const cells: CalendarCell[] = []
 
+  // Leading empty placeholders — shift day 1 under its correct weekday column
   for (let index = 0; index < startOffset; index += 1) {
-    const day = prevMonthDaysCount - startOffset + index + 1
-    cells.push({
-      key: `prev-${day}`,
-      day,
-      monthOffset: -1,
-    })
+    cells.push({ key: `lead-${index}`, day: 0, monthOffset: -1 })
   }
 
+  // Only days of the current month — no trailing next-month padding
   for (let day = 1; day <= currentMonthDaysCount; day += 1) {
-    cells.push({
-      key: `current-${day}`,
-      day,
-      monthOffset: 0,
-    })
-  }
-
-  const trailingDaysCount = 42 - cells.length
-  for (let day = 1; day <= trailingDaysCount; day += 1) {
-    cells.push({
-      key: `next-${day}`,
-      day,
-      monthOffset: 1,
-    })
+    cells.push({ key: `current-${day}`, day, monthOffset: 0 })
   }
 
   return cells
