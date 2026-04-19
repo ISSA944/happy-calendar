@@ -239,19 +239,19 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-5 pb-5 pt-4">
+              <div className="flex-1 overflow-y-auto px-5 pb-6 pt-5 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
                 <section>
-                  <p className="text-sm font-semibold text-on-surface-variant">Год</p>
-                  <div className="mt-3 grid grid-cols-4 gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant/70">Год</p>
+                  <div className="mt-4 grid grid-cols-4 gap-3">
                     {YEARS.map((year) => (
                       <button
                         key={year}
                         type="button"
                         onClick={() => handleYearSelect(year)}
-                        className={`min-h-11 rounded-2xl px-2 text-sm font-semibold transition-colors active:scale-95 ${
+                        className={`flex items-center justify-center rounded-2xl py-3 text-[15px] font-semibold transition-colors active:scale-95 ${
                           currentYear === year
-                            ? 'bg-primary text-white'
-                            : 'bg-surface text-on-surface-variant'
+                            ? 'bg-primary text-white shadow-md shadow-primary/25'
+                            : 'bg-surface-container text-on-surface-variant'
                         }`}
                       >
                         {year}
@@ -260,18 +260,20 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
                   </div>
                 </section>
 
-                <section className="mt-5">
-                  <p className="text-sm font-semibold text-on-surface-variant">Месяц</p>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="my-7 h-px bg-outline-variant/25" aria-hidden="true" />
+
+                <section className="pb-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant/70">Месяц</p>
+                  <div className="mt-4 grid grid-cols-3 gap-3">
                     {MONTHS.map((month, index) => (
                       <button
                         key={month}
                         type="button"
                         onClick={() => handleMonthSelect(index)}
-                        className={`min-h-12 rounded-2xl px-3 text-sm font-semibold transition-colors active:scale-95 ${
+                        className={`flex items-center justify-center rounded-2xl py-3 text-[15px] font-semibold transition-colors active:scale-95 ${
                           currentMonth === index
-                            ? 'border border-primary/30 bg-primary/10 text-primary'
-                            : 'border border-outline-variant/25 bg-surface text-on-surface-variant'
+                            ? 'bg-primary text-white shadow-md shadow-primary/25'
+                            : 'bg-surface-container text-on-surface-variant'
                         }`}
                       >
                         {month}
