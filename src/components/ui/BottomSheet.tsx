@@ -63,8 +63,8 @@ export function BottomSheet({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.5, ease: [0.32, 0.72, 0, 1] } }}
-            transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
+            exit={{ opacity: 0, transition: { duration: 0.8, ease: [0.32, 0.72, 0, 1] } }}
+            transition={{ duration: 1.0, ease: [0.32, 0.72, 0, 1] }}
             onClick={onClose}
             className="absolute inset-0 bg-black/55 cursor-pointer touch-none"
             style={{
@@ -80,15 +80,15 @@ export function BottomSheet({
             drag="y"
             dragControls={dragControls}
             dragListener={false}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.15 }}
+            dragConstraints={{ top: 0 }}
+            dragElastic={{ top: 0, bottom: 1 }}
             onDragEnd={(_, { offset, velocity }) => {
               if (offset.y > 60 || velocity.y > 250) onClose()
             }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%', transition: { type: 'tween', duration: 0.5, ease: [0.32, 0.72, 0, 1] } }}
-            transition={{ type: 'tween', duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
+            exit={{ y: '100%', transition: { type: 'tween', duration: 0.8, ease: [0.32, 0.72, 0, 1] } }}
+            transition={{ type: 'tween', duration: 1.0, ease: [0.32, 0.72, 0, 1] }}
             className="relative w-full max-w-[430px] mx-auto rounded-t-[28px] shadow-2xl flex flex-col overflow-hidden"
             style={{
               paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
@@ -104,7 +104,7 @@ export function BottomSheet({
               onPointerDown={(e) => dragControls.start(e)}
             >
               {!hideDragIndicator && (
-                <div className="w-10 h-1 bg-on-surface/15 rounded-full mx-auto mb-4" />
+                <div className="w-[48px] h-[5px] bg-[#E1E2E4] rounded-full mx-auto mb-4" />
               )}
               {(title || headerRight) && (
                 <div className="flex justify-between items-center mt-2">
