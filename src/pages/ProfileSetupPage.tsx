@@ -90,11 +90,10 @@ export function ProfileSetupPage() {
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+      transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       style={{ willChange: 'opacity' }}
       className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none scroll-smooth"
     >
@@ -124,13 +123,7 @@ export function ProfileSetupPage() {
       <main className="flex-1 flex flex-col pt-24 px-5">
 
         {/* Avatar Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.05 }}
-          style={{ willChange: 'opacity' }}
-          className="flex flex-col items-center mb-10"
-        >
+        <div className="flex flex-col items-center mb-10">
           <button
             onClick={handlePhotoClick}
             className="relative w-28 h-28 active:scale-95 transition-transform"
@@ -147,16 +140,10 @@ export function ProfileSetupPage() {
             </div>
           </button>
           <button onClick={handlePhotoClick} className="mt-3 text-sm font-semibold text-primary">Добавить фото</button>
-        </motion.div>
+        </div>
 
         {/* Input Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          style={{ willChange: 'opacity' }}
-          className="space-y-6"
-        >
+        <div className="space-y-6">
           {/* Date Field */}
           <div className="space-y-2">
             <label className="block text-[15px] font-semibold text-on-surface-variant ml-1">Когда вы родились?</label>
@@ -210,16 +197,13 @@ export function ProfileSetupPage() {
               })}
             </div>
           </div>
-        </motion.div>
+        </div>
       </main>
 
       {/* Footer CTA */}
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.15 }}
+      <footer
         className="px-5 pt-5 mt-auto"
-        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))', willChange: 'opacity' }}
+        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
       >
         <button
           onClick={handleSubmit}
@@ -232,7 +216,7 @@ export function ProfileSetupPage() {
         >
           Продолжить
         </button>
-      </motion.footer>
+      </footer>
 
       {/* Glassmorphism Background Elements */}
 

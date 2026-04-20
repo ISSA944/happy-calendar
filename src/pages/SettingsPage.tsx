@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
 import { CalendarSheet } from '../features/auth/CalendarSheet'
 import { TimePickerSheet } from '../features/auth/TimePickerSheet'
+import { isValidEmail } from '../utils/validation'
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -53,9 +54,13 @@ export function SettingsPage() {
   }, [setProfilePhoto])
 
   const handleSaveEmail = useCallback(() => {
+    if (!isValidEmail(emailDraft)) return
     setEmail(emailDraft.trim())
     setEditingEmail(false)
   }, [emailDraft, setEmail])
+
+  const isDraftValid = isValidEmail(emailDraft)
+  const showEmailError = emailDraft.length > 0 && !isDraftValid
 
   const handleBack = useCallback(() => navigate(-1), [navigate])
   const openCalendar = useCallback(() => setIsCalendarOpen(true), [])
@@ -142,22 +147,28 @@ export function SettingsPage() {
             <div className="flex flex-col gap-2">
               <label className="text-xs font-semibold text-on-surface-variant px-1">Электронная почта</label>
               {editingEmail ? (
-                <div className="flex gap-2 items-center">
-                  <input
-                    autoFocus
-                    type="email"
-                    value={emailDraft}
-                    onChange={(e) => setEmailDraft(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEmail() }}
-                    style={{ fontSize: '16px' }}
-                    className="flex-1 bg-surface-container-low rounded-xl px-5 py-3.5 text-on-surface border border-primary/40 outline-none focus:ring-2 focus:ring-primary/20 text-sm"
-                  />
-                  <button
-                    onClick={handleSaveEmail}
-                    className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"
-                  >
-                    <span className="material-symbols-outlined text-white text-[18px]">check</span>
-                  </button>
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-2 items-center">
+                    <input
+                      autoFocus
+                      type="email"
+                      value={emailDraft}
+                      onChange={(e) => setEmailDraft(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEmail() }}
+                      style={{ fontSize: '16px' }}
+                      className={`flex-1 bg-surface-container-low rounded-xl px-5 py-3.5 text-on-surface border outline-none focus:ring-2 text-sm transition-colors ${showEmailError ? 'border-red-300 focus:ring-red-200' : 'border-primary/40 focus:ring-primary/20'}`}
+                    />
+                    <button
+                      onClick={handleSaveEmail}
+                      disabled={!isDraftValid}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform ${isDraftValid ? 'bg-primary active:scale-95' : 'bg-primary/30 opacity-40 cursor-not-allowed'}`}
+                    >
+                      <span className="material-symbols-outlined text-white text-[18px]">check</span>
+                    </button>
+                  </div>
+                  {showEmailError && (
+                    <p className="text-xs text-red-500 mt-1 pl-1">Введите корректный email</p>
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5">

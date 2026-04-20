@@ -8,8 +8,7 @@ export function WelcomePage() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+      transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
       style={{
         willChange: 'opacity',
         paddingTop: 'max(2rem, env(safe-area-inset-top))',
@@ -25,10 +24,10 @@ export function WelcomePage() {
 
       {/* Hero Section */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        style={{ willChange: 'transform, opacity' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25 }}
+        style={{ willChange: 'opacity' }}
         className="relative z-10 pt-12 text-center"
       >
         <h1 className="font-headline font-extrabold text-4xl leading-tight text-on-surface tracking-tight mb-4">
@@ -76,10 +75,10 @@ export function WelcomePage() {
 
       {/* Features & CTA */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        style={{ willChange: 'transform, opacity' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25 }}
+        style={{ willChange: 'opacity' }}
         className="relative z-10 flex flex-col space-y-8 pb-4"
       >
         <div className="space-y-4 px-2">

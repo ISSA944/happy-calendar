@@ -66,7 +66,7 @@ const WheelColumn = memo(function WheelColumn({
       const rawIndex = Math.round(element.scrollTop / ITEM_HEIGHT)
       const clampedIndex = Math.max(0, Math.min(items.length - 1, rawIndex))
       onChange(clampedIndex)
-    }, 80)
+    }, 50)
   }, [items.length, onChange])
 
   return (
@@ -102,11 +102,10 @@ const WheelColumn = memo(function WheelColumn({
 
         {items.map((label, index) => {
           const distance = Math.abs(index - selectedIndex)
-          const opacity = distance === 0 ? 1 : distance === 1 ? 0.45 : 0.12
-          const scale = distance === 0 ? 1 : distance === 1 ? 0.82 : 0.62
+          const opacity = distance === 0 ? 1 : distance === 1 ? 0.5 : 0.2
           const color = distance === 0 ? '#006a65' : '#6d7a78'
           const fontWeight = distance === 0 ? 800 : distance === 1 ? 600 : 400
-          const fontSize = distance === 0 ? 54 : distance === 1 ? 40 : 30
+          const fontSize = distance === 0 ? 54 : distance === 1 ? 36 : 26
 
           return (
             <div
@@ -118,12 +117,11 @@ const WheelColumn = memo(function WheelColumn({
                 alignItems: 'center',
                 justifyContent: 'center',
                 opacity,
-                transform: `scale(${scale})`,
                 color,
                 fontWeight,
                 fontSize,
                 lineHeight: 1,
-                transition: 'opacity 0.15s ease, transform 0.15s ease, color 0.15s ease',
+                transition: 'opacity 0.12s ease, color 0.12s ease',
                 userSelect: 'none',
               }}
             >

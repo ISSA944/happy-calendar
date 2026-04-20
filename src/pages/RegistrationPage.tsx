@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppStore, useRegistrationDraft } from '../store'
+import { isValidEmail } from '../utils/validation'
 
 export function RegistrationPage() {
   const navigate = useNavigate()
@@ -14,7 +15,6 @@ export function RegistrationPage() {
   const updateDraft = useRegistrationDraft((s) => s.update)
   const clearDraft = useRegistrationDraft((s) => s.clear)
 
-  const isValidEmail = (v: string) => /\S+@\S+\.\S+/.test(v)
   const canSubmit = isValidEmail(emailInput) && consent
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -31,8 +31,7 @@ export function RegistrationPage() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+      transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       style={{ willChange: 'opacity' }}
       className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
     >
@@ -56,27 +55,17 @@ export function RegistrationPage() {
       >
 
         {/* ── Headline ── shrinks its bottom margin on tiny screens */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.05 }}
-          style={{ willChange: 'opacity' }}
-          className="mb-4 shrink-0"
-        >
+        <section className="mb-4 shrink-0">
           <h2 className="font-headline font-extrabold text-4xl text-on-surface mb-2 tracking-tight leading-tight">
             Давай начнём
           </h2>
           <p className="text-on-surface-variant text-base font-medium leading-relaxed">
             Введите данные, чтобы создать аккаунт.
           </p>
-        </motion.section>
+        </section>
 
         {/* ── Form ── */}
-        <motion.form
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          style={{ willChange: 'opacity' }}
+        <form
           className="flex flex-col flex-1 min-h-0"
           onSubmit={handleSubmit}
         >
@@ -182,7 +171,7 @@ export function RegistrationPage() {
               Почта нужна, чтобы сохранить твои настройки.
             </p>
           </div>
-        </motion.form>
+        </form>
       </main>
 
       {/* Glassmorphism blobs */}

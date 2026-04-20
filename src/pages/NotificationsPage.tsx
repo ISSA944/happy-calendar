@@ -98,8 +98,7 @@ export function NotificationsPage() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+      transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       style={{ willChange: 'opacity' }}
       className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none scroll-smooth"
     >
@@ -130,13 +129,7 @@ export function NotificationsPage() {
 
       <main className="flex-1 flex flex-col pt-10 pb-8 w-full px-5 space-y-6">
         {/* Card 1: Time Selection */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.05 }}
-          style={{ willChange: 'opacity' }}
-          className="bg-white rounded-[24px] p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.04)]"
-        >
+        <section className="bg-white rounded-[24px] p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.04)]">
           <h2 className="font-headline font-bold text-lg mb-5 text-[#1B1B1F]">Во сколько присылать гороскоп?</h2>
           <div className="grid grid-cols-2 gap-3 mb-4">
             {fixedTimes.map((t) => (
@@ -160,16 +153,10 @@ export function NotificationsPage() {
             </button>
           </div>
           <p className="text-sm text-[#5A5A66] font-body">Можно изменить в любой момент</p>
-        </motion.section>
+        </section>
 
         {/* Card 2: Notification Content */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          style={{ willChange: 'opacity' }}
-          className="bg-white rounded-[24px] p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.04)] space-y-8"
-        >
+        <section className="bg-white rounded-[24px] p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.04)] space-y-8">
           <h2 className="font-headline font-bold text-lg text-[#1B1B1F]">Что присылать</h2>
 
           <ToggleRow
@@ -189,18 +176,12 @@ export function NotificationsPage() {
             checked={showSupport}
             onChange={toggleSupport}
           />
-        </motion.section>
+        </section>
       </main>
 
       {/* Bottom Action Area — unmounted while TimePicker is open so nothing peeks through the sheet */}
       {!isTimePickerOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.15 }}
-          style={{ willChange: 'opacity' }}
-          className="w-full max-w-[430px] mx-auto px-5 pb-[env(safe-area-inset-bottom,24px)] pt-4 flex flex-col items-center space-y-4"
-        >
+        <div className="w-full max-w-[430px] mx-auto px-5 pb-[env(safe-area-inset-bottom,24px)] pt-4 flex flex-col items-center space-y-4">
           <button
             onClick={handleAllow}
             className="w-full h-14 bg-[#2FA7A0] hover:bg-[#006a65] text-white font-headline font-bold text-base rounded-full shadow-lg shadow-[#2FA7A0]/20 transition-colors active:scale-[0.98]"
@@ -213,7 +194,7 @@ export function NotificationsPage() {
           >
             Настрою позже
           </button>
-        </motion.div>
+        </div>
       )}
     </motion.div>
   )

@@ -30,7 +30,7 @@ const YEARS = Array.from({ length: 90 }, (_, index) => CURRENT_YEAR - index)
 
 const slideVariants: Variants = {
   enter: (direction: number) => ({
-    x: direction > 0 ? 32 : -32,
+    x: direction > 0 ? 24 : -24,
     opacity: 0,
   }),
   center: {
@@ -38,7 +38,7 @@ const slideVariants: Variants = {
     opacity: 1,
   },
   exit: (direction: number) => ({
-    x: direction < 0 ? 32 : -32,
+    x: direction < 0 ? 24 : -24,
     opacity: 0,
   }),
 }
@@ -143,7 +143,7 @@ function WheelColumn({
       const rawIndex = Math.round(element.scrollTop / WHEEL_ITEM_HEIGHT)
       const clampedIndex = Math.max(0, Math.min(items.length - 1, rawIndex))
       onChange(clampedIndex)
-    }, 80)
+    }, 50)
   }, [items.length, onChange])
 
   return (
@@ -182,11 +182,10 @@ function WheelColumn({
 
         {items.map((label, index) => {
           const distance = Math.abs(index - selectedIndex)
-          const opacity = distance === 0 ? 1 : distance === 1 ? 0.5 : 0.15
-          const scale = distance === 0 ? 1 : distance === 1 ? 0.9 : 0.75
+          const opacity = distance === 0 ? 1 : distance === 1 ? 0.5 : 0.2
           const color = distance === 0 ? '#006a65' : '#6d7a78'
-          const fontWeight = distance === 0 ? 700 : 500
-          const fontSize = distance === 0 ? 18 : distance === 1 ? 16 : 14
+          const fontWeight = distance === 0 ? 800 : distance === 1 ? 600 : 500
+          const fontSize = distance === 0 ? 22 : distance === 1 ? 17 : 14
 
           return (
             <div
@@ -198,12 +197,11 @@ function WheelColumn({
                 alignItems: 'center',
                 justifyContent: 'center',
                 opacity,
-                transform: `scale(${scale})`,
                 color,
                 fontWeight,
                 fontSize,
                 lineHeight: 1,
-                transition: 'opacity 0.15s ease, transform 0.15s ease, color 0.15s ease',
+                transition: 'opacity 0.12s ease, color 0.12s ease',
                 userSelect: 'none',
               }}
             >
@@ -272,6 +270,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
   const [selectedDate, setSelectedDate] = useState<ParsedDate | null>(parsedCurrentValue)
   const [direction, setDirection] = useState(0)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const skipNextSlideAnim = useRef(false)
 
   // Local wheel state (only committed when user closes the picker)
   const [pickerYear, setPickerYear] = useState(currentYear)
@@ -317,12 +316,10 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
   const handlePickerConfirm = useCallback(() => {
     const yr = YEARS[pickerYear]
     const mo = pickerMonth
-    const nextDirection = yr === currentYear
-      ? (mo === currentMonth ? 0 : mo > currentMonth ? 1 : -1)
-      : (yr > currentYear ? 1 : -1)
+    skipNextSlideAnim.current = true
     setIsPickerOpen(false)
-    updateDisplayedMonth(yr, mo, nextDirection)
-  }, [pickerYear, pickerMonth, currentYear, currentMonth, updateDisplayedMonth])
+    updateDisplayedMonth(yr, mo, 0)
+  }, [pickerYear, pickerMonth, updateDisplayedMonth])
 
   const handleDaySelect = useCallback((cell: CalendarCell) => {
     const nextDate = new Date(currentYear, currentMonth + cell.monthOffset, cell.day)
@@ -365,42 +362,42 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
       headerRight={headerRight}
     >
       <div className="relative pb-5">
-        {/* ── Wheel Picker Overlay (Apple-style) ── */}
+        {/* ── Full-cover Wheel Picker Overlay (covers BottomSheet header) ── */}
         <AnimatePresence>
           {isPickerOpen && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 16 }}
-              transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
-              className="absolute inset-0 z-20 flex flex-col bg-surface-container-lowest"
-              style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className="fixed inset-x-0 top-0 z-[110] flex flex-col mx-auto w-full max-w-[430px]"
+              style={{
+                height: 'calc(100dvh - env(safe-area-inset-top) - 16px)',
+                marginTop: 'env(safe-area-inset-top)',
+                background: '#fcf9f4',
+                paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+              }}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 pb-3 pt-2">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant/60">Быстрый выбор</p>
-                  <h3 className="mt-0.5 font-headline text-base font-bold text-on-surface">Год и месяц</h3>
-                </div>
+              {/* Picker Header — visually replaces "Дата рождения" */}
+              <div className="flex items-center justify-between px-6 pt-6 pb-4">
+                <h2 className="font-headline text-lg font-bold text-on-surface">Год и месяц</h2>
                 <button
                   type="button"
                   onClick={handlePickerConfirm}
-                  className="font-headline text-sm font-bold text-primary active:opacity-70 px-3 py-1"
+                  className="rounded-full bg-primary px-5 py-2 font-headline text-sm font-bold text-white shadow-md shadow-primary/20 active:scale-95"
                 >
                   Готово
                 </button>
               </div>
 
               {/* Dual Wheel Picker */}
-              <div className="flex-1 flex items-center px-5 pb-4">
+              <div className="flex-1 flex items-center justify-center px-6 pb-6">
                 <div className="flex w-full gap-3">
-                  {/* Month Wheel */}
                   <WheelColumn
                     items={MONTHS_SHORT}
                     selectedIndex={pickerMonth}
                     onChange={setPickerMonth}
                   />
-                  {/* Year Wheel */}
                   <WheelColumn
                     items={YEARS.map(String)}
                     selectedIndex={pickerYear}
@@ -457,7 +454,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
 
           {/* ── Calendar Grid with swipe ── */}
           <div className="relative h-[240px] overflow-hidden">
-            <AnimatePresence initial={false} custom={direction} mode="wait">
+            <AnimatePresence initial={false} custom={direction} mode="wait" onExitComplete={() => { skipNextSlideAnim.current = false }}>
               <motion.div
                 key={`${currentYear}-${currentMonth}`}
                 custom={direction}
@@ -465,7 +462,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
+                transition={skipNextSlideAnim.current ? { duration: 0 } : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.08}

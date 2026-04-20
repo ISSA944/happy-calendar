@@ -177,8 +177,7 @@ export function OtpPage() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+      transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       style={{ willChange: 'opacity' }}
       className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto"
     >
@@ -198,29 +197,17 @@ export function OtpPage() {
 
       <main className="flex-1 flex flex-col px-5 pt-10 pb-10">
         {/* ── Headline ── */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.05 }}
-          style={{ willChange: 'opacity' }}
-          className="mb-10 shrink-0"
-        >
+        <section className="mb-10 shrink-0">
           <h2 className="font-headline font-extrabold text-4xl text-on-surface mb-3 tracking-tight leading-tight">
             Проверим почту
           </h2>
           <p className="text-on-surface-variant text-base font-medium leading-relaxed">
             Мы отправили код на вашу электронную почту.
           </p>
-        </motion.section>
+        </section>
 
         {/* ── OTP Boxes ── */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          style={{ willChange: 'opacity' }}
-          className="mb-10 shrink-0"
-        >
+        <section className="mb-10 shrink-0">
           <div className="flex justify-between gap-3">
             {code.map((digit, index) => (
               <OtpBox
@@ -236,15 +223,12 @@ export function OtpPage() {
               />
             ))}
           </div>
-        </motion.section>
+        </section>
 
         {/* ── Bottom actions ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.15 }}
+        <div
           className="mt-auto flex flex-col items-center gap-6 shrink-0"
-          style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))', willChange: 'opacity' }}
+          style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
         >
           <button
             onClick={handleSubmit}
@@ -264,7 +248,7 @@ export function OtpPage() {
             onExpire={handleExpire}
             onResend={handleResend}
           />
-        </motion.div>
+        </div>
       </main>
 
       {/* Glassmorphism blobs */}

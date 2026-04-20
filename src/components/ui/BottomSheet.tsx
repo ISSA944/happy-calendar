@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, useMotionValue, animate } from 'framer-motion'
+import { AnimatePresence, motion, useMotionValue, useTransform, animate } from 'framer-motion'
 
 export interface BottomSheetProps {
   isOpen: boolean
@@ -11,16 +11,6 @@ export interface BottomSheetProps {
   hideDragIndicator?: boolean
 }
 
-/**
- * Lightweight BottomSheet optimised for 60 fps on low-end mobile.
- *
- * Performance rules applied:
- *  - NO scale transforms on #root (kills compositing on weak GPUs)
- *  - NO backdrop-filter blur (Chrome Android drops to 20 fps)
- *  - Only opacity + translateY are animated (cheapest GPU ops)
- *  - Drag uses useMotionValue for zero-React-render finger tracking
- *  - will-change is scoped to only the two animated properties
- */
 export function BottomSheet({
   isOpen,
   onClose,
@@ -31,6 +21,8 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const [mounted, setMounted] = useState(false)
   const dragY = useMotionValue(0)
+  // Backdrop opacity follows finger: full when sheet rest, fades to 0 as sheet drags down 320px
+  const backdropOpacity = useTransform(dragY, [0, 320], [1, 0])
   const sheetRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -38,7 +30,6 @@ export function BottomSheet({
     return () => setMounted(false)
   }, [])
 
-  // Lock body scroll while sheet is open
   useEffect(() => {
     if (!isOpen) return
 
@@ -47,9 +38,7 @@ export function BottomSheet({
     const savedBodyOverflow = document.body.style.overflow
     const savedHtmlOverflow = document.documentElement.style.overflow
 
-    if (root) {
-      root.style.pointerEvents = 'none'
-    }
+    if (root) root.style.pointerEvents = 'none'
     document.body.style.overflow = 'hidden'
     document.documentElement.style.overflow = 'hidden'
 
@@ -60,16 +49,20 @@ export function BottomSheet({
     }
   }, [isOpen])
 
+  // Reset drag value when sheet opens (otherwise stale dragY makes backdrop transparent on next open)
+  useEffect(() => {
+    if (isOpen) dragY.set(0)
+  }, [isOpen, dragY])
+
   if (!mounted) return null
 
-  // Fast and snappy ease-out for native-like instant response
   const ease: [number, number, number, number] = [0.0, 0.0, 0.2, 1]
 
   const handleDragEnd = (_: unknown, info: { offset: { y: number }; velocity: { y: number } }) => {
     if (info.offset.y > 100 || info.velocity.y > 400) {
       onClose()
     } else {
-      animate(dragY, 0, { type: 'spring', stiffness: 400, damping: 30 })
+      animate(dragY, 0, { type: 'spring', stiffness: 500, damping: 38 })
     }
   }
 
@@ -77,19 +70,17 @@ export function BottomSheet({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex flex-col justify-end">
-          {/* Backdrop — opacity only, no blur, no scale */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease }}
+            transition={{ duration: 0.18, ease }}
             onClick={onClose}
             className="absolute inset-0 bg-black/40 touch-none"
-            style={{ willChange: 'opacity' }}
+            style={{ opacity: backdropOpacity }}
             aria-hidden="true"
           />
 
-          {/* Sheet panel */}
           <motion.div
             ref={sheetRef}
             drag="y"
@@ -99,8 +90,8 @@ export function BottomSheet({
             onDragEnd={handleDragEnd}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%', transition: { duration: 0.2, ease } }}
-            transition={{ duration: 0.25, ease }}
+            exit={{ y: '100%', transition: { duration: 0.18, ease } }}
+            transition={{ duration: 0.2, ease }}
             className="relative w-full max-w-[430px] mx-auto rounded-t-[24px] shadow-2xl flex flex-col overflow-hidden"
             style={{
               y: dragY,
@@ -111,7 +102,6 @@ export function BottomSheet({
               touchAction: 'none',
             }}
           >
-            {/* Drag handle */}
             <div
               className="px-6 pt-3 pb-4 touch-none select-none cursor-grab active:cursor-grabbing"
               style={{ paddingBottom: title || headerRight ? '10px' : '16px' }}

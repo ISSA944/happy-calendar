@@ -6,7 +6,6 @@ import {
   Routes,
   useLocation,
 } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
 import { BottomNav } from './components/BottomNav'
 import { useAppStore } from './store'
 
@@ -97,23 +96,21 @@ function AppRoutes() {
   const routeKey = APP_SHELL_ROUTES.includes(location.pathname) ? 'app-shell' : location.key
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <Routes location={location} key={routeKey}>
-        <Route path="/" element={<RootGuard />} />
-        <Route path="/register" element={<RegistrationPage />} />
-        <Route path="/otp" element={<OtpPage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/profile-setup" element={<ProfileSetupPage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-        <Route element={<AppLayout />}>
-          <Route path="/home" element={null} />
-          <Route path="/bookmarks" element={null} />
-          <Route path="/settings" element={null} />
-          <Route path="/notifications-list" element={null} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AnimatePresence>
+    <Routes location={location} key={routeKey}>
+      <Route path="/" element={<RootGuard />} />
+      <Route path="/register" element={<RegistrationPage />} />
+      <Route path="/otp" element={<OtpPage />} />
+      <Route path="/notifications" element={<NotificationsPage />} />
+      <Route path="/profile-setup" element={<ProfileSetupPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+      <Route element={<AppLayout />}>
+        <Route path="/home" element={null} />
+        <Route path="/bookmarks" element={null} />
+        <Route path="/settings" element={null} />
+        <Route path="/notifications-list" element={null} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
 
