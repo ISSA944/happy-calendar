@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: happy_calendar_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: happy_calendar
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Базовые оптимизации под сервер 2 vCPU, 2GB RAM (Postgres берёт ~256MB под shared_buffers, макс коннектов 100)
+    command: postgres -c shared_buffers=256MB -c max_connections=100 -c work_mem=4MB -c maintenance_work_mem=64MB
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

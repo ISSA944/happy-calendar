@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String?  @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile    Profile?
+  dailyFeeds DailyFeed[]
+  bookmarks  Bookmark[]
+}
+
+model Profile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zodiacSign    String?
+  gender        String?
+  birthDate     String?
+  horoscopeTime String   @default("09:00")
+  showHoroscope Boolean  @default(true)
+  showHolidays  Boolean  @default(false)
+  showSupport   Boolean  @default(true)
+  currentMood   String   @default("Спокойное")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model DailyFeed {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date          String   // Format DD.MM or YYYY-MM-DD
+  horoscope     String
+  holiday       String?
+  supportPhrase String
+  zodiacSign    String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // "гороскоп" or "поддержка"
+  date      String
+  text      String
+  icon      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
