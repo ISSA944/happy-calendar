@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, useMotionValue, useTransform, animate } from 'framer-motion'
+import { AnimatePresence, motion, useMotionValue, useTransform, animate, useDragControls } from 'framer-motion'
 
 export interface BottomSheetProps {
   isOpen: boolean
@@ -24,6 +24,7 @@ export function BottomSheet({
   // Backdrop opacity follows finger: full when sheet rest, fades to 0 as sheet drags down 320px
   const backdropOpacity = useTransform(dragY, [0, 320], [1, 0])
   const sheetRef = useRef<HTMLDivElement>(null)
+  const dragControls = useDragControls()
 
   useEffect(() => {
     setMounted(true)
@@ -73,24 +74,26 @@ export function BottomSheet({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.4, ease: [0.32, 0.72, 0, 1] } }}
             transition={{ duration: 0.18, ease }}
             onClick={onClose}
             className="absolute inset-0 bg-black/40 touch-none"
-            style={{ opacity: backdropOpacity }}
+            style={{ opacity: backdropOpacity, willChange: 'transform, opacity' }}
             aria-hidden="true"
           />
 
           <motion.div
             ref={sheetRef}
             drag="y"
+            dragControls={dragControls}
+            dragListener={false}
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 1 }}
             dragMomentum={false}
             onDragEnd={handleDragEnd}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%', transition: { duration: 0.18, ease } }}
+            exit={{ y: '100%', transition: { duration: 0.4, ease: [0.32, 0.72, 0, 1] } }}
             transition={{ duration: 0.2, ease }}
             className="relative w-full max-w-[430px] mx-auto rounded-t-[24px] shadow-2xl flex flex-col overflow-hidden"
             style={{
@@ -105,6 +108,7 @@ export function BottomSheet({
             <div
               className="px-6 pt-3 pb-4 touch-none select-none cursor-grab active:cursor-grabbing"
               style={{ paddingBottom: title || headerRight ? '10px' : '16px' }}
+              onPointerDown={(e) => dragControls.start(e)}
             >
               {!hideDragIndicator && (
                 <div className="w-9 h-[5px] bg-on-surface-variant/25 rounded-full mx-auto mb-3" />

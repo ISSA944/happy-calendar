@@ -221,19 +221,15 @@ export function ProfileSetupPage() {
       {/* Glassmorphism Background Elements */}
 
 
-      <AnimatePresence>
-        {isCalendarOpen && (
-          <CalendarSheet
-            isOpen={isCalendarOpen}
-            onClose={() => setIsCalendarOpen(false)}
-            onSelect={(dateStr) => {
-              setIsCalendarOpen(false)
-              startTransition(() => setBirthDate(dateStr))
-            }}
-            currentValue={birthDate}
-          />
-        )}
-      </AnimatePresence>
+      <CalendarSheet
+        isOpen={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
+        onSelect={(dateStr) => {
+          setIsCalendarOpen(false)
+          startTransition(() => setBirthDate(dateStr))
+        }}
+        currentValue={birthDate}
+      />
     </motion.div>
   )
 }

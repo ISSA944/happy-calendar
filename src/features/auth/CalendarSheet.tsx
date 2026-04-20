@@ -265,15 +265,18 @@ const CalendarGrid = memo(function CalendarGrid({
 
 export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: CalendarSheetProps) {
   const parsedCurrentValue = useMemo(() => parseDate(currentValue), [currentValue])
-  const [currentYear, setCurrentYear] = useState(parsedCurrentValue?.year ?? CURRENT_YEAR)
-  const [currentMonth, setCurrentMonth] = useState(parsedCurrentValue?.month ?? new Date().getMonth())
+  const [currentYear, setCurrentYear] = useState(parsedCurrentValue?.year ?? 2026)
+  const [currentMonth, setCurrentMonth] = useState(parsedCurrentValue?.month ?? 0)
   const [selectedDate, setSelectedDate] = useState<ParsedDate | null>(parsedCurrentValue)
   const [direction, setDirection] = useState(0)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   const skipNextSlideAnim = useRef(false)
 
   // Local wheel state (only committed when user closes the picker)
-  const [pickerYear, setPickerYear] = useState(currentYear)
+  const [pickerYear, setPickerYear] = useState(() => {
+    const idx = YEARS.indexOf(currentYear)
+    return idx !== -1 ? idx : YEARS.indexOf(2026)
+  })
   const [pickerMonth, setPickerMonth] = useState(currentMonth)
 
   useEffect(() => {
@@ -286,9 +289,8 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
       return
     }
 
-    const today = new Date()
-    setCurrentYear(today.getFullYear())
-    setCurrentMonth(today.getMonth())
+    setCurrentYear(2026)
+    setCurrentMonth(0)
     setSelectedDate(null)
   }, [isOpen, parsedCurrentValue])
 
@@ -308,7 +310,8 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
   }, [currentMonth, currentYear, updateDisplayedMonth])
 
   const handleOpenPicker = useCallback(() => {
-    setPickerYear(currentYear)
+    const yearIdx = YEARS.indexOf(currentYear)
+    setPickerYear(yearIdx !== -1 ? yearIdx : YEARS.indexOf(2026))
     setPickerMonth(currentMonth)
     setIsPickerOpen(true)
   }, [currentMonth, currentYear])
