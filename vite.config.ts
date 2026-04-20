@@ -49,15 +49,35 @@ export default defineConfig({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
         navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/^\/api\//],
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/images\.unsplash\.com\//,
             handler: 'CacheFirst',
             options: {
               cacheName: 'unsplash-images',
-              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 7 },
+              expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/lh3\.googleusercontent\.com\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'googleusercontent-images',
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: ({ request }) => request.destination === 'image',
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'runtime-images',
+              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 14 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
