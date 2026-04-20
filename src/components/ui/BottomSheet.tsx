@@ -122,7 +122,7 @@ export function BottomSheet({
                       title
                     )}
                   </div>
-                  {headerRight && <div className="flex-shrink-0">{headerRight}</div>}
+                  {headerRight && <div className="flex-shrink-0" onPointerDown={(e) => e.stopPropagation()}>{headerRight}</div>}
                 </div>
               )}
             </div>

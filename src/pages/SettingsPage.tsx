@@ -1,5 +1,5 @@
 import { memo, useCallback, useRef, useState, startTransition } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
@@ -238,28 +238,20 @@ export function SettingsPage() {
       </main>
 
       {/* CalendarSheet */}
-      <AnimatePresence>
-        {isCalendarOpen && (
-          <CalendarSheet
-            isOpen={isCalendarOpen}
-            onClose={closeCalendar}
-            onSelect={handleSaveBirthDate}
-            currentValue={birthDate}
-          />
-        )}
-      </AnimatePresence>
+      <CalendarSheet
+        isOpen={isCalendarOpen}
+        onClose={closeCalendar}
+        onSelect={handleSaveBirthDate}
+        currentValue={birthDate}
+      />
 
       {/* TimePickerSheet */}
-      <AnimatePresence>
-        {isTimePickerOpen && (
-          <TimePickerSheet
-            isOpen={isTimePickerOpen}
-            initialTime={horoscopeTime || '09:00'}
-            onSave={handleSaveTime}
-            onCancel={closeTimePicker}
-          />
-        )}
-      </AnimatePresence>
+      <TimePickerSheet
+        isOpen={isTimePickerOpen}
+        initialTime={horoscopeTime || '09:00'}
+        onSave={handleSaveTime}
+        onCancel={closeTimePicker}
+      />
     </motion.div>
   )
 }

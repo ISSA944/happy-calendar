@@ -395,7 +395,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
 
               {/* Dual Wheel Picker */}
               <div className="flex-1 flex items-center justify-center px-6 pb-6">
-                <div className="flex w-full gap-3">
+                <div className="flex w-full max-w-[240px] mx-auto gap-4">
                   <WheelColumn
                     items={MONTHS_SHORT}
                     selectedIndex={pickerMonth}
