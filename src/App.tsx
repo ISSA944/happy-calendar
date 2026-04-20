@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -7,22 +7,25 @@ import {
   useLocation,
 } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
-import {
-  BookmarksPage,
-  HomePage,
-  NotificationsListPage,
-  NotificationsPage,
-  OtpPage,
-  PrivacyPolicyPage,
-  ProfileSetupPage,
-  RegistrationPage,
-  SettingsPage,
-  WelcomePage,
-} from './pages'
 import { BottomNav } from './components/BottomNav'
 import { useAppStore } from './store'
 
+const WelcomePage = lazy(() => import('./pages/WelcomePage').then(m => ({ default: m.WelcomePage })))
+const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })))
+const BookmarksPage = lazy(() => import('./pages/BookmarksPage').then(m => ({ default: m.BookmarksPage })))
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
+const NotificationsListPage = lazy(() => import('./pages/NotificationsListPage').then(m => ({ default: m.NotificationsListPage })))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
+const OtpPage = lazy(() => import('./pages/OtpPage').then(m => ({ default: m.OtpPage })))
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })))
+const ProfileSetupPage = lazy(() => import('./pages/ProfileSetupPage').then(m => ({ default: m.ProfileSetupPage })))
+const RegistrationPage = lazy(() => import('./pages/RegistrationPage').then(m => ({ default: m.RegistrationPage })))
+
 const APP_SHELL_ROUTES = ['/home', '/bookmarks', '/settings', '/notifications-list']
+
+function PageFallback() {
+  return <div className="h-[100dvh] w-full" style={{ background: '#fcf9f4' }} />
+}
 
 function RootGuard() {
   const hasCompletedOnboarding = useAppStore(s => s.hasCompletedOnboarding)
@@ -42,14 +45,14 @@ function ShellTab({ visible, children }: { visible: boolean; children: ReactNode
   return (
     <div
       aria-hidden={!visible}
-      className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain bg-background"
+      className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
       style={{
         background: '#fcf9f4',
         opacity: visible ? 1 : 0,
         pointerEvents: visible ? 'auto' : 'none',
         visibility: visible ? 'visible' : 'hidden',
-        transition: visible 
-          ? 'opacity 0.15s ease-out' 
+        transition: visible
+          ? 'opacity 0.15s ease-out'
           : 'opacity 0.15s ease-out, visibility 0s linear 0.15s',
         WebkitOverflowScrolling: 'touch',
         touchAction: 'manipulation',
@@ -63,8 +66,7 @@ function ShellTab({ visible, children }: { visible: boolean; children: ReactNode
 }
 
 function AppLayout() {
-  const location = useLocation()
-  const { pathname } = location
+  const { pathname } = useLocation()
 
   return (
     <div
@@ -72,13 +74,10 @@ function AppLayout() {
       style={{ background: '#fcf9f4' }}
     >
       <div
-        className="w-full max-w-[430px] mx-auto h-full relative bg-background flex flex-col overflow-hidden"
+        className="w-full max-w-[430px] mx-auto h-full relative flex flex-col overflow-hidden"
         style={{ background: '#fcf9f4' }}
       >
-        <main
-          className="flex-1 w-full relative overflow-hidden bg-background"
-          style={{ background: '#fcf9f4' }}
-        >
+        <main className="flex-1 w-full relative overflow-hidden" style={{ background: '#fcf9f4' }}>
           <ShellTab visible={pathname === '/home'}><HomePage /></ShellTab>
           <ShellTab visible={pathname === '/bookmarks'}><BookmarksPage /></ShellTab>
           <ShellTab visible={pathname === '/settings'}><SettingsPage /></ShellTab>
@@ -122,10 +121,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <div
-        className="relative w-full h-[100dvh] overflow-hidden bg-background"
+        className="relative w-full h-[100dvh] overflow-hidden"
         style={{ background: '#fcf9f4' }}
       >
-        <AppRoutes />
+        <Suspense fallback={<PageFallback />}>
+          <AppRoutes />
+        </Suspense>
       </div>
     </BrowserRouter>
   )

@@ -62,14 +62,14 @@ export function BottomSheet({
 
   if (!mounted) return null
 
-  // Decelerate curve: fast response, long silky tail
-  const ease: [number, number, number, number] = [0.32, 0.72, 0, 1]
+  // Fast and snappy ease-out for native-like instant response
+  const ease: [number, number, number, number] = [0.0, 0.0, 0.2, 1]
 
   const handleDragEnd = (_: unknown, info: { offset: { y: number }; velocity: { y: number } }) => {
     if (info.offset.y > 100 || info.velocity.y > 400) {
       onClose()
     } else {
-      animate(dragY, 0, { type: 'spring', stiffness: 300, damping: 30 })
+      animate(dragY, 0, { type: 'spring', stiffness: 400, damping: 30 })
     }
   }
 
@@ -82,7 +82,7 @@ export function BottomSheet({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.35, ease }}
+            transition={{ duration: 0.2, ease }}
             onClick={onClose}
             className="absolute inset-0 bg-black/40 touch-none"
             style={{ willChange: 'opacity' }}
@@ -99,8 +99,8 @@ export function BottomSheet({
             onDragEnd={handleDragEnd}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%', transition: { duration: 0.3, ease } }}
-            transition={{ duration: 0.45, ease }}
+            exit={{ y: '100%', transition: { duration: 0.2, ease } }}
+            transition={{ duration: 0.25, ease }}
             className="relative w-full max-w-[430px] mx-auto rounded-t-[24px] shadow-2xl flex flex-col overflow-hidden"
             style={{
               y: dragY,

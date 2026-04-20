@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
@@ -7,11 +7,12 @@ import type { BookmarkType } from '../store/app.store'
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1 } },
+  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
 }
+// Opacity-only — no y translate on shadowed cards.
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.25, ease: 'easeOut' } },
 }
 
 export function BookmarksPage() {
@@ -20,14 +21,20 @@ export function BookmarksPage() {
   const removeBookmark = useAppStore(s => s.removeBookmark)
   const [filter, setFilter] = useState<'все' | BookmarkType>('все')
 
-  const filtered = bookmarks.filter(b => filter === 'все' || b.type === filter)
+  const filtered = useMemo(
+    () => bookmarks.filter(b => filter === 'все' || b.type === filter),
+    [bookmarks, filter],
+  )
+
+  const handleRemove = useCallback((id: string) => removeBookmark(id), [removeBookmark])
+  const handleBack = useCallback(() => navigate(-1), [navigate])
 
   return (
     <motion.div initial="hidden" animate="show" variants={containerVariants} className="flex flex-col min-h-full bg-background">
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
         <div className="flex items-center h-16 relative">
           <button
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="w-10 h-10 -ml-1 text-on-surface-variant hover:bg-black/5 rounded-full transition-colors active:scale-95 flex items-center justify-center shrink-0"
           >
             <span className="material-symbols-outlined">arrow_back</span>
@@ -69,7 +76,7 @@ export function BookmarksPage() {
                 variants={itemVariants}
                 initial="hidden"
                 animate="show"
-                exit={{ opacity: 0, scale: 0.95 }}
+                exit={{ opacity: 0 }}
                 className="bg-white rounded-[24px] p-5 flex flex-col gap-4 shadow-[0_4px_16px_rgba(0,0,0,0.04)]"
               >
                 <div className="flex items-center gap-3">
@@ -91,7 +98,7 @@ export function BookmarksPage() {
                     <p className="text-[11px] text-on-surface-variant">{bm.date}</p>
                   </div>
                   <button
-                    onClick={() => removeBookmark(bm.id)}
+                    onClick={() => handleRemove(bm.id)}
                     className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container text-on-surface-variant/50 transition-colors active:scale-90"
                     aria-label="Удалить"
                   >

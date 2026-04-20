@@ -199,17 +199,10 @@ export function ProfileSetupPage() {
                     onClick={() => setGender(g.id as "F" | "M" | "UNKNOWN")}
                     className={`relative flex-1 rounded-full font-semibold transition-colors duration-200 z-10 select-none touch-manipulation active:scale-95 ${
                       g.extraClass || 'text-[15px]'
-                    } ${isSelected ? 'text-on-surface' : 'text-on-surface-variant hover:text-on-surface/80'}`}
+                    } ${isSelected ? 'bg-white text-on-surface shadow-sm' : 'text-on-surface-variant hover:text-on-surface/80'}`}
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
-                    {isSelected && (
-                      <motion.div
-                        layoutId="gender-pill"
-                        className="absolute inset-0 bg-white rounded-full shadow-sm -z-10"
-                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                      />
-                    )}
-                    <span className="relative z-10">{g.label}</span>
+                    {g.label}
                   </button>
                 );
               })}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { memo, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 
 interface TimePickerSheetProps {
@@ -25,7 +25,7 @@ const scrollStyle: CSSProperties = {
   WebkitOverflowScrolling: 'touch',
 }
 
-function WheelColumn({
+const WheelColumn = memo(function WheelColumn({
   items,
   selectedIndex,
   onChange,
@@ -136,7 +136,7 @@ function WheelColumn({
       </div>
     </div>
   )
-}
+})
 
 export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimePickerSheetProps) {
   const [hourIndex, setHourIndex] = useState(7)

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import type { Variants } from 'framer-motion'
@@ -20,11 +20,12 @@ import {
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.05 } }
+  show: { opacity: 1, transition: { staggerChildren: 0.04, delayChildren: 0.02 } }
 }
+// Opacity-only — avoid translating shadowed cards (re-raster per frame on mobile).
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }
 }
 
 export function HomePage() {
@@ -71,13 +72,20 @@ export function HomePage() {
   }, [showIOSModal])
 
   const supportPhrase = dailyPack?.supportPhrase ?? ''
-  const holiday = getTodayHoliday()
-  const horoscope = getHoroscope(zodiacSign)
-  const moodImage = getMoodImage(currentMood)
-  const todayStr = getFullDateStr()
+  const holiday = useMemo(() => getTodayHoliday(), [])
+  const horoscope = useMemo(() => getHoroscope(zodiacSign), [zodiacSign])
+  const moodImage = useMemo(() => getMoodImage(currentMood), [currentMood])
+  const todayStr = useMemo(() => getFullDateStr(), [])
+  const moodLabel = useMemo(() => getMoodLabel(currentMood, gender), [currentMood, gender])
 
-  const savedQuote = bookmarks.some(b => b.type === 'поддержка' && b.text === supportPhrase)
-  const savedHoroscope = bookmarks.some(b => b.type === 'гороскоп' && b.date === todayStr)
+  const savedQuote = useMemo(
+    () => bookmarks.some(b => b.type === 'поддержка' && b.text === supportPhrase),
+    [bookmarks, supportPhrase],
+  )
+  const savedHoroscope = useMemo(
+    () => bookmarks.some(b => b.type === 'гороскоп' && b.date === todayStr),
+    [bookmarks, todayStr],
+  )
 
   const handleNewQuote = useCallback(() => {
     const { text, index } = getRandomQuote(currentMood, quoteIdxRef.current, gender)
@@ -121,10 +129,11 @@ export function HomePage() {
         {showInstallBanner && (
           <motion.div
             key="pwa-banner"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
+            style={{ willChange: 'opacity' }}
             className="bg-surface-container-low rounded-[24px] p-4 border border-white/40 flex items-center gap-4 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)]"
           >
             <button
@@ -199,7 +208,7 @@ export function HomePage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
         <div className="absolute top-4 right-4 z-10 bg-white/90 text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
-          {getMoodLabel(currentMood, gender)}
+          {moodLabel}
         </div>
       </motion.section>
 
@@ -207,16 +216,17 @@ export function HomePage() {
       <motion.section variants={itemVariants} className="bg-surface-container-low p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-4">
         <div className="flex justify-between items-start gap-3">
           <h2 className="font-headline text-xl font-bold text-on-surface">Поддержка на сегодня</h2>
-          <span className="flex-shrink-0 bg-primary-container/20 text-on-primary-container px-3 py-1 rounded-full text-xs font-semibold tracking-wide">{getMoodLabel(currentMood, gender)}</span>
+          <span className="flex-shrink-0 bg-primary-container/20 text-on-primary-container px-3 py-1 rounded-full text-xs font-semibold tracking-wide">{moodLabel}</span>
         </div>
 
         <AnimatePresence mode="wait">
           <motion.p
             key={supportPhrase}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
+            style={{ willChange: 'opacity' }}
             className="font-body text-on-surface leading-relaxed italic text-[15px] min-h-[60px]"
           >
             {supportPhrase}
@@ -281,9 +291,10 @@ export function HomePage() {
 
           {horoscopeTab === 'detailed' && (
             <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
+              style={{ willChange: 'opacity' }}
               className="space-y-4 pt-1"
             >
               <div className="flex items-center gap-3 opacity-80">
@@ -322,7 +333,7 @@ export function HomePage() {
         >
           <span className="material-symbols-outlined text-primary text-xl">tune</span>
           <span className="text-sm font-semibold text-on-surface flex-grow text-left">Сменить настроение</span>
-          <div className="px-2.5 py-0.5 bg-primary-container/10 rounded-full text-[11px] font-bold text-primary uppercase tracking-tight">{getMoodLabel(currentMood, gender)}</div>
+          <div className="px-2.5 py-0.5 bg-primary-container/10 rounded-full text-[11px] font-bold text-primary uppercase tracking-tight">{moodLabel}</div>
           <span className="material-symbols-outlined text-on-surface-variant text-xl">expand_more</span>
         </motion.button>
       </motion.section>

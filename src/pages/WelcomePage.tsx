@@ -24,10 +24,11 @@ export function WelcomePage() {
       />
 
       {/* Hero Section */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
+        style={{ willChange: 'transform, opacity' }}
         className="relative z-10 pt-12 text-center"
       >
         <h1 className="font-headline font-extrabold text-4xl leading-tight text-on-surface tracking-tight mb-4">
@@ -41,17 +42,19 @@ export function WelcomePage() {
       {/* Central Orb */}
       <div className="relative z-10 flex flex-col items-center justify-center py-6">
         <div className="relative w-full max-h-[280px] aspect-square flex items-center justify-center">
-          <motion.div 
+          <motion.div
             animate={{ scale: [1, 1.05, 1], opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            style={{ willChange: 'transform, opacity' }}
             className="absolute w-64 h-64 border border-primary/10 rounded-full"
           ></motion.div>
           <div className="absolute w-48 h-48 border border-secondary/10 rounded-full"></div>
-          
-          <motion.div 
+
+          <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.3, ease: 'easeOut', delay: 0.2 }}
+            style={{ willChange: 'transform, opacity' }}
             className="relative w-40 h-40 bg-gradient-to-tr from-[#006a65] to-[#2fa7a0] rounded-full shadow-2xl shadow-[#2fa7a0]/30 flex items-center justify-center overflow-hidden"
           >
             <img 
@@ -72,10 +75,11 @@ export function WelcomePage() {
       </div>
 
       {/* Features & CTA */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
+        style={{ willChange: 'transform, opacity' }}
         className="relative z-10 flex flex-col space-y-8 pb-4"
       >
         <div className="space-y-4 px-2">

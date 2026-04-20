@@ -1,10 +1,20 @@
-import { useRef, useState, startTransition } from 'react'
+import { memo, useCallback, useRef, useState, startTransition } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
 import { CalendarSheet } from '../features/auth/CalendarSheet'
 import { TimePickerSheet } from '../features/auth/TimePickerSheet'
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.04, delayChildren: 0.02 } },
+}
+// Opacity-only — no y translate on shadowed sections.
+const itemVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.25, ease: 'easeOut' as const } },
+}
 
 export function SettingsPage() {
   const navigate = useNavigate()
@@ -19,10 +29,10 @@ export function SettingsPage() {
     resetApp,
   } = useAppStore()
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     resetApp()
     navigate('/', { replace: true })
-  }
+  }, [resetApp, navigate])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -31,31 +41,37 @@ export function SettingsPage() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
 
-  const handlePhotoClick = () => fileInputRef.current?.click()
+  const handlePhotoClick = useCallback(() => fileInputRef.current?.click(), [])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => setProfilePhoto(reader.result as string)
     reader.readAsDataURL(file)
     e.target.value = ''
-  }
+  }, [setProfilePhoto])
 
-  const handleSaveEmail = () => {
+  const handleSaveEmail = useCallback(() => {
     setEmail(emailDraft.trim())
     setEditingEmail(false)
-  }
+  }, [emailDraft, setEmail])
 
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.02 } }
-  }
+  const handleBack = useCallback(() => navigate(-1), [navigate])
+  const openCalendar = useCallback(() => setIsCalendarOpen(true), [])
+  const closeCalendar = useCallback(() => setIsCalendarOpen(false), [])
+  const openTimePicker = useCallback(() => setIsTimePickerOpen(true), [])
+  const closeTimePicker = useCallback(() => setIsTimePickerOpen(false), [])
 
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' as const } }
-  }
+  const handleSaveBirthDate = useCallback((dateStr: string) => {
+    setIsCalendarOpen(false)
+    startTransition(() => setBirthDate(dateStr))
+  }, [setBirthDate])
+
+  const handleSaveTime = useCallback((time: string) => {
+    setIsTimePickerOpen(false)
+    startTransition(() => setHoroscopeTime(time))
+  }, [setHoroscopeTime])
 
   return (
     <motion.div
@@ -77,7 +93,7 @@ export function SettingsPage() {
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
         <div className="flex items-center h-16 relative">
           <button
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             aria-label="Назад"
             className="w-10 h-10 -ml-1 text-primary hover:bg-black/5 rounded-full transition-colors active:scale-95 flex items-center justify-center shrink-0"
           >
@@ -162,7 +178,7 @@ export function SettingsPage() {
               <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5">
                 <span className="text-on-surface text-sm">{birthDate || '—'}</span>
                 <button
-                  onClick={() => setIsCalendarOpen(true)}
+                  onClick={openCalendar}
                   className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors ml-3 flex-shrink-0"
                 >
                   <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -176,7 +192,7 @@ export function SettingsPage() {
               <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5">
                 <span className="text-on-surface text-sm">{horoscopeTime || '—'}</span>
                 <button
-                  onClick={() => setIsTimePickerOpen(true)}
+                  onClick={openTimePicker}
                   className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors ml-3 flex-shrink-0"
                 >
                   <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -215,11 +231,8 @@ export function SettingsPage() {
         {isCalendarOpen && (
           <CalendarSheet
             isOpen={isCalendarOpen}
-            onClose={() => setIsCalendarOpen(false)}
-            onSelect={(dateStr) => {
-              setIsCalendarOpen(false)
-              startTransition(() => setBirthDate(dateStr))
-            }}
+            onClose={closeCalendar}
+            onSelect={handleSaveBirthDate}
             currentValue={birthDate}
           />
         )}
@@ -231,11 +244,8 @@ export function SettingsPage() {
           <TimePickerSheet
             isOpen={isTimePickerOpen}
             initialTime={horoscopeTime || '09:00'}
-            onSave={(time) => {
-              setIsTimePickerOpen(false)
-              startTransition(() => setHoroscopeTime(time))
-            }}
-            onCancel={() => setIsTimePickerOpen(false)}
+            onSave={handleSaveTime}
+            onCancel={closeTimePicker}
           />
         )}
       </AnimatePresence>
@@ -243,7 +253,7 @@ export function SettingsPage() {
   )
 }
 
-function ToggleItem({ label, isActive, onToggle }: { label: string; isActive: boolean; onToggle: () => void }) {
+const ToggleItem = memo(function ToggleItem({ label, isActive, onToggle }: { label: string; isActive: boolean; onToggle: () => void }) {
   return (
     <div className="flex items-center justify-between">
       <span className="font-medium text-on-surface">{label}</span>
@@ -254,10 +264,11 @@ function ToggleItem({ label, isActive, onToggle }: { label: string; isActive: bo
         <motion.span
           animate={{ x: isActive ? 24 : 4 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
+          style={{ willChange: 'transform' }}
           className="absolute left-0 top-1 w-4 h-4 bg-white rounded-full shadow-sm"
         />
       </button>
     </div>
   )
-}
+})
 
