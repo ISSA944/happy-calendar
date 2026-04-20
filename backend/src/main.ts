@@ -28,6 +28,7 @@ async function bootstrap() {
   logger.log(`   DEL  /api/bookmarks/:id?userId=xxx`);
   logger.log(`   POST /api/profile      { userId, name, email, zodiacSign, ... }`);
   logger.log(`   GET  /api/profile?userId=xxx`);
+  logger.log(`   POST /api/notifications/token { userId, token }`);
 }
 
 bootstrap();

@@ -5,7 +5,10 @@ export const envSchema = z.object({
   PORT: z.coerce.number().default(4000),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   AI_API_KEY: z.string().min(1, 'AI_API_KEY is required'),
-  JWT_SECRET: z.string().min(8, 'JWT_SECRET must be at least 8 characters long'),
+  JWT_SECRET: z.string().min(8, 'JWT_SECRET is required'),
+  FIREBASE_PROJECT_ID: z.string().min(1, 'FIREBASE_PROJECT_ID is required'),
+  FIREBASE_CLIENT_EMAIL: z.string().email('FIREBASE_CLIENT_EMAIL must be a valid email'),
+  FIREBASE_PRIVATE_KEY: z.string().min(1, 'FIREBASE_PRIVATE_KEY is required'),
 });
 
 export type Env = z.infer<typeof envSchema>;

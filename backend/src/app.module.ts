@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { validate } from './config/env.validation';
 import { PrismaModule } from './prisma';
 import { AiModule } from './ai';
@@ -9,6 +10,8 @@ import { FeedModule } from './feed';
 import { MoodModule } from './mood';
 import { BookmarksModule } from './bookmarks';
 import { ProfileModule } from './profile';
+import { FirebaseModule } from './firebase/firebase.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -20,12 +23,15 @@ import { ProfileModule } from './profile';
       ttl: 60000,
       limit: 10,
     }]),
+    ScheduleModule.forRoot(),
     PrismaModule,
     AiModule,
     FeedModule,
     MoodModule,
     BookmarksModule,
     ProfileModule,
+    FirebaseModule,
+    NotificationsModule,
   ],
   providers: [
     {
