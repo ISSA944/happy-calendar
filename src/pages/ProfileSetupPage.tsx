@@ -125,9 +125,10 @@ export function ProfileSetupPage() {
 
         {/* Avatar Section */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          style={{ willChange: 'opacity' }}
           className="flex flex-col items-center mb-10"
         >
           <button
@@ -149,10 +150,11 @@ export function ProfileSetupPage() {
         </motion.div>
 
         {/* Input Section */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          style={{ willChange: 'opacity' }}
           className="space-y-6"
         >
           {/* Date Field */}
@@ -212,12 +214,12 @@ export function ProfileSetupPage() {
       </main>
 
       {/* Footer CTA */}
-      <motion.footer 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
+      <motion.footer
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.15 }}
         className="px-5 pt-5 mt-auto"
-        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))', willChange: 'opacity' }}
       >
         <button
           onClick={handleSubmit}

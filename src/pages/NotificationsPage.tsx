@@ -131,9 +131,10 @@ export function NotificationsPage() {
       <main className="flex-1 flex flex-col pt-10 pb-8 w-full px-5 space-y-6">
         {/* Card 1: Time Selection */}
         <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          style={{ willChange: 'opacity' }}
           className="bg-white rounded-[24px] p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.04)]"
         >
           <h2 className="font-headline font-bold text-lg mb-5 text-[#1B1B1F]">Во сколько присылать гороскоп?</h2>
@@ -163,9 +164,10 @@ export function NotificationsPage() {
 
         {/* Card 2: Notification Content */}
         <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          style={{ willChange: 'opacity' }}
           className="bg-white rounded-[24px] p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.04)] space-y-8"
         >
           <h2 className="font-headline font-bold text-lg text-[#1B1B1F]">Что присылать</h2>
@@ -193,9 +195,10 @@ export function NotificationsPage() {
       {/* Bottom Action Area — unmounted while TimePicker is open so nothing peeks through the sheet */}
       {!isTimePickerOpen && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.15 }}
+          style={{ willChange: 'opacity' }}
           className="w-full max-w-[430px] mx-auto px-5 pb-[env(safe-area-inset-bottom,24px)] pt-4 flex flex-col items-center space-y-4"
         >
           <button

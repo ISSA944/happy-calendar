@@ -199,9 +199,10 @@ export function OtpPage() {
       <main className="flex-1 flex flex-col px-5 pt-10 pb-10">
         {/* ── Headline ── */}
         <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          style={{ willChange: 'opacity' }}
           className="mb-10 shrink-0"
         >
           <h2 className="font-headline font-extrabold text-4xl text-on-surface mb-3 tracking-tight leading-tight">
@@ -214,9 +215,10 @@ export function OtpPage() {
 
         {/* ── OTP Boxes ── */}
         <motion.section
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          style={{ willChange: 'opacity' }}
           className="mb-10 shrink-0"
         >
           <div className="flex justify-between gap-3">
@@ -238,11 +240,11 @@ export function OtpPage() {
 
         {/* ── Bottom actions ── */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.15 }}
           className="mt-auto flex flex-col items-center gap-6 shrink-0"
-          style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+          style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))', willChange: 'opacity' }}
         >
           <button
             onClick={handleSubmit}

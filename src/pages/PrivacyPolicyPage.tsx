@@ -56,9 +56,10 @@ export function PrivacyPolicyPage() {
       >
         {/* Hero */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.05 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          style={{ willChange: 'opacity' }}
           className="mb-10 flex flex-col items-center"
         >
           <div className="w-20 h-20 bg-primary-container/20 rounded-full flex items-center justify-center mb-6">
@@ -77,9 +78,10 @@ export function PrivacyPolicyPage() {
 
         {/* Intro */}
         <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          style={{ willChange: 'opacity' }}
           className="text-on-surface-variant leading-relaxed text-[15px] mb-12"
         >
           В приложении «Digital Sanctuary» мы верим, что ваше цифровое спокойствие начинается
@@ -92,9 +94,10 @@ export function PrivacyPolicyPage() {
           {SECTIONS.map((s, i) => (
             <motion.section
               key={s.n}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.15 + i * 0.06 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.15 + i * 0.06 }}
+              style={{ willChange: 'opacity' }}
               className="bg-white rounded-3xl p-6 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)]"
             >
               <div className="flex items-center gap-3 mb-4">

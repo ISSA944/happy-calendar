@@ -57,9 +57,10 @@ export function RegistrationPage() {
 
         {/* ── Headline ── shrinks its bottom margin on tiny screens */}
         <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          style={{ willChange: 'opacity' }}
           className="mb-4 shrink-0"
         >
           <h2 className="font-headline font-extrabold text-4xl text-on-surface mb-2 tracking-tight leading-tight">
@@ -72,9 +73,10 @@ export function RegistrationPage() {
 
         {/* ── Form ── */}
         <motion.form
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          style={{ willChange: 'opacity' }}
           className="flex flex-col flex-1 min-h-0"
           onSubmit={handleSubmit}
         >
