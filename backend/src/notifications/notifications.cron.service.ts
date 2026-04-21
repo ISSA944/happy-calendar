@@ -10,6 +10,6 @@ export class NotificationCronService {
    */
   @Cron(CronExpression.EVERY_MINUTE)
   handleCron() {
-    this.logger.debug('Проверка: кому нужно отправить гороскоп прямо сейчас? (CRON stub)');
+    this.logger.log('Проверка: кому нужно отправить гороскоп прямо сейчас? (CRON stub)');
   }
 }
