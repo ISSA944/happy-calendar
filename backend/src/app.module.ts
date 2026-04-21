@@ -6,10 +6,11 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { validate } from './config/env.validation';
 import { PrismaModule } from './prisma';
 import { AiModule } from './ai';
-import { FeedModule } from './feed';
-import { MoodModule } from './mood';
+import { AuthModule } from './auth/auth.module';
+import { TodayModule } from './today';
 import { BookmarksModule } from './bookmarks';
 import { ProfileModule } from './profile';
+import { PushModule } from './push';
 import { FirebaseModule } from './firebase/firebase.module';
 import { NotificationsModule } from './notifications/notifications.module';
 
@@ -26,10 +27,11 @@ import { NotificationsModule } from './notifications/notifications.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     AiModule,
-    FeedModule,
-    MoodModule,
+    AuthModule,
+    TodayModule,
     BookmarksModule,
     ProfileModule,
+    PushModule,
     FirebaseModule,
     NotificationsModule,
   ],

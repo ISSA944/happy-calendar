@@ -1,12 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { IsString, MaxLength, IsObject } from 'class-validator';
 import { PrismaService } from '../prisma';
+import type { Prisma } from '@prisma/client';
 
-export interface CreateBookmarkDto {
-  userId: string;
-  type: string;   // "гороскоп" | "поддержка"
-  date: string;
-  text: string;
-  icon: string;
+export class CreateBookmarkDto {
+  @IsString() @MaxLength(32)
+  type!: string;
+
+  @IsObject()
+  payload!: Record<string, unknown>;
 }
 
 @Injectable()
@@ -15,33 +17,29 @@ export class BookmarksService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Создать закладку */
-  async create(dto: CreateBookmarkDto) {
-    this.logger.log(`create bookmark user=${dto.userId}, type=${dto.type}`);
-
+  async create(userId: string, dto: CreateBookmarkDto) {
+    this.logger.log(`create bookmark user=${userId}, type=${dto.type}`);
     return this.prisma.bookmark.create({
       data: {
-        userId: dto.userId,
+        userId,
         type: dto.type,
-        date: dto.date,
-        text: dto.text,
-        icon: dto.icon,
+        payload: dto.payload as Prisma.InputJsonValue,
       },
     });
   }
 
-  /** Все закладки пользователя (новые сверху) */
-  async findAll(userId: string) {
+  async findAll(userId: string, type?: string) {
     return this.prisma.bookmark.findMany({
-      where: { userId },
+      where: { userId, ...(type ? { type } : {}) },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  /** Удалить закладку */
   async remove(id: string, userId: string) {
-    return this.prisma.bookmark.deleteMany({
+    const result = await this.prisma.bookmark.deleteMany({
       where: { id, userId },
     });
+    if (result.count === 0) throw new NotFoundException('Bookmark not found');
+    return { deleted: true };
   }
 }

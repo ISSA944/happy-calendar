@@ -1,33 +1,32 @@
-import { Controller, Post, Get, Body, Query, Logger } from '@nestjs/common';
-import { ProfileService, type UpdateProfileDto } from './profile.service';
+import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { IsString, MaxLength } from 'class-validator';
+import { ProfileService, UpdateProfileDto } from './profile.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { AuthUser } from '../auth/current-user.decorator';
+
+class PatchMoodDto {
+  @IsString() @MaxLength(32)
+  mood!: string;
+}
 
 @Controller('api/profile')
+@UseGuards(JwtAuthGuard)
 export class ProfileController {
-  private readonly logger = new Logger(ProfileController.name);
-
   constructor(private readonly profileService: ProfileService) {}
 
-  @Post()
-  async updateProfile(@Body() dto: UpdateProfileDto) {
-    this.logger.log(`POST /api/profile — userId=${dto.userId}`);
-    
-    if (!dto.userId) {
-      return { error: 'userId is required', statusCode: 400 };
-    }
-
-    const result = await this.profileService.upsertProfile(dto);
-    return { data: result };
+  @Get()
+  async getProfile(@CurrentUser() user: AuthUser) {
+    return this.profileService.getFullProfile(user.sub);
   }
 
-  @Get()
-  async getProfile(@Query('userId') userId: string) {
-    this.logger.log(`GET /api/profile — userId=${userId}`);
-    
-    if (!userId) {
-      return { error: 'userId is required', statusCode: 400 };
-    }
+  @Patch()
+  async patchProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
+    return this.profileService.patch(user.sub, dto);
+  }
 
-    const result = await this.profileService.getProfile(userId);
-    return { data: result };
+  @Patch('mood')
+  async patchMood(@CurrentUser() user: AuthUser, @Body() dto: PatchMoodDto) {
+    return this.profileService.patchMood(user.sub, dto.mood);
   }
 }

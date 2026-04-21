@@ -1,12 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
-  // CORS — разрешаем фронтенд (Vercel + localhost)
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: false,
+    transform: true,
+  }));
+
   app.enableCors({
     origin: [
       'http://localhost:5173',
@@ -19,16 +24,22 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 4000;
   await app.listen(port);
-  logger.log(`🚀 Backend running on http://localhost:${port}`);
-  logger.log(`📡 Endpoints:`);
-  logger.log(`   GET  /api/feed/today?userId=xxx`);
-  logger.log(`   POST /api/mood         { userId, mood }`);
-  logger.log(`   POST /api/bookmarks    { userId, type, date, text, icon }`);
-  logger.log(`   GET  /api/bookmarks?userId=xxx`);
-  logger.log(`   DEL  /api/bookmarks/:id?userId=xxx`);
-  logger.log(`   POST /api/profile      { userId, name, email, zodiacSign, ... }`);
-  logger.log(`   GET  /api/profile?userId=xxx`);
-  logger.log(`   POST /api/notifications/token { userId, token }`);
+  logger.log(`Backend running on http://localhost:${port}`);
+  logger.log(`Endpoints:`);
+  logger.log(`  POST   /api/auth/register`);
+  logger.log(`  POST   /api/auth/verify-otp`);
+  logger.log(`  POST   /api/auth/refresh`);
+  logger.log(`  POST   /api/auth/logout`);
+  logger.log(`  GET    /api/profile`);
+  logger.log(`  PATCH  /api/profile`);
+  logger.log(`  PATCH  /api/profile/mood`);
+  logger.log(`  GET    /api/today`);
+  logger.log(`  POST   /api/today/support/next`);
+  logger.log(`  GET    /api/bookmarks?type=...`);
+  logger.log(`  POST   /api/bookmarks`);
+  logger.log(`  DELETE /api/bookmarks/:id`);
+  logger.log(`  POST   /api/push/subscribe`);
+  logger.log(`  DELETE /api/push/unsubscribe`);
 }
 
 bootstrap();
