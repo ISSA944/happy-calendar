@@ -185,7 +185,7 @@ function WheelColumn({
           const opacity = distance === 0 ? 1 : distance === 1 ? 0.5 : 0.2
           const color = distance === 0 ? '#006a65' : '#6d7a78'
           const fontWeight = distance === 0 ? 800 : distance === 1 ? 600 : 500
-          const fontSize = distance === 0 ? 22 : distance === 1 ? 17 : 14
+          const fontSize = distance === 0 ? 22 : distance === 1 ? 18 : 16
 
           return (
             <div
@@ -265,8 +265,8 @@ const CalendarGrid = memo(function CalendarGrid({
 
 export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: CalendarSheetProps) {
   const parsedCurrentValue = useMemo(() => parseDate(currentValue), [currentValue])
-  const [currentYear, setCurrentYear] = useState(parsedCurrentValue?.year ?? 2026)
-  const [currentMonth, setCurrentMonth] = useState(parsedCurrentValue?.month ?? 0)
+  const [currentYear, setCurrentYear] = useState(parsedCurrentValue?.year ?? CURRENT_YEAR)
+  const [currentMonth, setCurrentMonth] = useState(parsedCurrentValue?.month ?? new Date().getMonth())
   const [selectedDate, setSelectedDate] = useState<ParsedDate | null>(parsedCurrentValue)
   const [direction, setDirection] = useState(0)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
@@ -275,7 +275,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
   // Local wheel state (only committed when user closes the picker)
   const [pickerYear, setPickerYear] = useState(() => {
     const idx = YEARS.indexOf(currentYear)
-    return idx !== -1 ? idx : YEARS.indexOf(2026)
+    return idx !== -1 ? idx : Math.max(0, YEARS.indexOf(CURRENT_YEAR))
   })
   const [pickerMonth, setPickerMonth] = useState(currentMonth)
 
@@ -289,8 +289,8 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
       return
     }
 
-    setCurrentYear(2026)
-    setCurrentMonth(0)
+    setCurrentYear(CURRENT_YEAR)
+    setCurrentMonth(new Date().getMonth())
     setSelectedDate(null)
   }, [isOpen, parsedCurrentValue])
 
@@ -311,7 +311,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
 
   const handleOpenPicker = useCallback(() => {
     const yearIdx = YEARS.indexOf(currentYear)
-    setPickerYear(yearIdx !== -1 ? yearIdx : YEARS.indexOf(2026))
+    setPickerYear(yearIdx !== -1 ? yearIdx : Math.max(0, YEARS.indexOf(CURRENT_YEAR)))
     setPickerMonth(currentMonth)
     setIsPickerOpen(true)
   }, [currentMonth, currentYear])
@@ -395,7 +395,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
 
               {/* Dual Wheel Picker */}
               <div className="flex-1 flex items-center justify-center px-6 pb-6">
-                <div className="flex w-full max-w-[240px] mx-auto gap-4">
+                <div className="flex w-full max-w-[280px] mx-auto gap-8">
                   <WheelColumn
                     items={MONTHS_SHORT}
                     selectedIndex={pickerMonth}
