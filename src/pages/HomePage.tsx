@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import type { Variants } from 'framer-motion'
@@ -6,7 +6,6 @@ import { useAppStore } from '../store'
 import { MoodSheet } from '../features/mood/MoodSheet'
 import { BottomSheet } from '../components/ui/BottomSheet'
 import { usePWAInstall } from '../hooks'
-import { useState } from 'react'
 import {
   getGreeting,
   getTodayFormatted,
@@ -18,67 +17,70 @@ import {
   getFullDateStr,
 } from '../services/content.service'
 
-const containerVariants: Variants = {
-  hidden: { opacity: 1 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.05 } }
+// Slide variants — same pattern as CalendarSheet calendar grid, no async overhead
+const slideVariants: Variants = {
+  enter: (dir: number) => ({ x: dir > 0 ? 22 : -22, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit:  (dir: number) => ({ x: dir < 0 ? 22 : -22, opacity: 0 }),
 }
-// "Стелющаяся" cascade: items fall from y:15 with opacity 0→1.
-// willChange hint on each child keeps the transforms on the GPU compositor layer.
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }
-}
-const STAGGER_GPU_STYLE = { willChange: 'transform, opacity' as const }
+const SLIDE_TRANSITION = { duration: 0.2, ease: [0.22, 1, 0.36, 1] as const }
+const SLIDE_STYLE = { willChange: 'transform, opacity' as const }
+
+// Module-level flag: first visit → gentle fade-in once. Subsequent tab switches → instant (initial={false}).
+let homePageDidMount = false
 
 export function HomePage() {
   const navigate = useNavigate()
+  const isFirstVisit = useRef(!homePageDidMount)
 
-  const currentMood = useAppStore(s => s.currentMood)
-  const gender = useAppStore(s => s.gender)
-  const zodiacSign = useAppStore(s => s.zodiacSign)
-  const dailyPack = useAppStore(s => s.dailyPack)
-  const initDailyPack = useAppStore(s => s.initDailyPack)
-  const setSupportPhrase = useAppStore(s => s.setSupportPhrase)
-  const addBookmark = useAppStore(s => s.addBookmark)
-  const bookmarks = useAppStore(s => s.bookmarks)
-  const profilePhoto = useAppStore(s => s.profilePhoto)
-
+  const currentMood        = useAppStore(s => s.currentMood)
+  const gender             = useAppStore(s => s.gender)
+  const zodiacSign         = useAppStore(s => s.zodiacSign)
+  const dailyPack          = useAppStore(s => s.dailyPack)
+  const initDailyPack      = useAppStore(s => s.initDailyPack)
+  const setSupportPhrase   = useAppStore(s => s.setSupportPhrase)
+  const addBookmark        = useAppStore(s => s.addBookmark)
+  const bookmarks          = useAppStore(s => s.bookmarks)
+  const profilePhoto       = useAppStore(s => s.profilePhoto)
   const installBannerDismissed = useAppStore(s => s.installBannerDismissed)
-  const dismissInstallBanner = useAppStore(s => s.dismissInstallBanner)
+  const dismissInstallBanner   = useAppStore(s => s.dismissInstallBanner)
 
   const [horoscopeTab, setHoroscopeTab] = useState<'short' | 'detailed'>('short')
+  const [tabDir, setTabDir]             = useState(1)
   const [isMoodSheetOpen, setIsMoodSheetOpen] = useState(false)
-  const [showIOSModal, setShowIOSModal] = useState(false)
+  const [showIOSModal, setShowIOSModal]       = useState(false)
 
   const quoteIdxRef = useRef<number>(-1)
 
   useEffect(() => {
+    homePageDidMount = true
     initDailyPack(zodiacSign, currentMood)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Hard scroll lock when iOS install sheet is open (body + html + overscroll)
   useEffect(() => {
     if (!showIOSModal) return
-    const previousBodyOverflow = document.body.style.overflow
-    const previousHtmlOverflow = document.documentElement.style.overflow
-    const previousBodyOverscroll = document.body.style.overscrollBehavior
-    document.body.style.overflow = 'hidden'
-    document.documentElement.style.overflow = 'hidden'
-    document.body.style.overscrollBehavior = 'none'
+    const b = document.body.style
+    const h = document.documentElement.style
+    const prevBodyOverflow = b.overflow
+    const prevHtmlOverflow = h.overflow
+    const prevBodyOverscroll = b.overscrollBehavior
+    b.overflow = 'hidden'
+    h.overflow = 'hidden'
+    b.overscrollBehavior = 'none'
     return () => {
-      document.body.style.overflow = previousBodyOverflow
-      document.documentElement.style.overflow = previousHtmlOverflow
-      document.body.style.overscrollBehavior = previousBodyOverscroll
+      b.overflow = prevBodyOverflow
+      h.overflow = prevHtmlOverflow
+      b.overscrollBehavior = prevBodyOverscroll
     }
   }, [showIOSModal])
 
-  const supportPhrase = dailyPack?.supportPhrase ?? ''
-  const holiday = useMemo(() => getTodayHoliday(), [])
-  const horoscope = useMemo(() => getHoroscope(zodiacSign), [zodiacSign])
-  const moodImage = useMemo(() => getMoodImage(currentMood), [currentMood])
-  const todayStr = useMemo(() => getFullDateStr(), [])
-  const moodLabel = useMemo(() => getMoodLabel(currentMood, gender), [currentMood, gender])
+  const supportPhrase  = dailyPack?.supportPhrase ?? ''
+  const holiday        = useMemo(() => getTodayHoliday(), [])
+  const horoscope      = useMemo(() => getHoroscope(zodiacSign), [zodiacSign])
+  const moodImage      = useMemo(() => getMoodImage(currentMood), [currentMood])
+  const todayStr       = useMemo(() => getFullDateStr(), [])
+  const moodLabel      = useMemo(() => getMoodLabel(currentMood, gender), [currentMood, gender])
 
   const savedQuote = useMemo(
     () => bookmarks.some(b => b.type === 'поддержка' && b.text === supportPhrase),
@@ -106,250 +108,266 @@ export function HomePage() {
     addBookmark({ id: `h-${Date.now()}`, type: 'гороскоп', date: todayStr, text: `${zodiacSign}: ${text}`, icon: 'auto_awesome' })
   }, [addBookmark, horoscope, horoscopeTab, savedHoroscope, zodiacSign, todayStr])
 
+  const handleTabChange = useCallback((tab: 'short' | 'detailed') => {
+    setTabDir(tab === 'detailed' ? 1 : -1)
+    setHoroscopeTab(tab)
+  }, [])
+
   const { isInstallable, isInstalled, isIOS, triggerInstall } = usePWAInstall()
   const showInstallBanner = isInstallable && !isInstalled && !installBannerDismissed
 
-  const handleInstallClick = () => {
-    if (isIOS) {
-      setShowIOSModal(true)
-    } else {
-      triggerInstall()
-    }
-  }
+  const handleInstallClick = useCallback(() => {
+    if (isIOS) setShowIOSModal(true)
+    else triggerInstall()
+  }, [isIOS, triggerInstall])
 
   return (
     <>
-      <div className="max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-2 pb-8">
-      {/* PWA Install Banner — sits above the staggered grid, full width in landscape */}
-      <AnimatePresence>
-        {showInstallBanner && (
-          <motion.div
-            key="pwa-banner"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ willChange: 'opacity' }}
-            className="bg-surface-container-low rounded-[24px] p-4 border border-white/40 flex items-center gap-4 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8"
-          >
-            <button
-              onClick={() => dismissInstallBanner()}
-              className="absolute top-3 right-3 text-on-surface-variant/30 hover:text-on-surface-variant transition-colors active:scale-90"
-              aria-label="Закрыть"
-            >
-              <span className="material-symbols-outlined text-[18px]">close</span>
-            </button>
-            <div className="w-12 h-12 flex-shrink-0 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-              <span className="material-symbols-outlined text-primary-container text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_today</span>
-            </div>
-            <div className="flex-1 min-w-0 pr-2">
-              <p className="font-headline font-bold text-on-surface text-sm tracking-tight">Установить приложение</p>
-              <p className="text-[12px] text-on-surface-variant/80 font-medium leading-tight">Работает офлайн · Как родное</p>
-            </div>
-            <button
-              onClick={handleInstallClick}
-              className="flex-shrink-0 bg-primary-container text-white px-5 py-2 rounded-full font-bold text-xs shadow-sm active:scale-95 transition-colors"
-            >
-              Установить
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      {/* Outer wrapper: fades in on first visit only — subsequent tab switches are instant */}
       <motion.div
-        initial="hidden"
-        animate="show"
-        variants={containerVariants}
-        className="flex flex-col gap-8 landscape:grid landscape:grid-cols-2 landscape:gap-x-6 landscape:gap-y-8"
+        initial={isFirstVisit.current ? { opacity: 0 } : false}
+        animate={{ opacity: 1 }}
+        transition={isFirstVisit.current ? { duration: 0.25, ease: [0.22, 1, 0.36, 1] } : undefined}
+        style={isFirstVisit.current ? { willChange: 'opacity' } : undefined}
+        className="max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-2 pb-8"
       >
 
-      {/* Header — spans both columns in landscape */}
-      <motion.header variants={itemVariants} style={STAGGER_GPU_STYLE} className="flex justify-between items-center py-2 landscape:col-span-2 landscape:row-start-1">
-        <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high border-2 border-surface-container-lowest flex items-center justify-center">
-          {profilePhoto
-            ? <img src={profilePhoto} className="w-full h-full object-cover" alt="avatar" />
-            : <span className="material-symbols-outlined text-[28px] text-outline-variant opacity-50" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
-          }
-        </div>
-        <span className="font-headline font-semibold text-on-surface-variant text-sm">Сегодня — {getTodayFormatted()}</span>
-        <button
-          onClick={() => navigate('/notifications-list')}
-          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors active:scale-95 duration-200"
-        >
-          <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
-        </button>
-      </motion.header>
-
-      {/* Welcome — left column */}
-      <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="space-y-1 landscape:col-start-1 landscape:row-start-2">
-        <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface leading-tight">{getGreeting()}</h1>
-        <div className="inline-flex items-center px-3 py-1 bg-surface-container rounded-full text-xs font-medium text-on-surface-variant gap-1.5">
-          <span>Твой знак: {zodiacSign || '—'}</span>
-        </div>
-      </motion.section>
-
-      {/* Holiday Card — left column */}
-      {holiday && (
-        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-surface-container-lowest p-5 rounded-lg flex items-center gap-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:col-start-1 landscape:row-start-3">
-          <div className="w-16 h-16 flex-shrink-0 bg-secondary-fixed/30 rounded-full flex items-center justify-center">
-            <span className="material-symbols-outlined text-[32px] text-secondary/70" style={{ fontVariationSettings: "'FILL' 1" }}>{holiday.icon}</span>
-          </div>
-          <div className="space-y-1 min-w-0">
-            <h2 className="font-headline text-base font-bold text-on-surface leading-snug">Сегодня праздник: {holiday.name}</h2>
-            <p className="text-sm text-on-surface-variant leading-tight">{holiday.description}</p>
-          </div>
-        </motion.section>
-      )}
-
-      {/* Mood Banner — right column */}
-      <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="w-full h-[200px] rounded-lg overflow-hidden relative landscape:col-start-2 landscape:row-start-2">
-        <img
-          src={moodImage}
-          alt={currentMood}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-        <div className="absolute top-4 right-4 z-10 bg-white/90 text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
-          {moodLabel}
-        </div>
-      </motion.section>
-
-      {/* Support Card — right column */}
-      <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-surface-container-low p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-4 landscape:col-start-2 landscape:row-start-3">
-        <div className="flex justify-between items-start gap-3">
-          <h2 className="font-headline text-xl font-bold text-on-surface">Поддержка на сегодня</h2>
-          <span className="flex-shrink-0 bg-primary-container/20 text-on-primary-container px-3 py-1 rounded-full text-xs font-semibold tracking-wide">{moodLabel}</span>
-        </div>
-
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={supportPhrase}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ willChange: 'opacity' }}
-            className="font-body text-on-surface leading-relaxed italic text-[15px] min-h-[60px]"
-          >
-            {supportPhrase}
-          </motion.p>
-        </AnimatePresence>
-
-        <div className="flex gap-3 pt-2">
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={handleNewQuote}
-            className="flex-1 h-12 bg-primary-container text-white rounded-xl font-semibold text-sm"
-          >
-            Другая фраза
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={handleSaveQuote}
-            disabled={savedQuote}
-            className={`flex-1 h-12 border rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
-              savedQuote
-                ? 'border-primary/30 text-primary bg-primary/5'
-                : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
-            }`}
-          >
-            <span className="material-symbols-outlined text-lg" style={savedQuote ? { fontVariationSettings: "'FILL' 1" } : undefined}>bookmark</span>
-            {savedQuote ? 'Сохранено' : 'Сохранить'}
-          </motion.button>
-        </div>
-      </motion.section>
-
-      {/* Horoscope — left column */}
-      <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6 landscape:col-start-1 landscape:row-start-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-headline text-xl font-bold text-on-surface">Гороскоп на сегодня</h2>
-          <div className="flex bg-surface-container rounded-full p-1 flex-shrink-0">
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setHoroscopeTab('short')}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${horoscopeTab === 'short' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'}`}
-            >
-              Сжато
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setHoroscopeTab('detailed')}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${horoscopeTab === 'detailed' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'}`}
-            >
-              Подробнее
-            </motion.button>
-          </div>
-        </div>
-
-        <div className="space-y-4 text-on-surface">
-          <div className="flex gap-3">
-            <span className="material-symbols-outlined text-primary-container flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
-            <p className="text-sm"><span className="font-bold">Главное:</span> {horoscopeTab === 'short' ? horoscope.main : horoscope.mainDetailed}</p>
-          </div>
-          <div className="flex gap-3">
-            <span className="material-symbols-outlined text-primary-container flex-shrink-0">lightbulb</span>
-            <p className="text-sm"><span className="font-bold">Совет:</span> {horoscope.advice}</p>
-          </div>
-
-          {horoscopeTab === 'detailed' && (
+        {/* PWA Install Banner */}
+        <AnimatePresence>
+          {showInstallBanner && (
             <motion.div
+              key="pwa-banner"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               style={{ willChange: 'opacity' }}
-              className="space-y-4 pt-1"
+              className="bg-surface-container-low rounded-[24px] p-4 border border-white/40 flex items-center gap-4 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8"
             >
-              <div className="flex items-center gap-3 opacity-80">
-                <span className="material-symbols-outlined text-primary-container flex-shrink-0">dark_mode</span>
-                <p className="text-sm"><span className="font-bold">Луна:</span> {horoscope.moon}</p>
+              <button
+                onClick={dismissInstallBanner}
+                className="absolute top-3 right-3 text-on-surface-variant/30 hover:text-on-surface-variant transition-colors active:scale-90"
+                aria-label="Закрыть"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+              <div className="w-12 h-12 flex-shrink-0 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                <span className="material-symbols-outlined text-primary-container text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_today</span>
               </div>
-              <div className="flex items-center gap-3 opacity-80">
-                <span className="material-symbols-outlined text-primary-container flex-shrink-0">balance</span>
-                <p className="text-sm"><span className="font-bold">Аспект:</span> {horoscope.aspect}</p>
+              <div className="flex-1 min-w-0 pr-2">
+                <p className="font-headline font-bold text-on-surface text-sm tracking-tight">Установить приложение</p>
+                <p className="text-[12px] text-on-surface-variant/80 font-medium leading-tight">Работает офлайн · Как родное</p>
               </div>
+              <button
+                onClick={handleInstallClick}
+                className="flex-shrink-0 bg-primary-container text-white px-5 py-2 rounded-full font-bold text-xs shadow-sm active:scale-95 transition-colors"
+              >
+                Установить
+              </button>
             </motion.div>
           )}
-        </div>
+        </AnimatePresence>
 
-        <div className="flex justify-center pt-2">
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={handleSaveHoroscope}
-            disabled={savedHoroscope}
-            className={`font-semibold text-sm flex items-center gap-2 transition-colors px-4 py-2 rounded-full ${
-              savedHoroscope ? 'text-primary/50' : 'text-primary hover:opacity-80'
-            }`}
-          >
-            <span className="material-symbols-outlined text-lg" style={savedHoroscope ? { fontVariationSettings: "'FILL' 1" } : undefined}>bookmark_add</span>
-            {savedHoroscope ? 'Сохранено' : 'Сохранить в закладки'}
-          </motion.button>
-        </div>
-      </motion.section>
+        <div className="flex flex-col gap-8 landscape:grid landscape:grid-cols-2 landscape:gap-x-6 landscape:gap-y-8">
 
-      {/* Change Mood — right column */}
-      <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="pb-4 landscape:col-start-2 landscape:row-start-4">
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => setIsMoodSheetOpen(true)}
-          className="w-full bg-surface-container-lowest border border-outline-variant/30 shadow-sm rounded-[24px] px-5 py-4 flex items-center gap-3 transition-colors duration-300 hover:bg-surface-container-low"
-        >
-          <span className="material-symbols-outlined text-primary text-xl">tune</span>
-          <span className="text-sm font-semibold text-on-surface flex-grow text-left">Сменить настроение</span>
-          <div className="px-2.5 py-0.5 bg-primary-container/10 rounded-full text-[11px] font-bold text-primary uppercase tracking-tight">{moodLabel}</div>
-          <span className="material-symbols-outlined text-on-surface-variant text-xl">expand_more</span>
-        </motion.button>
-      </motion.section>
+          {/* ── Header ── */}
+          <header className="flex justify-between items-center py-2 landscape:col-span-2 landscape:row-start-1">
+            <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high border-2 border-surface-container-lowest flex items-center justify-center">
+              {profilePhoto
+                ? <img src={profilePhoto} className="w-full h-full object-cover" alt="Фото профиля" />
+                : <span className="material-symbols-outlined text-[28px] text-outline-variant opacity-50" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
+              }
+            </div>
+            <span className="font-headline font-semibold text-on-surface-variant text-sm">Сегодня — {getTodayFormatted()}</span>
+            <button
+              onClick={() => navigate('/notifications-list')}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors active:scale-95 duration-200"
+            >
+              <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
+            </button>
+          </header>
+
+          {/* ── Greeting ── */}
+          <section className="space-y-1 landscape:col-start-1 landscape:row-start-2">
+            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface leading-tight">{getGreeting()}</h1>
+            <div className="inline-flex items-center px-3 py-1 bg-surface-container rounded-full text-xs font-medium text-on-surface-variant gap-1.5">
+              <span>Твой знак: {zodiacSign || '—'}</span>
+            </div>
+          </section>
+
+          {/* ── Holiday Card ── */}
+          {holiday && (
+            <section className="bg-surface-container-lowest p-5 rounded-lg flex items-center gap-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:col-start-1 landscape:row-start-3">
+              <div className="w-16 h-16 flex-shrink-0 bg-secondary-fixed/30 rounded-full flex items-center justify-center">
+                <span className="material-symbols-outlined text-[32px] text-secondary/70" style={{ fontVariationSettings: "'FILL' 1" }}>{holiday.icon}</span>
+              </div>
+              <div className="space-y-1 min-w-0">
+                <h2 className="font-headline text-base font-bold text-on-surface leading-snug">Сегодня праздник: {holiday.name}</h2>
+                <p className="text-sm text-on-surface-variant leading-tight">{holiday.description}</p>
+              </div>
+            </section>
+          )}
+
+          {/* ── Mood Banner ── */}
+          <section className="w-full h-[200px] rounded-lg overflow-hidden relative landscape:col-start-2 landscape:row-start-2">
+            <img src={moodImage} alt={currentMood} className="w-full h-full object-cover" loading="lazy" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+            <div className="absolute top-4 right-4 z-10 bg-white/90 text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
+              {moodLabel}
+            </div>
+          </section>
+
+          {/* ── Support Card ── */}
+          <section className="bg-surface-container-low p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-4 landscape:col-start-2 landscape:row-start-3">
+            <div className="flex justify-between items-start gap-3">
+              <h2 className="font-headline text-xl font-bold text-on-surface">Поддержка на сегодня</h2>
+              <span className="flex-shrink-0 bg-primary-container/20 text-on-primary-container px-3 py-1 rounded-full text-xs font-semibold tracking-wide">{moodLabel}</span>
+            </div>
+
+            {/* Phrase slider — new phrase always slides in from the right */}
+            <div className="relative overflow-hidden min-h-[60px]">
+              <AnimatePresence mode="wait" custom={1}>
+                <motion.p
+                  key={supportPhrase}
+                  custom={1}
+                  variants={slideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={SLIDE_TRANSITION}
+                  style={SLIDE_STYLE}
+                  className="font-body text-on-surface leading-relaxed italic text-[15px]"
+                >
+                  {supportPhrase}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleNewQuote}
+                className="flex-1 h-12 bg-primary-container text-white rounded-xl font-semibold text-sm"
+              >
+                Другая фраза
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleSaveQuote}
+                disabled={savedQuote}
+                className={`flex-1 h-12 border rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
+                  savedQuote
+                    ? 'border-primary/30 text-primary bg-primary/5'
+                    : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
+                }`}
+              >
+                <span className="material-symbols-outlined text-lg" style={savedQuote ? { fontVariationSettings: "'FILL' 1" } : undefined}>bookmark</span>
+                {savedQuote ? 'Сохранено' : 'Сохранить'}
+              </motion.button>
+            </div>
+          </section>
+
+          {/* ── Horoscope Card ── */}
+          <section className="bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6 landscape:col-start-1 landscape:row-start-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-headline text-xl font-bold text-on-surface">Гороскоп на сегодня</h2>
+              <div className="flex bg-surface-container rounded-full p-1 flex-shrink-0">
+                <button
+                  onClick={() => handleTabChange('short')}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${
+                    horoscopeTab === 'short' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'
+                  }`}
+                >
+                  Сжато
+                </button>
+                <button
+                  onClick={() => handleTabChange('detailed')}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${
+                    horoscopeTab === 'detailed' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'
+                  }`}
+                >
+                  Подробнее
+                </button>
+              </div>
+            </div>
+
+            {/* Horoscope content slider — same slide pattern as CalendarSheet */}
+            <div className="relative overflow-hidden">
+              <AnimatePresence mode="wait" custom={tabDir}>
+                <motion.div
+                  key={horoscopeTab}
+                  custom={tabDir}
+                  variants={slideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={SLIDE_TRANSITION}
+                  style={SLIDE_STYLE}
+                  className="space-y-4 text-on-surface"
+                >
+                  <div className="flex gap-3">
+                    <span className="material-symbols-outlined text-primary-container flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
+                    <p className="text-sm">
+                      <span className="font-bold">Главное:</span>{' '}
+                      {horoscopeTab === 'short' ? horoscope.main : horoscope.mainDetailed}
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="material-symbols-outlined text-primary-container flex-shrink-0">lightbulb</span>
+                    <p className="text-sm"><span className="font-bold">Совет:</span> {horoscope.advice}</p>
+                  </div>
+                  {horoscopeTab === 'detailed' && (
+                    <>
+                      <div className="flex items-center gap-3 opacity-80">
+                        <span className="material-symbols-outlined text-primary-container flex-shrink-0">dark_mode</span>
+                        <p className="text-sm"><span className="font-bold">Луна:</span> {horoscope.moon}</p>
+                      </div>
+                      <div className="flex items-center gap-3 opacity-80">
+                        <span className="material-symbols-outlined text-primary-container flex-shrink-0">balance</span>
+                        <p className="text-sm"><span className="font-bold">Аспект:</span> {horoscope.aspect}</p>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <div className="flex justify-center pt-2">
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleSaveHoroscope}
+                disabled={savedHoroscope}
+                className={`font-semibold text-sm flex items-center gap-2 transition-colors px-4 py-2 rounded-full ${
+                  savedHoroscope ? 'text-primary/50' : 'text-primary hover:opacity-80'
+                }`}
+              >
+                <span className="material-symbols-outlined text-lg" style={savedHoroscope ? { fontVariationSettings: "'FILL' 1" } : undefined}>bookmark_add</span>
+                {savedHoroscope ? 'Сохранено' : 'Сохранить в закладки'}
+              </motion.button>
+            </div>
+          </section>
+
+          {/* ── Change Mood ── */}
+          <section className="pb-4 landscape:col-start-2 landscape:row-start-4">
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setIsMoodSheetOpen(true)}
+              className="w-full bg-surface-container-lowest border border-outline-variant/30 shadow-sm rounded-[24px] px-5 py-4 flex items-center gap-3 transition-colors duration-300 hover:bg-surface-container-low"
+            >
+              <span className="material-symbols-outlined text-primary text-xl">tune</span>
+              <span className="text-sm font-semibold text-on-surface flex-grow text-left">Сменить настроение</span>
+              <div className="px-2.5 py-0.5 bg-primary-container/10 rounded-full text-[11px] font-bold text-primary uppercase tracking-tight">{moodLabel}</div>
+              <span className="material-symbols-outlined text-on-surface-variant text-xl">expand_more</span>
+            </motion.button>
+          </section>
+
+        </div>
       </motion.div>
-      </div>
 
-      {/* iOS Install Modal */}
+      {/* ── iOS Install Modal ── */}
       <BottomSheet
         isOpen={showIOSModal}
-        onClose={() => {
-          setShowIOSModal(false)
-          dismissInstallBanner()
-        }}
+        onClose={() => { setShowIOSModal(false); dismissInstallBanner() }}
         hideDragIndicator={false}
       >
         <div className="px-6 pb-2 flex items-center gap-4 mb-6 mt-2">
@@ -386,9 +404,8 @@ export function HomePage() {
         </div>
       </BottomSheet>
 
-      {/* MoodSheet */}
+      {/* ── MoodSheet ── */}
       <MoodSheet isOpen={isMoodSheetOpen} onClose={() => setIsMoodSheetOpen(false)} />
     </>
   )
 }
-
