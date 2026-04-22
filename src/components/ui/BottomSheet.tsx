@@ -2,6 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useMotionValue, useTransform, animate, useDragControls } from 'framer-motion'
 
+const SHEET_SPRING = { type: 'spring' as const, stiffness: 300, damping: 30 }
+const SHEET_WILL_CHANGE = { willChange: 'transform, opacity' as const }
+
 export interface BottomSheetProps {
   isOpen: boolean
   onClose: () => void
@@ -75,7 +78,7 @@ export function BottomSheet({
     if (info.offset.y > 100 || info.velocity.y > 400) {
       onClose()
     } else {
-      animate(dragY, 0, { type: 'spring', stiffness: 300, damping: 30 })
+      animate(dragY, 0, SHEET_SPRING)
     }
   }
 
@@ -109,15 +112,15 @@ export function BottomSheet({
             onDragEnd={handleDragEnd}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%', transition: { type: 'spring', stiffness: 300, damping: 30 } }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            exit={{ y: '100%', transition: SHEET_SPRING }}
+            transition={SHEET_SPRING}
             className="relative w-full max-w-md mx-auto rounded-t-[24px] shadow-2xl flex flex-col overflow-hidden"
             style={{
               y: dragY,
               paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
               maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 16px)',
               background: '#fcf9f4',
-              willChange: 'transform',
+              ...SHEET_WILL_CHANGE,
             }}
           >
             {/* Drag handle zone — ONLY this area can initiate drag-to-close */}

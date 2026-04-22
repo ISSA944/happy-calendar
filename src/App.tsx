@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -6,6 +6,7 @@ import {
   Routes,
   useLocation,
 } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { BottomNav } from './components/BottomNav'
 import { useAppStore } from './store'
 
@@ -20,7 +21,7 @@ const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(m 
 const ProfileSetupPage = lazy(() => import('./pages/ProfileSetupPage').then(m => ({ default: m.ProfileSetupPage })))
 const RegistrationPage = lazy(() => import('./pages/RegistrationPage').then(m => ({ default: m.RegistrationPage })))
 
-const APP_SHELL_ROUTES = ['/home', '/bookmarks', '/settings', '/notifications-list']
+const APP_SHELL_ROUTES: readonly string[] = ['/home', '/bookmarks', '/settings', '/notifications-list']
 
 function PageFallback() {
   return <div className="h-[100dvh] w-full" style={{ background: '#fcf9f4' }} />
@@ -31,42 +32,33 @@ function RootGuard() {
   return hasCompletedOnboarding ? <Navigate to="/home" replace /> : <WelcomePage />
 }
 
-// Keep-alive tab: mounts once on first visit, then stays in DOM. Zero remount cost.
-function ShellTab({ visible, children }: { visible: boolean; children: ReactNode }) {
-  const [hasMounted, setHasMounted] = useState(visible)
+const TAB_FADE = { duration: 0.18, ease: [0.22, 1, 0.36, 1] as const }
+const TAB_WILL_CHANGE = { willChange: 'opacity' as const }
 
-  useEffect(() => {
-    if (visible && !hasMounted) setHasMounted(true)
-  }, [visible, hasMounted])
-
-  if (!hasMounted) return null
+function TabOutlet() {
+  const { pathname } = useLocation()
 
   return (
-    <div
-      aria-hidden={!visible}
-      className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
-      style={{
-        background: '#fcf9f4',
-        opacity: visible ? 1 : 0,
-        pointerEvents: visible ? 'auto' : 'none',
-        visibility: visible ? 'visible' : 'hidden',
-        transition: visible
-          ? 'opacity 0.15s ease-out'
-          : 'opacity 0.15s ease-out, visibility 0s linear 0.15s',
-        WebkitOverflowScrolling: 'touch',
-        touchAction: 'manipulation',
-        willChange: visible ? 'opacity' : 'auto',
-        zIndex: visible ? 1 : 0,
-      }}
-    >
-      {children}
-    </div>
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={pathname}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={TAB_FADE}
+        style={{ ...TAB_WILL_CHANGE, background: '#fcf9f4' }}
+        className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
+      >
+        {pathname === '/home' && <HomePage />}
+        {pathname === '/bookmarks' && <BookmarksPage />}
+        {pathname === '/settings' && <SettingsPage />}
+        {pathname === '/notifications-list' && <NotificationsListPage />}
+      </motion.div>
+    </AnimatePresence>
   )
 }
 
 function AppLayout() {
-  const { pathname } = useLocation()
-
   return (
     <div
       className="bg-background text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden"
@@ -77,10 +69,7 @@ function AppLayout() {
         style={{ background: '#fcf9f4' }}
       >
         <main className="flex-1 w-full relative overflow-hidden" style={{ background: '#fcf9f4' }}>
-          <ShellTab visible={pathname === '/home'}><HomePage /></ShellTab>
-          <ShellTab visible={pathname === '/bookmarks'}><BookmarksPage /></ShellTab>
-          <ShellTab visible={pathname === '/settings'}><SettingsPage /></ShellTab>
-          <ShellTab visible={pathname === '/notifications-list'}><NotificationsListPage /></ShellTab>
+          <TabOutlet />
         </main>
 
         <BottomNav />
