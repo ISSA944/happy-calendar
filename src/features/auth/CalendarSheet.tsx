@@ -108,9 +108,16 @@ const GridMonthPicker = memo(function GridMonthPicker({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Picker Header — visually replaces "Дата рождения" */}
+      {/* Picker Header — mirrors BottomSheet's title + headerRight pattern */}
       <div className="flex items-center justify-between px-6 pt-6 pb-4">
         <h2 className="font-headline text-lg font-bold text-on-surface">Выберите месяц и год</h2>
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="font-headline text-sm font-bold text-primary active:opacity-70"
+        >
+          Готово
+        </button>
       </div>
 
       <div className="flex-1 px-6">

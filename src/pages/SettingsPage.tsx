@@ -109,9 +109,9 @@ export function SettingsPage() {
         </div>
       </header>
 
-      <main className="px-6 pb-28 hide-scrollbar">
+      <main className="w-full max-w-[430px] landscape:max-w-[860px] mx-auto px-6 pb-28 hide-scrollbar landscape:grid landscape:grid-cols-2 landscape:gap-x-6 landscape:gap-y-6 landscape:items-start">
         {/* Profile Block */}
-        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="flex items-center gap-6 mb-10 mt-4">
+        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="flex items-center gap-6 mb-10 mt-4 landscape:mb-0 landscape:mt-0 landscape:col-start-1 landscape:row-start-1">
           <button
             onClick={handlePhotoClick}
             className="relative flex-shrink-0 active:scale-95 transition-transform"
@@ -141,7 +141,7 @@ export function SettingsPage() {
         </motion.section>
 
         {/* Account Section */}
-        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-start-1 landscape:row-start-2">
           <div className="flex flex-col gap-5">
 
             {/* Email */}
@@ -216,7 +216,7 @@ export function SettingsPage() {
         </motion.section>
 
         {/* Контент */}
-        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-start-2 landscape:row-start-1">
           <h2 className="text-sm font-bold text-on-surface mb-5 px-1 uppercase tracking-wider opacity-60">Контент</h2>
           <div className="flex flex-col gap-6">
             <ToggleItem label="Гороскоп" isActive={showHoroscope} onToggle={toggleHoroscope} />
@@ -226,7 +226,7 @@ export function SettingsPage() {
         </motion.section>
 
         {/* Reset */}
-        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="mb-6">
+        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="mb-6 landscape:mb-0 landscape:col-start-2 landscape:row-start-2">
           <button
             onClick={handleReset}
             className="w-full py-4 rounded-[1.5rem] border border-red-200 text-red-500 font-semibold text-sm active:scale-[0.98] transition-colors hover:bg-red-50"
@@ -235,7 +235,7 @@ export function SettingsPage() {
           </button>
         </motion.section>
 
-        <div className="h-6" />
+        <div className="h-6 landscape:hidden" />
       </main>
 
       {/* CalendarSheet */}
