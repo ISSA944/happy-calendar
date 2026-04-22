@@ -1,5 +1,5 @@
 import { useState, startTransition } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
 import { TimePickerSheet } from '../features/auth/TimePickerSheet'
@@ -102,16 +102,12 @@ export function NotificationsPage() {
       style={{ willChange: 'opacity' }}
       className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none scroll-smooth"
     >
-      <AnimatePresence>
-        {isTimePickerOpen && (
-          <TimePickerSheet
-            isOpen={isTimePickerOpen}
-            initialTime={customTime || '07:30'}
-            onSave={handleTimePickerSave}
-            onCancel={() => setIsTimePickerOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+      <TimePickerSheet
+        isOpen={isTimePickerOpen}
+        initialTime={customTime || '07:30'}
+        onSave={handleTimePickerSave}
+        onCancel={() => setIsTimePickerOpen(false)}
+      />
 
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
