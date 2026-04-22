@@ -56,10 +56,10 @@ export function WelcomePage() {
             style={{ willChange: 'transform, opacity' }}
             className="relative w-40 h-40 bg-gradient-to-tr from-[#006a65] to-[#2fa7a0] rounded-full shadow-2xl shadow-[#2fa7a0]/30 flex items-center justify-center overflow-hidden"
           >
-            <img 
-              className="w-full h-full object-cover mix-blend-overlay opacity-60" 
-              data-alt="Abstract soft green botanical shapes against warm background" 
-              loading="lazy"
+            <img
+              className="w-full h-full object-cover mix-blend-overlay opacity-60"
+              alt="Декоративный фон"
+              loading="eager"
               decoding="async"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuDO7drcpWG-UfbzgVikkY0RF0tA0Hp4jOxsW5jaW6EUzOTh_i6Fex4cfxyXKVq5uouZMCi8x0z0jR4OoZugyMtws3TfKNb1vJzH93p-KzWKa541DyKv5-QF-FiKdh2_vvXyi3zM92sKg_6sAN9Iq8ACCHSgBnk9c9ranxkkolbm075kUlgBupIz0CP9BFd-9YfD42Q9w3rW9pC1Eav7mnGUHOmDNHr2YXW7wR1JvJM_XUmgDDzKJEC1pp9sVGJVJNOiYhaz22EyI4xY"
             />
