@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import type { PanInfo, Variants } from 'framer-motion'
@@ -24,9 +24,11 @@ type ParsedDate = {
 
 const WEEK_DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
-const MONTHS_SHORT = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
-const CURRENT_YEAR = new Date().getFullYear()
-const YEARS = Array.from({ length: 90 }, (_, index) => CURRENT_YEAR - index)
+// Grid picker defaults: per design spec, picker always opens on 2026 / Январь when nothing is committed.
+const PICKER_DEFAULT_YEAR = 2026
+const PICKER_DEFAULT_MONTH = 0
+const PICKER_MIN_YEAR = 1900
+const PICKER_MAX_YEAR = new Date().getFullYear()
 
 const slideVariants: Variants = {
   enter: (direction: number) => ({
@@ -86,135 +88,98 @@ function buildCalendarCells(year: number, month: number): CalendarCell[] {
   return cells
 }
 
-/* ─── Wheel Picker Column (Apple-style drum picker) ─── */
+/* ─── Grid Month/Year Picker (replaces WheelColumn) ─── */
 
-const WHEEL_ITEM_HEIGHT = 44
-const WHEEL_VISIBLE_ITEMS = 5
-const WHEEL_SPACER_HEIGHT = WHEEL_ITEM_HEIGHT * 2
-
-const wheelScrollStyle: CSSProperties = {
-  height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ITEMS,
-  overflowY: 'scroll',
-  scrollSnapType: 'y mandatory',
-  overscrollBehaviorY: 'contain',
-  scrollbarWidth: 'none',
-  msOverflowStyle: 'none',
-  WebkitOverflowScrolling: 'touch',
-}
-
-function WheelColumn({
-  items,
-  selectedIndex,
-  onChange,
+const GridMonthPicker = memo(function GridMonthPicker({
+  pickerYear,
+  pickerMonth,
+  onYearChange,
+  onMonthChange,
+  onConfirm,
 }: {
-  items: string[]
-  selectedIndex: number
-  onChange: (index: number) => void
+  pickerYear: number
+  pickerMonth: number
+  onYearChange: (year: number) => void
+  onMonthChange: (month: number) => void
+  onConfirm: () => void
 }) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const userScrollingRef = useRef(false)
-
-  useEffect(() => {
-    const element = scrollRef.current
-    if (!element || userScrollingRef.current) return
-
-    element.scrollTo({
-      top: selectedIndex * WHEEL_ITEM_HEIGHT,
-      behavior: 'auto',
-    })
-  }, [selectedIndex])
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [])
-
-  const handleScroll = useCallback(() => {
-    userScrollingRef.current = true
-
-    if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => {
-      const element = scrollRef.current
-      if (!element) return
-
-      userScrollingRef.current = false
-      const rawIndex = Math.round(element.scrollTop / WHEEL_ITEM_HEIGHT)
-      const clampedIndex = Math.max(0, Math.min(items.length - 1, rawIndex))
-      onChange(clampedIndex)
-    }, 50)
-  }, [items.length, onChange])
+  const canDecrement = pickerYear > PICKER_MIN_YEAR
+  const canIncrement = pickerYear < PICKER_MAX_YEAR
 
   return (
-    <div className="relative flex-1" style={{ height: WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ITEMS }}>
-      {/* Selection highlight */}
-      <div
-        className="pointer-events-none absolute left-0 right-0 z-10 rounded-xl bg-primary/[0.07]"
-        style={{ top: WHEEL_ITEM_HEIGHT * 2, height: WHEEL_ITEM_HEIGHT }}
-      />
+    <div className="flex h-full flex-col">
+      {/* Picker Header — visually replaces "Дата рождения" */}
+      <div className="flex items-center justify-between px-6 pt-6 pb-4">
+        <h2 className="font-headline text-lg font-bold text-on-surface">Выберите месяц и год</h2>
+      </div>
 
-      {/* Top fade */}
-      <div
-        className="pointer-events-none absolute left-0 right-0 top-0 z-20"
-        style={{
-          height: WHEEL_ITEM_HEIGHT * 2,
-          background: 'linear-gradient(to bottom, #fcf9f4 15%, rgba(252, 249, 244, 0) 100%)',
-        }}
-      />
+      <div className="flex-1 px-6">
+        {/* Year selector with arrows */}
+        <div className="mb-6 flex items-center justify-between rounded-2xl bg-white p-2 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-surface-variant/30">
+          <button
+            type="button"
+            disabled={!canDecrement}
+            onClick={() => canDecrement && onYearChange(pickerYear - 1)}
+            className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors active:scale-95 ${
+              canDecrement ? 'text-primary hover:bg-surface-container' : 'text-on-surface-variant/30 cursor-not-allowed'
+            }`}
+            aria-label="Предыдущий год"
+          >
+            <span className="material-symbols-outlined text-[22px]">chevron_left</span>
+          </button>
 
-      {/* Bottom fade */}
-      <div
-        className="pointer-events-none absolute bottom-0 left-0 right-0 z-20"
-        style={{
-          height: WHEEL_ITEM_HEIGHT * 2,
-          background: 'linear-gradient(to top, #fcf9f4 15%, rgba(252, 249, 244, 0) 100%)',
-        }}
-      />
+          <span className="font-headline text-xl font-bold text-primary tabular-nums select-none">
+            {pickerYear}
+          </span>
 
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="[&::-webkit-scrollbar]:hidden relative z-0"
-        style={wheelScrollStyle}
-      >
-        <div style={{ height: WHEEL_SPACER_HEIGHT, flexShrink: 0 }} />
+          <button
+            type="button"
+            disabled={!canIncrement}
+            onClick={() => canIncrement && onYearChange(pickerYear + 1)}
+            className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors active:scale-95 ${
+              canIncrement ? 'text-primary hover:bg-surface-container' : 'text-on-surface-variant/30 cursor-not-allowed'
+            }`}
+            aria-label="Следующий год"
+          >
+            <span className="material-symbols-outlined text-[22px]">chevron_right</span>
+          </button>
+        </div>
 
-        {items.map((label, index) => {
-          const distance = Math.abs(index - selectedIndex)
-          const opacity = distance === 0 ? 1 : distance === 1 ? 0.5 : 0.2
-          const color = distance === 0 ? '#006a65' : '#6d7a78'
-          const fontWeight = distance === 0 ? 800 : distance === 1 ? 600 : 500
-          const fontSize = distance === 0 ? 22 : distance === 1 ? 18 : 16
+        {/* Months grid 3x4 */}
+        <div className="grid grid-cols-3 gap-3">
+          {MONTHS.map((label, index) => {
+            const isSelected = index === pickerMonth
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => onMonthChange(index)}
+                className={`py-3.5 rounded-2xl font-body text-sm transition-colors active:scale-[0.97] ${
+                  isSelected
+                    ? 'bg-primary text-white font-bold shadow-md shadow-primary/20'
+                    : 'bg-surface-container-low text-on-surface font-medium hover:bg-surface-container'
+                }`}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
-          return (
-            <div
-              key={label}
-              style={{
-                height: WHEEL_ITEM_HEIGHT,
-                scrollSnapAlign: 'center',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity,
-                color,
-                fontWeight,
-                fontSize,
-                lineHeight: 1,
-                transition: 'opacity 0.12s ease, color 0.12s ease',
-                userSelect: 'none',
-              }}
-            >
-              {label}
-            </div>
-          )
-        })}
-
-        <div style={{ height: WHEEL_SPACER_HEIGHT, flexShrink: 0 }} />
+      {/* Done button */}
+      <div className="px-6 pt-6 pb-2">
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary-container to-primary text-white font-headline font-bold text-base shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
+        >
+          Готово
+        </button>
       </div>
     </div>
   )
-}
+})
 
 /* ─── Calendar Grid ─── */
 
@@ -265,19 +230,16 @@ const CalendarGrid = memo(function CalendarGrid({
 
 export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: CalendarSheetProps) {
   const parsedCurrentValue = useMemo(() => parseDate(currentValue), [currentValue])
-  const [currentYear, setCurrentYear] = useState(parsedCurrentValue?.year ?? CURRENT_YEAR)
-  const [currentMonth, setCurrentMonth] = useState(parsedCurrentValue?.month ?? new Date().getMonth())
+  const [currentYear, setCurrentYear] = useState(parsedCurrentValue?.year ?? PICKER_DEFAULT_YEAR)
+  const [currentMonth, setCurrentMonth] = useState(parsedCurrentValue?.month ?? PICKER_DEFAULT_MONTH)
   const [selectedDate, setSelectedDate] = useState<ParsedDate | null>(parsedCurrentValue)
   const [direction, setDirection] = useState(0)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   const skipNextSlideAnim = useRef(false)
 
-  // Local wheel state (only committed when user closes the picker)
-  const [pickerYear, setPickerYear] = useState(() => {
-    const idx = YEARS.indexOf(currentYear)
-    return idx !== -1 ? idx : Math.max(0, YEARS.indexOf(CURRENT_YEAR))
-  })
-  const [pickerMonth, setPickerMonth] = useState(currentMonth)
+  // Grid picker draft state (committed only on "Готово" click)
+  const [pickerYear, setPickerYear] = useState(parsedCurrentValue?.year ?? PICKER_DEFAULT_YEAR)
+  const [pickerMonth, setPickerMonth] = useState(parsedCurrentValue?.month ?? PICKER_DEFAULT_MONTH)
 
   useEffect(() => {
     if (!isOpen) return
@@ -289,8 +251,8 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
       return
     }
 
-    setCurrentYear(CURRENT_YEAR)
-    setCurrentMonth(new Date().getMonth())
+    setCurrentYear(PICKER_DEFAULT_YEAR)
+    setCurrentMonth(PICKER_DEFAULT_MONTH)
     setSelectedDate(null)
   }, [isOpen, parsedCurrentValue])
 
@@ -310,18 +272,15 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
   }, [currentMonth, currentYear, updateDisplayedMonth])
 
   const handleOpenPicker = useCallback(() => {
-    const yearIdx = YEARS.indexOf(currentYear)
-    setPickerYear(yearIdx !== -1 ? yearIdx : Math.max(0, YEARS.indexOf(CURRENT_YEAR)))
+    setPickerYear(currentYear)
     setPickerMonth(currentMonth)
     setIsPickerOpen(true)
   }, [currentMonth, currentYear])
 
   const handlePickerConfirm = useCallback(() => {
-    const yr = YEARS[pickerYear]
-    const mo = pickerMonth
     skipNextSlideAnim.current = true
     setIsPickerOpen(false)
-    updateDisplayedMonth(yr, mo, 0)
+    updateDisplayedMonth(pickerYear, pickerMonth, 0)
   }, [pickerYear, pickerMonth, updateDisplayedMonth])
 
   const handleDaySelect = useCallback((cell: CalendarCell) => {
@@ -365,7 +324,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
       headerRight={headerRight}
     >
       <div className="relative pb-5">
-        {/* ── Full-cover Wheel Picker Overlay (covers BottomSheet header) ── */}
+        {/* ── Full-cover Grid Picker Overlay (covers BottomSheet header) ── */}
         <AnimatePresence>
           {isPickerOpen && (
             <motion.div
@@ -373,41 +332,22 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="fixed inset-x-0 top-0 z-[110] flex flex-col mx-auto w-full max-w-[430px]"
+              className="fixed inset-x-0 top-0 z-[110] flex flex-col mx-auto w-full max-w-md"
               style={{
                 height: 'calc(100dvh - env(safe-area-inset-top) - 16px)',
                 marginTop: 'env(safe-area-inset-top)',
                 background: '#fcf9f4',
                 paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+                willChange: 'opacity',
               }}
             >
-              {/* Picker Header — visually replaces "Дата рождения" */}
-              <div className="flex items-center justify-between px-6 pt-6 pb-4">
-                <h2 className="font-headline text-lg font-bold text-on-surface">Год и месяц</h2>
-                <button
-                  type="button"
-                  onClick={handlePickerConfirm}
-                  className="rounded-full bg-primary px-5 py-2 font-headline text-sm font-bold text-white shadow-md shadow-primary/20 active:scale-95"
-                >
-                  Готово
-                </button>
-              </div>
-
-              {/* Dual Wheel Picker */}
-              <div className="flex-1 flex items-center justify-center px-6 pb-6">
-                <div className="flex w-full max-w-[280px] mx-auto gap-8">
-                  <WheelColumn
-                    items={MONTHS_SHORT}
-                    selectedIndex={pickerMonth}
-                    onChange={setPickerMonth}
-                  />
-                  <WheelColumn
-                    items={YEARS.map(String)}
-                    selectedIndex={pickerYear}
-                    onChange={setPickerYear}
-                  />
-                </div>
-              </div>
+              <GridMonthPicker
+                pickerYear={pickerYear}
+                pickerMonth={pickerMonth}
+                onYearChange={setPickerYear}
+                onMonthChange={setPickerMonth}
+                onConfirm={handlePickerConfirm}
+              />
             </motion.div>
           )}
         </AnimatePresence>

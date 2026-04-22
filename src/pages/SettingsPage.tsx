@@ -8,14 +8,15 @@ import { TimePickerSheet } from '../features/auth/TimePickerSheet'
 import { isValidEmail } from '../utils/validation'
 
 const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.04, delayChildren: 0.02 } },
+  hidden: { opacity: 1 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
 }
-// Opacity-only — no y translate on shadowed sections.
+// "Стелющаяся" cascade with GPU compositor hint
 const itemVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.25, ease: 'easeOut' as const } },
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
 }
+const STAGGER_GPU_STYLE = { willChange: 'transform, opacity' as const }
 
 export function SettingsPage() {
   const navigate = useNavigate()
@@ -110,7 +111,7 @@ export function SettingsPage() {
 
       <main className="px-6 pb-28 hide-scrollbar">
         {/* Profile Block */}
-        <motion.section variants={itemVariants} className="flex items-center gap-6 mb-10 mt-4">
+        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="flex items-center gap-6 mb-10 mt-4">
           <button
             onClick={handlePhotoClick}
             className="relative flex-shrink-0 active:scale-95 transition-transform"
@@ -140,7 +141,7 @@ export function SettingsPage() {
         </motion.section>
 
         {/* Account Section */}
-        <motion.section variants={itemVariants} className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
           <div className="flex flex-col gap-5">
 
             {/* Email */}
@@ -215,7 +216,7 @@ export function SettingsPage() {
         </motion.section>
 
         {/* Контент */}
-        <motion.section variants={itemVariants} className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
           <h2 className="text-sm font-bold text-on-surface mb-5 px-1 uppercase tracking-wider opacity-60">Контент</h2>
           <div className="flex flex-col gap-6">
             <ToggleItem label="Гороскоп" isActive={showHoroscope} onToggle={toggleHoroscope} />
@@ -225,7 +226,7 @@ export function SettingsPage() {
         </motion.section>
 
         {/* Reset */}
-        <motion.section variants={itemVariants} className="mb-6">
+        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="mb-6">
           <button
             onClick={handleReset}
             className="w-full py-4 rounded-[1.5rem] border border-red-200 text-red-500 font-semibold text-sm active:scale-[0.98] transition-colors hover:bg-red-50"

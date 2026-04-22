@@ -19,14 +19,16 @@ import {
 } from '../services/content.service'
 
 const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.04, delayChildren: 0.02 } }
+  hidden: { opacity: 1 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.05 } }
 }
-// Opacity-only — avoid translating shadowed cards (re-raster per frame on mobile).
+// "Стелющаяся" cascade: items fall from y:15 with opacity 0→1.
+// willChange hint on each child keeps the transforms on the GPU compositor layer.
 const itemVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }
 }
+const STAGGER_GPU_STYLE = { willChange: 'transform, opacity' as const }
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -117,14 +119,8 @@ export function HomePage() {
 
   return (
     <>
-      <motion.div
-        initial="hidden"
-        animate="show"
-        variants={containerVariants}
-        className="max-w-[430px] mx-auto px-5 space-y-8 pt-2 pb-8"
-      >
-
-      {/* PWA Install Banner */}
+      <div className="max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-2 pb-8">
+      {/* PWA Install Banner — sits above the staggered grid, full width in landscape */}
       <AnimatePresence>
         {showInstallBanner && (
           <motion.div
@@ -134,7 +130,7 @@ export function HomePage() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             style={{ willChange: 'opacity' }}
-            className="bg-surface-container-low rounded-[24px] p-4 border border-white/40 flex items-center gap-4 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)]"
+            className="bg-surface-container-low rounded-[24px] p-4 border border-white/40 flex items-center gap-4 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8"
           >
             <button
               onClick={() => dismissInstallBanner()}
@@ -160,8 +156,15 @@ export function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* Header */}
-      <motion.header variants={itemVariants} className="flex justify-between items-center py-2">
+      <motion.div
+        initial="hidden"
+        animate="show"
+        variants={containerVariants}
+        className="flex flex-col gap-8 landscape:grid landscape:grid-cols-2 landscape:gap-x-6 landscape:gap-y-8"
+      >
+
+      {/* Header — spans both columns in landscape */}
+      <motion.header variants={itemVariants} style={STAGGER_GPU_STYLE} className="flex justify-between items-center py-2 landscape:col-span-2 landscape:row-start-1">
         <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high border-2 border-surface-container-lowest flex items-center justify-center">
           {profilePhoto
             ? <img src={profilePhoto} className="w-full h-full object-cover" alt="avatar" />
@@ -177,17 +180,17 @@ export function HomePage() {
         </button>
       </motion.header>
 
-      {/* Welcome */}
-      <motion.section variants={itemVariants} className="space-y-1">
+      {/* Welcome — left column */}
+      <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="space-y-1 landscape:col-start-1 landscape:row-start-2">
         <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface leading-tight">{getGreeting()}</h1>
         <div className="inline-flex items-center px-3 py-1 bg-surface-container rounded-full text-xs font-medium text-on-surface-variant gap-1.5">
           <span>Твой знак: {zodiacSign || '—'}</span>
         </div>
       </motion.section>
 
-      {/* Holiday Card */}
+      {/* Holiday Card — left column */}
       {holiday && (
-        <motion.section variants={itemVariants} className="bg-surface-container-lowest p-5 rounded-lg flex items-center gap-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-surface-container-lowest p-5 rounded-lg flex items-center gap-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:col-start-1 landscape:row-start-3">
           <div className="w-16 h-16 flex-shrink-0 bg-secondary-fixed/30 rounded-full flex items-center justify-center">
             <span className="material-symbols-outlined text-[32px] text-secondary/70" style={{ fontVariationSettings: "'FILL' 1" }}>{holiday.icon}</span>
           </div>
@@ -198,8 +201,8 @@ export function HomePage() {
         </motion.section>
       )}
 
-      {/* Mood Banner */}
-      <motion.section variants={itemVariants} className="w-full h-[200px] rounded-lg overflow-hidden relative">
+      {/* Mood Banner — right column */}
+      <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="w-full h-[200px] rounded-lg overflow-hidden relative landscape:col-start-2 landscape:row-start-2">
         <img
           src={moodImage}
           alt={currentMood}
@@ -212,8 +215,8 @@ export function HomePage() {
         </div>
       </motion.section>
 
-      {/* Support Card */}
-      <motion.section variants={itemVariants} className="bg-surface-container-low p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-4">
+      {/* Support Card — right column */}
+      <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-surface-container-low p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-4 landscape:col-start-2 landscape:row-start-3">
         <div className="flex justify-between items-start gap-3">
           <h2 className="font-headline text-xl font-bold text-on-surface">Поддержка на сегодня</h2>
           <span className="flex-shrink-0 bg-primary-container/20 text-on-primary-container px-3 py-1 rounded-full text-xs font-semibold tracking-wide">{moodLabel}</span>
@@ -257,8 +260,8 @@ export function HomePage() {
         </div>
       </motion.section>
 
-      {/* Horoscope */}
-      <motion.section variants={itemVariants} className="bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6">
+      {/* Horoscope — left column */}
+      <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6 landscape:col-start-1 landscape:row-start-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-headline text-xl font-bold text-on-surface">Гороскоп на сегодня</h2>
           <div className="flex bg-surface-container rounded-full p-1 flex-shrink-0">
@@ -324,8 +327,8 @@ export function HomePage() {
         </div>
       </motion.section>
 
-      {/* Change Mood */}
-      <motion.section variants={itemVariants} className="pb-4">
+      {/* Change Mood — right column */}
+      <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="pb-4 landscape:col-start-2 landscape:row-start-4">
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => setIsMoodSheetOpen(true)}
@@ -338,6 +341,7 @@ export function HomePage() {
         </motion.button>
       </motion.section>
       </motion.div>
+      </div>
 
       {/* iOS Install Modal */}
       <BottomSheet

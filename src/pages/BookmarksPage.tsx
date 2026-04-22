@@ -6,14 +6,15 @@ import { useAppStore } from '../store'
 import type { BookmarkType } from '../store/app.store'
 
 const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+  hidden: { opacity: 1 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
 }
-// Opacity-only — no y translate on shadowed cards.
+// "Стелющаяся" cascade with GPU compositor hint
 const itemVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.25, ease: 'easeOut' } },
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
 }
+const STAGGER_GPU_STYLE = { willChange: 'transform, opacity' as const }
 
 export function BookmarksPage() {
   const navigate = useNavigate()
@@ -44,13 +45,13 @@ export function BookmarksPage() {
       </header>
 
       <main className="flex-1 px-5 pt-4 pb-24">
-        <motion.div variants={itemVariants} className="mb-6">
+        <motion.div variants={itemVariants} style={STAGGER_GPU_STYLE} className="mb-6">
           <p className="text-on-surface-variant font-body text-sm leading-relaxed">
             Ваши сохраненные моменты и предсказания в одном безопасном месте.
           </p>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="flex gap-2 overflow-x-auto pb-6 no-scrollbar">
+        <motion.div variants={itemVariants} style={STAGGER_GPU_STYLE} className="flex gap-2 overflow-x-auto pb-6 no-scrollbar">
           {(['все', 'гороскоп', 'поддержка'] as const).map(type => (
             <button
               key={type}

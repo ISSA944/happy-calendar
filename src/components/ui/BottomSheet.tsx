@@ -75,7 +75,7 @@ export function BottomSheet({
     if (info.offset.y > 100 || info.velocity.y > 400) {
       onClose()
     } else {
-      animate(dragY, 0, { type: 'spring', stiffness: 500, damping: 38 })
+      animate(dragY, 0, { type: 'spring', stiffness: 300, damping: 30 })
     }
   }
 
@@ -109,9 +109,9 @@ export function BottomSheet({
             onDragEnd={handleDragEnd}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%', transition: { type: 'spring', bounce: 0, duration: 0.4 } }}
-            transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-            className="relative w-full max-w-[430px] mx-auto rounded-t-[24px] shadow-2xl flex flex-col overflow-hidden"
+            exit={{ y: '100%', transition: { type: 'spring', stiffness: 300, damping: 30 } }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="relative w-full max-w-md mx-auto rounded-t-[24px] shadow-2xl flex flex-col overflow-hidden"
             style={{
               y: dragY,
               paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
