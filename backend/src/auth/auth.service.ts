@@ -1,4 +1,9 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -27,7 +32,7 @@ export class AuthService {
     this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
   }
 
-  async register(email: string, name?: string, consents?: boolean) {
+  async register(email: string, name?: string, _consents?: boolean) {
     const normalizedEmail = email.trim().toLowerCase();
 
     const user = await this.prisma.user.upsert({
@@ -36,7 +41,12 @@ export class AuthService {
       create: { email: normalizedEmail, name: name ?? null },
     });
 
-    const code = randomInt(100_000, 1_000_000).toString();
+    const code = randomInt(1000, 10_000).toString();
+
+    // Отправляем письмо ПЕРВЫМ. Хэш OTP записываем в БД только после успеха,
+    // чтобы сбой Resend не ломал стейт юзера (не оставлял протухшие OTP).
+    await this.sendOtpEmail(normalizedEmail, code);
+
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
     const otpExpiresAt = new Date(Date.now() + this.OTP_TTL_MIN * 60_000);
 
@@ -45,9 +55,7 @@ export class AuthService {
       data: { otpHash, otpExpiresAt },
     });
 
-    this.logger.log(`OTP для ${normalizedEmail}: ${code} (TTL ${this.OTP_TTL_MIN} мин)`);
-
-    await this.sendOtpEmail(normalizedEmail, code);
+    this.logger.log(`OTP отправлен на ${normalizedEmail} (TTL ${this.OTP_TTL_MIN} мин)`);
 
     return { ok: true, email: normalizedEmail };
   }
@@ -128,29 +136,79 @@ export class AuthService {
   }
 
   private async sendOtpEmail(to: string, code: string) {
+    const EMAIL_FAILURE_MSG =
+      'Не удалось отправить письмо с кодом. Попробуйте позже.';
+
     try {
-      const { error } = await this.resend.emails.send({
+      const { data, error } = await this.resend.emails.send({
         from: 'Happy Calendar <onboarding@happy-calendar.app>',
         to,
         subject: 'Твой код доступа к Happy Calendar',
-        html: `
-          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fcf9f4;border-radius:16px">
-            <h2 style="color:#006a65;margin:0 0 8px">Happy Calendar 🌿</h2>
-            <p style="color:#444;margin:0 0 24px">Вот твой одноразовый код для входа:</p>
-            <div style="background:#006a65;color:#fff;font-size:36px;font-weight:700;letter-spacing:12px;text-align:center;padding:24px;border-radius:12px">
-              ${code}
-            </div>
-            <p style="color:#888;font-size:13px;margin:24px 0 0">Код действует ${this.OTP_TTL_MIN} минут. Не передавай его никому.</p>
-          </div>`,
+        html: this.renderOtpEmailHtml(code),
       });
+
       if (error) {
-        this.logger.warn(`Resend error for ${to}: ${error.message}`);
-      } else {
-        this.logger.log(`OTP email sent to ${to}`);
+        this.logger.error(
+          `Resend API rejected email for ${to}: ${error.name} — ${error.message}`,
+        );
+        throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
       }
+
+      this.logger.log(`OTP email sent to ${to} (resend_id=${data?.id ?? 'n/a'})`);
     } catch (err) {
-      this.logger.error(`Failed to send OTP email to ${to}`, err);
+      if (err instanceof InternalServerErrorException) throw err;
+      this.logger.error(`Unexpected error while sending OTP to ${to}`, err);
+      throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
     }
+  }
+
+  private renderOtpEmailHtml(code: string): string {
+    return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Happy Calendar</title>
+</head>
+<body style="margin:0;padding:32px 16px;background:#f5f2ed;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="480" cellspacing="0" cellpadding="0" border="0" style="max-width:480px;background:#fcf9f4;border-radius:24px;overflow:hidden">
+          <tr>
+            <td style="padding:40px 40px 28px;background:#006a65;text-align:center">
+              <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px">Happy Calendar 🌿</div>
+              <div style="color:#a4d8d5;font-size:13px;margin-top:6px">Твой персональный компаньон дня</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 40px 8px">
+              <p style="margin:0 0 28px;font-size:16px;line-height:1.55;color:#2a3f3e">
+                Привет! Вот твой одноразовый код для входа:
+              </p>
+              <div style="text-align:center;background:#ffffff;border:1.5px solid #2FA7A0;border-radius:16px;padding:28px 12px">
+                <div style="font-size:52px;font-weight:700;color:#006a65;letter-spacing:18px;line-height:1">${code}</div>
+              </div>
+              <p style="margin:28px 0 0;font-size:14px;line-height:1.55;color:#5a6968">
+                Код действует <strong style="color:#006a65">${this.OTP_TTL_MIN} минут</strong>. Никому его не передавай — мы не запрашиваем коды в чатах и сообщениях.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 40px 40px">
+              <div style="border-top:1px solid #e8e3db;padding-top:24px">
+                <p style="margin:0;font-size:12px;line-height:1.5;color:#8a9998;text-align:center">
+                  Если ты не запрашивал(а) код — просто проигнорируй это письмо.
+                </p>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
   }
 
   private async issueTokens(userId: string, email: string | null) {
