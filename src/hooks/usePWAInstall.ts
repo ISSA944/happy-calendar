@@ -28,17 +28,14 @@ function detectIOS(): boolean {
 }
 
 export function usePWAInstall(): UsePWAInstall {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const [isInstallable, setIsInstallable] = useState(false)
-  const [isInstalled, setIsInstalled] = useState(() => getIsStandalone())
   const [isIOS] = useState(() => detectIOS())
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [isInstallable, setIsInstallable] = useState(() => isIOS)
+  const [isInstalled, setIsInstalled] = useState(() => getIsStandalone())
 
   useEffect(() => {
     // iOS Safari never fires beforeinstallprompt — handle separately
-    if (isIOS) {
-      setIsInstallable(true)
-      return
-    }
+    if (isIOS) return
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()

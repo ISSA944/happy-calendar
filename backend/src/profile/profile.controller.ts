@@ -6,7 +6,8 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/current-user.decorator';
 
 class PatchMoodDto {
-  @IsString() @MaxLength(32)
+  @IsString()
+  @MaxLength(32)
   mood!: string;
 }
 
@@ -21,7 +22,10 @@ export class ProfileController {
   }
 
   @Patch()
-  async patchProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
+  async patchProfile(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdateProfileDto,
+  ) {
     return this.profileService.patch(user.sub, dto);
   }
 

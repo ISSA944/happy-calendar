@@ -20,10 +20,12 @@ import { NotificationsModule } from './notifications/notifications.module';
       isGlobal: true,
       validate,
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     ScheduleModule.forRoot(),
     PrismaModule,
     AiModule,

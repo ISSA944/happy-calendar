@@ -1,6 +1,7 @@
 import { useState, startTransition } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useFirebasePush } from '../hooks'
 import { useAppStore } from '../store'
 import { TimePickerSheet } from '../features/auth/TimePickerSheet'
 
@@ -54,6 +55,7 @@ function ToggleRow({
 
 export function NotificationsPage() {
   const navigate = useNavigate()
+  const { permission, requestPermissionAndSubscribe } = useFirebasePush()
   const setHoroscopeTime = useAppStore(state => state.setHoroscopeTime)
   const showHoroscope = useAppStore(state => state.showHoroscope)
   const showHolidays = useAppStore(state => state.showHolidays)
@@ -66,6 +68,8 @@ export function NotificationsPage() {
   const [customTime, setCustomTime] = useState('')
   const [isCustomSelected, setIsCustomSelected] = useState(false)
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
+  const [pushError, setPushError] = useState('')
+  const [isRequestingPush, setIsRequestingPush] = useState(false)
 
   const fixedTimes = ['08:00', '09:00', '10:00']
 
@@ -87,8 +91,24 @@ export function NotificationsPage() {
     })
   }
 
-  const handleAllow = () => {
-    navigate('/profile-setup')
+  const handleAllow = async () => {
+    if (isRequestingPush) return
+
+    setIsRequestingPush(true)
+    setPushError('')
+
+    try {
+      const result = await requestPermissionAndSubscribe()
+
+      if (!result.subscribed && result.reason !== 'permission-denied') {
+        setPushError('Разрешение сохранили, но подписка на push не завершилась. Повторим после настройки профиля.')
+      }
+    } catch {
+      setPushError('Не удалось подключить push прямо сейчас. Повторим после настройки профиля.')
+    } finally {
+      setIsRequestingPush(false)
+      navigate('/profile-setup')
+    }
   }
 
   const handleSkip = () => {
@@ -181,9 +201,10 @@ export function NotificationsPage() {
         <div className="w-full max-w-[430px] mx-auto px-5 pb-[env(safe-area-inset-bottom,24px)] pt-4 flex flex-col items-center space-y-4">
           <button
             onClick={handleAllow}
+            disabled={isRequestingPush}
             className="w-full h-14 bg-[#2FA7A0] hover:bg-[#006a65] text-white font-headline font-bold text-base rounded-full shadow-lg shadow-[#2FA7A0]/20 transition-colors active:scale-[0.98]"
           >
-            Разрешить уведомления
+            {isRequestingPush ? 'Подключаем push...' : 'Разрешить уведомления'}
           </button>
           <button
             onClick={handleSkip}
@@ -191,9 +212,18 @@ export function NotificationsPage() {
           >
             Настрою позже
           </button>
+          {pushError && (
+            <p className="text-center text-sm font-medium text-red-500 px-2">
+              {pushError}
+            </p>
+          )}
+          {permission === 'denied' && !pushError && (
+            <p className="text-center text-sm font-medium text-[#5A5A66] px-2">
+              В браузере уже стоит запрет на уведомления. Подписку можно будет включить позже в настройках устройства.
+            </p>
+          )}
         </div>
       )}
     </motion.div>
   )
 }
-

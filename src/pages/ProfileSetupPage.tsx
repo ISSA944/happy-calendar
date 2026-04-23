@@ -1,6 +1,8 @@
 import { useState, useMemo, useRef, startTransition } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { apiClient } from '../api'
+import { useFirebasePush } from '../hooks'
 import { useAppStore } from '../store'
 
 // Helper function to calculate Zodiac
@@ -57,13 +59,19 @@ export function ProfileSetupPage() {
   const storeGender = useAppStore((s) => s.setGender)
   const storeZodiac = useAppStore((s) => s.setZodiacSign)
   const setHasCompletedOnboarding = useAppStore((s) => s.setHasCompletedOnboarding)
+  const horoscopeTime = useAppStore((s) => s.horoscopeTime)
+  const showHoroscope = useAppStore((s) => s.showHoroscope)
+  const showHolidays = useAppStore((s) => s.showHolidays)
   const profilePhoto = useAppStore((s) => s.profilePhoto)
   const setProfilePhoto = useAppStore((s) => s.setProfilePhoto)
+  const { syncPushSubscription } = useFirebasePush()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [birthDate, setBirthDate] = useState('')
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [gender, setGender] = useState<'F' | 'M' | 'UNKNOWN'>('UNKNOWN')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   const handlePhotoClick = () => fileInputRef.current?.click()
 
@@ -80,13 +88,35 @@ export function ProfileSetupPage() {
   const hasSelectedBirthDate = useMemo(() => isValidBirthDate(birthDate), [birthDate])
   const isValid = hasSelectedBirthDate && !!zodiacSign
 
-  const handleSubmit = () => {
-    if (!isValid) return
-    storeBirthDate(birthDate)
-    storeGender(gender)
-    storeZodiac(zodiacSign ?? '')
-    setHasCompletedOnboarding(true)
-    navigate('/home')
+  const handleSubmit = async () => {
+    if (!isValid || isSubmitting) return
+
+    setIsSubmitting(true)
+    setSubmitError('')
+
+    try {
+      await apiClient.patch('profile', {
+        birthdate: birthDate,
+        zodiacSign: zodiacSign ?? '',
+        gender,
+        pushTime: horoscopeTime,
+        horoscopeEnabled: showHoroscope,
+        holidaysEnabled: showHolidays,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      })
+
+      await syncPushSubscription()
+
+      storeBirthDate(birthDate)
+      storeGender(gender)
+      storeZodiac(zodiacSign ?? '')
+      setHasCompletedOnboarding(true)
+      navigate('/home')
+    } catch {
+      setSubmitError('Не удалось сохранить профиль. Проверь соединение и попробуй ещё раз.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -207,15 +237,20 @@ export function ProfileSetupPage() {
       >
         <button
           onClick={handleSubmit}
-          disabled={!isValid}
+          disabled={!isValid || isSubmitting}
           className={`w-full h-16 rounded-full font-headline font-bold text-lg flex items-center justify-center transition-colors ${
-            isValid
+            isValid && !isSubmitting
               ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 active:scale-[0.98] cursor-pointer'
               : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
           }`}
         >
-          Продолжить
+          {isSubmitting ? 'Сохраняем...' : 'Продолжить'}
         </button>
+        {submitError && (
+          <p className="mt-3 text-center text-sm font-medium text-red-500">
+            {submitError}
+          </p>
+        )}
       </footer>
 
       {/* Glassmorphism Background Elements */}
@@ -233,4 +268,3 @@ export function ProfileSetupPage() {
     </motion.div>
   )
 }
-

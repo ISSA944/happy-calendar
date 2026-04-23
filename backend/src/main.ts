@@ -6,11 +6,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: false,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: true,
+    }),
+  );
 
   app.enableCors({
     origin: [
@@ -42,4 +44,4 @@ async function bootstrap() {
   logger.log(`  DELETE /api/push/unsubscribe`);
 }
 
-bootstrap();
+void bootstrap();

@@ -1,4 +1,11 @@
-import { Body, Controller, Delete, Post, HttpCode, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Post,
+  HttpCode,
+  UseGuards,
+} from '@nestjs/common';
 import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { PushService } from './push.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -6,12 +13,15 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/current-user.decorator';
 
 class SubscribeDto {
-  @IsString() @MaxLength(4096)
+  @IsString()
+  @MaxLength(4096)
   fcm_token!: string;
 }
 
 class UnsubscribeDto {
-  @IsOptional() @IsString() @MaxLength(4096)
+  @IsOptional()
+  @IsString()
+  @MaxLength(4096)
   fcm_token?: string;
 }
 
@@ -28,7 +38,10 @@ export class PushController {
 
   @Delete('unsubscribe')
   @HttpCode(200)
-  async unsubscribe(@CurrentUser() user: AuthUser, @Body() dto: UnsubscribeDto) {
+  async unsubscribe(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UnsubscribeDto,
+  ) {
     return this.pushService.unsubscribe(user.sub, dto.fcm_token);
   }
 }

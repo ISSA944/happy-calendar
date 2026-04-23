@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import type { PanInfo, Variants } from 'framer-motion'
@@ -236,32 +236,50 @@ const CalendarGrid = memo(function CalendarGrid({
 /* ─── Main CalendarSheet ─── */
 
 export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: CalendarSheetProps) {
+  const title = "Дата рождения"
+  const headerRight = (
+    <button
+      type="button"
+      onClick={onClose}
+      className="text-right font-headline text-sm font-bold text-primary active:opacity-70"
+    >
+      Готово
+    </button>
+  )
+
+  return (
+    <BottomSheet 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title={title} 
+      headerRight={headerRight}
+    >
+      {isOpen && (
+        <CalendarSheetContent
+          key={currentValue || '__empty__'}
+          currentValue={currentValue}
+          onSelect={onSelect}
+        />
+      )}
+    </BottomSheet>
+  )
+}
+
+function CalendarSheetContent({
+  currentValue,
+  onSelect,
+}: Pick<CalendarSheetProps, 'currentValue' | 'onSelect'>) {
   const parsedCurrentValue = useMemo(() => parseDate(currentValue), [currentValue])
   const [currentYear, setCurrentYear] = useState(parsedCurrentValue?.year ?? PICKER_DEFAULT_YEAR)
   const [currentMonth, setCurrentMonth] = useState(parsedCurrentValue?.month ?? PICKER_DEFAULT_MONTH)
   const [selectedDate, setSelectedDate] = useState<ParsedDate | null>(parsedCurrentValue)
   const [direction, setDirection] = useState(0)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
-  const skipNextSlideAnim = useRef(false)
+  const [disableSlideAnimation, setDisableSlideAnimation] = useState(false)
 
   // Grid picker draft state (committed only on "Готово" click)
   const [pickerYear, setPickerYear] = useState(parsedCurrentValue?.year ?? PICKER_DEFAULT_YEAR)
   const [pickerMonth, setPickerMonth] = useState(parsedCurrentValue?.month ?? PICKER_DEFAULT_MONTH)
-
-  useEffect(() => {
-    if (!isOpen) return
-
-    if (parsedCurrentValue) {
-      setCurrentYear(parsedCurrentValue.year)
-      setCurrentMonth(parsedCurrentValue.month)
-      setSelectedDate(parsedCurrentValue)
-      return
-    }
-
-    setCurrentYear(PICKER_DEFAULT_YEAR)
-    setCurrentMonth(PICKER_DEFAULT_MONTH)
-    setSelectedDate(null)
-  }, [isOpen, parsedCurrentValue])
 
   const cells = useMemo(() => buildCalendarCells(currentYear, currentMonth), [currentMonth, currentYear])
   const selectedValue = selectedDate ? formatDate(selectedDate.day, selectedDate.month, selectedDate.year) : ''
@@ -285,7 +303,7 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
   }, [currentMonth, currentYear])
 
   const handlePickerConfirm = useCallback(() => {
-    skipNextSlideAnim.current = true
+    setDisableSlideAnimation(true)
     setIsPickerOpen(false)
     updateDisplayedMonth(pickerYear, pickerMonth, 0)
   }, [pickerYear, pickerMonth, updateDisplayedMonth])
@@ -313,125 +331,113 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
     }
   }, [changeMonth])
 
-  const title = "Дата рождения"
-  const headerRight = (
-    <button
-      type="button"
-      onClick={onClose}
-      className="text-right font-headline text-sm font-bold text-primary active:opacity-70"
-    >
-      Готово
-    </button>
-  )
   return (
-    <BottomSheet 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title={title} 
-      headerRight={headerRight}
-    >
-      <div className="relative pb-5">
-        {/* ── Full-cover Grid Picker Overlay (covers BottomSheet header) ── */}
-        <AnimatePresence>
-          {isPickerOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="fixed inset-x-0 top-0 z-[110] flex flex-col mx-auto w-full max-w-md"
-              style={{
-                height: 'calc(100dvh - env(safe-area-inset-top) - 16px)',
-                marginTop: 'env(safe-area-inset-top)',
-                background: '#fcf9f4',
-                paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
-                willChange: 'opacity',
-              }}
+    <div className="relative pb-5">
+      {/* ── Full-cover Grid Picker Overlay (covers BottomSheet header) ── */}
+      <AnimatePresence>
+        {isPickerOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="fixed inset-x-0 top-0 z-[110] flex flex-col mx-auto w-full max-w-md"
+            style={{
+              height: 'calc(100dvh - env(safe-area-inset-top) - 16px)',
+              marginTop: 'env(safe-area-inset-top)',
+              background: '#fcf9f4',
+              paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+              willChange: 'opacity',
+            }}
+          >
+            <GridMonthPicker
+              pickerYear={pickerYear}
+              pickerMonth={pickerMonth}
+              onYearChange={setPickerYear}
+              onMonthChange={setPickerMonth}
+              onConfirm={handlePickerConfirm}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Month Navigation ── */}
+      <div className="px-5">
+        <div className="mb-4 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => changeMonth(-1)}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container text-on-surface-variant active:scale-95"
+          >
+            <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenPicker}
+            className="flex items-center gap-1.5 rounded-full px-3 py-2 active:bg-surface-container"
+          >
+            <span className="font-headline text-base font-bold text-on-surface">
+              {MONTHS[currentMonth]} {currentYear}
+            </span>
+            <span className="material-symbols-outlined text-[18px] text-primary">expand_more</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => changeMonth(1)}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container text-on-surface-variant active:scale-95"
+          >
+            <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+          </button>
+        </div>
+
+        {/* ── Weekday Headers ── */}
+        <div className="grid grid-cols-7 pb-2">
+          {WEEK_DAYS.map((day) => (
+            <div
+              key={day}
+              className="flex h-8 items-center justify-center text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface-variant/55"
             >
-              <GridMonthPicker
-                pickerYear={pickerYear}
-                pickerMonth={pickerMonth}
-                onYearChange={setPickerYear}
-                onMonthChange={setPickerMonth}
-                onConfirm={handlePickerConfirm}
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* ── Calendar Grid with swipe ── */}
+        <div className="relative h-[240px] overflow-hidden">
+          <AnimatePresence
+            initial={false}
+            custom={direction}
+            mode="wait"
+            onExitComplete={() => setDisableSlideAnimation(false)}
+          >
+            <motion.div
+              key={`${currentYear}-${currentMonth}`}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={disableSlideAnimation ? { duration: 0 } : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.08}
+              onDragEnd={handleCalendarDragEnd}
+              className="absolute inset-0"
+              style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
+            >
+              <CalendarGrid
+                cells={cells}
+                selectedValue={selectedValue}
+                baseMonth={currentMonth}
+                baseYear={currentYear}
+                onSelectDay={handleDaySelect}
               />
             </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Month Navigation ── */}
-        <div className="px-5">
-          <div className="mb-4 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => changeMonth(-1)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container text-on-surface-variant active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[20px]">chevron_left</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleOpenPicker}
-              className="flex items-center gap-1.5 rounded-full px-3 py-2 active:bg-surface-container"
-            >
-              <span className="font-headline text-base font-bold text-on-surface">
-                {MONTHS[currentMonth]} {currentYear}
-              </span>
-              <span className="material-symbols-outlined text-[18px] text-primary">expand_more</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => changeMonth(1)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container text-on-surface-variant active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-            </button>
-          </div>
-
-          {/* ── Weekday Headers ── */}
-          <div className="grid grid-cols-7 pb-2">
-            {WEEK_DAYS.map((day) => (
-              <div
-                key={day}
-                className="flex h-8 items-center justify-center text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface-variant/55"
-              >
-                {day}
-              </div>
-            ))}
-          </div>
-
-          {/* ── Calendar Grid with swipe ── */}
-          <div className="relative h-[240px] overflow-hidden">
-            <AnimatePresence initial={false} custom={direction} mode="wait" onExitComplete={() => { skipNextSlideAnim.current = false }}>
-              <motion.div
-                key={`${currentYear}-${currentMonth}`}
-                custom={direction}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={skipNextSlideAnim.current ? { duration: 0 } : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.08}
-                onDragEnd={handleCalendarDragEnd}
-                className="absolute inset-0"
-                style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
-              >
-                <CalendarGrid
-                  cells={cells}
-                  selectedValue={selectedValue}
-                  baseMonth={currentMonth}
-                  baseYear={currentYear}
-                  onSelectDay={handleDaySelect}
-                />
-              </motion.div>
-            </AnimatePresence>
-          </div>
+          </AnimatePresence>
         </div>
       </div>
-    </BottomSheet>
+    </div>
   )
 }

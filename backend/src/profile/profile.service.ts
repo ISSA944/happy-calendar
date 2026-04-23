@@ -1,30 +1,50 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { IsBoolean, IsOptional, IsString, MaxLength, Matches } from 'class-validator';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Matches,
+} from 'class-validator';
 import { PrismaService } from '../prisma';
 
 export class UpdateProfileDto {
-  @IsOptional() @IsString() @MaxLength(32)
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
   birthdate?: string;
 
-  @IsOptional() @IsString() @MaxLength(32)
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
   zodiacSign?: string;
 
-  @IsOptional() @IsString() @MaxLength(16)
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
   gender?: string;
 
-  @IsOptional() @IsString() @MaxLength(500)
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
   avatarUrl?: string;
 
-  @IsOptional() @IsString() @Matches(/^\d{2}:\d{2}$/, { message: 'pushTime must be HH:MM' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{2}:\d{2}$/, { message: 'pushTime must be HH:MM' })
   pushTime?: string;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   horoscopeEnabled?: boolean;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   holidaysEnabled?: boolean;
 
-  @IsOptional() @IsString() @MaxLength(64)
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
   timezone?: string;
 }
 
@@ -55,8 +75,10 @@ export class ProfileService {
 
     const prefsData: Record<string, unknown> = {};
     if (dto.pushTime !== undefined) prefsData.pushTime = dto.pushTime;
-    if (dto.horoscopeEnabled !== undefined) prefsData.horoscopeEnabled = dto.horoscopeEnabled;
-    if (dto.holidaysEnabled !== undefined) prefsData.holidaysEnabled = dto.holidaysEnabled;
+    if (dto.horoscopeEnabled !== undefined)
+      prefsData.horoscopeEnabled = dto.horoscopeEnabled;
+    if (dto.holidaysEnabled !== undefined)
+      prefsData.holidaysEnabled = dto.holidaysEnabled;
     if (dto.timezone !== undefined) prefsData.timezone = dto.timezone;
 
     const [profile, prefs] = await Promise.all([

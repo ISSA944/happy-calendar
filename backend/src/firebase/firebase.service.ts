@@ -12,8 +12,12 @@ export class FirebaseService implements OnModuleInit {
   onModuleInit() {
     try {
       const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
-      const clientEmail = this.configService.get<string>('FIREBASE_CLIENT_EMAIL');
-      const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY')?.replace(/\\n/g, '\n');
+      const clientEmail = this.configService.get<string>(
+        'FIREBASE_CLIENT_EMAIL',
+      );
+      const privateKey = this.configService
+        .get<string>('FIREBASE_PRIVATE_KEY')
+        ?.replace(/\\n/g, '\n');
 
       if (!admin.apps.length) {
         this.firebaseApp = admin.initializeApp({
@@ -23,7 +27,9 @@ export class FirebaseService implements OnModuleInit {
             privateKey,
           }),
         });
-        this.logger.log(`Firebase Admin SDK initialized for project: ${projectId}`);
+        this.logger.log(
+          `Firebase Admin SDK initialized for project: ${projectId}`,
+        );
       }
     } catch (error) {
       this.logger.error('Failed to initialize Firebase Admin SDK', error);
@@ -34,7 +40,12 @@ export class FirebaseService implements OnModuleInit {
     }
   }
 
-  async sendPushNotification(token: string, title: string, body: string, data?: any) {
+  async sendPushNotification(
+    token: string,
+    title: string,
+    body: string,
+    data?: Record<string, string | number | boolean>,
+  ) {
     if (!this.firebaseApp) {
       this.logger.warn('Firebase App not initialized. Skipping push.');
       return;
@@ -44,7 +55,7 @@ export class FirebaseService implements OnModuleInit {
       const message: admin.messaging.Message = {
         notification: { title, body },
         token,
-        data: data || {},
+        data: this.serializeData(data),
       };
 
       const response = await admin.messaging().send(message);
@@ -53,5 +64,13 @@ export class FirebaseService implements OnModuleInit {
     } catch (error) {
       this.logger.error('Error sending push notification', error);
     }
+  }
+
+  private serializeData(data?: Record<string, string | number | boolean>) {
+    if (!data) return {};
+
+    return Object.fromEntries(
+      Object.entries(data).map(([key, value]) => [key, String(value)]),
+    );
   }
 }

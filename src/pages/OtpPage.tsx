@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { apiClient } from '../api'
+import { setAuthTokens } from '../auth/token-storage'
+import { useAppStore } from '../store'
 
 // ── Isolated timer so its setInterval never re-renders OTP boxes ──
 const CountdownTimer = memo(function CountdownTimer({
@@ -14,11 +17,6 @@ const CountdownTimer = memo(function CountdownTimer({
 }) {
   const [timeLeft, setTimeLeft] = useState(initialSeconds)
   const expiredRef = useRef(false)
-
-  useEffect(() => {
-    expiredRef.current = false
-    setTimeLeft(initialSeconds)
-  }, [initialSeconds])
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -108,10 +106,14 @@ const OtpBox = memo(function OtpBox({
 
 export function OtpPage() {
   const navigate = useNavigate()
+  const email = useAppStore((s) => s.email)
 
   const [code, setCode] = useState(['', '', '', ''])
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [resendKey, setResendKey] = useState(0) // bumping resets CountdownTimer
+  const [submitError, setSubmitError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isResending, setIsResending] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // Stable ref callbacks — recreating these inline each render defeats OtpBox memo
@@ -160,18 +162,49 @@ export function OtpPage() {
   const handleFocus = useCallback((index: number) => setActiveIndex(index), [])
   const handleBlur = useCallback(() => setActiveIndex(null), [])
 
-  const handleSubmit = useCallback(() => {
-    if (isValid) navigate('/notifications')
-  }, [isValid, navigate])
+  const handleSubmit = useCallback(async () => {
+    if (!isValid || !email || isSubmitting) return
+
+    setIsSubmitting(true)
+    setSubmitError('')
+
+    try {
+      const { data } = await apiClient.post<{
+        accessToken: string
+        refreshToken: string
+      }>('auth/verify-otp', {
+        email,
+        code: code.join(''),
+      })
+
+      setAuthTokens(data.accessToken, data.refreshToken)
+      navigate('/notifications')
+    } catch {
+      setSubmitError('Неверный код или он уже истёк. Попробуй ещё раз.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [code, email, isSubmitting, isValid, navigate])
 
   const handleExpire = useCallback(() => {}, [])
 
-  const handleResend = useCallback(() => {
-    setCode(['', '', '', ''])
-    setResendKey(k => k + 1)
-    // slight rAF so state flushes before focus
-    requestAnimationFrame(() => inputRefs.current[0]?.focus())
-  }, [])
+  const handleResend = useCallback(async () => {
+    if (!email || isResending) return
+
+    setIsResending(true)
+    setSubmitError('')
+
+    try {
+      await apiClient.post('auth/register', { email })
+      setCode(['', '', '', ''])
+      setResendKey(k => k + 1)
+      requestAnimationFrame(() => inputRefs.current[0]?.focus())
+    } catch {
+      setSubmitError('Не удалось отправить код повторно. Попробуй чуть позже.')
+    } finally {
+      setIsResending(false)
+    }
+  }, [email, isResending])
 
   return (
     <motion.div
@@ -232,15 +265,21 @@ export function OtpPage() {
         >
           <button
             onClick={handleSubmit}
-            disabled={!isValid}
+            disabled={!isValid || isSubmitting}
             className={`h-14 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
-              isValid
+              isValid && !isSubmitting
                 ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 cursor-pointer'
                 : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
             }`}
           >
-            Продолжить
+            {isSubmitting ? 'Проверяем...' : 'Продолжить'}
           </button>
+
+          {submitError && (
+            <p className="text-center text-sm font-medium text-red-500">
+              {submitError}
+            </p>
+          )}
 
           <CountdownTimer
             key={resendKey}
@@ -256,4 +295,3 @@ export function OtpPage() {
     </motion.div>
   )
 }
-

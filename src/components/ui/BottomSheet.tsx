@@ -34,15 +34,10 @@ export function BottomSheet({
   headerRight,
   hideDragIndicator = false,
 }: BottomSheetProps) {
-  const [mounted, setMounted] = useState(false)
+  const [mounted] = useState(() => typeof document !== 'undefined')
   const dragY = useMotionValue(0)
   const dragControls = useDragControls()
   const sheetRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    setMounted(true)
-    return () => setMounted(false)
-  }, [])
 
   useEffect(() => {
     if (!isOpen) return

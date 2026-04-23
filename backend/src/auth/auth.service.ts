@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -42,7 +42,9 @@ export class AuthService {
     });
 
     // MOCK EMAIL — Phase 1 выводит в лог. Заменится на Resend/Mailgun позже.
-    this.logger.log(`[MOCK EMAIL] OTP для ${normalizedEmail}: ${code} (TTL ${this.OTP_TTL_MIN} мин, consents=${consents ?? false})`);
+    this.logger.log(
+      `[MOCK EMAIL] OTP для ${normalizedEmail}: ${code} (TTL ${this.OTP_TTL_MIN} мин, consents=${consents ?? false})`,
+    );
 
     return { ok: true, email: normalizedEmail };
   }
@@ -50,7 +52,9 @@ export class AuthService {
   async verifyOtp(email: string, code: string) {
     const normalizedEmail = email.trim().toLowerCase();
 
-    const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+    const user = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
     if (!user || !user.otpHash || !user.otpExpiresAt) {
       throw new UnauthorizedException('OTP not requested');
     }
@@ -98,7 +102,9 @@ export class AuthService {
       throw new UnauthorizedException('Wrong token type');
     }
 
-    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
     if (!user || !user.refreshTokenHash) {
       throw new UnauthorizedException('Session revoked');
     }

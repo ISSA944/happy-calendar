@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { apiClient } from '../api'
 import { useAppStore, useRegistrationDraft } from '../store'
 import { isValidEmail } from '../utils/validation'
 
@@ -14,16 +16,34 @@ export function RegistrationPage() {
   const marketing = useRegistrationDraft((s) => s.marketing)
   const updateDraft = useRegistrationDraft((s) => s.update)
   const clearDraft = useRegistrationDraft((s) => s.clear)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   const canSubmit = isValidEmail(emailInput) && consent
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (canSubmit) {
+    if (!canSubmit || isSubmitting) return
+
+    setIsSubmitting(true)
+    setSubmitError('')
+
+    try {
+      await apiClient.post('auth/register', {
+        email: emailInput.trim(),
+        name: name.trim() || undefined,
+        consents: consent,
+        marketing,
+      })
+
       setUserName(name.trim())
       setEmail(emailInput.trim())
       clearDraft()
       navigate('/otp')
+    } catch {
+      setSubmitError('Не удалось отправить код. Проверь соединение и попробуй ещё раз.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -156,16 +176,22 @@ export function RegistrationPage() {
 
             {/* CTA */}
             <button
-              disabled={!canSubmit}
+              disabled={!canSubmit || isSubmitting}
               type="submit"
               className={`h-14 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
-                canSubmit
+                canSubmit && !isSubmitting
                   ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 cursor-pointer'
                   : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
               }`}
             >
-              Получить код
+              {isSubmitting ? 'Отправляем...' : 'Получить код'}
             </button>
+
+            {submitError && (
+              <p className="text-center text-sm font-medium text-red-500">
+                {submitError}
+              </p>
+            )}
 
             <p className="text-center text-sm font-medium text-on-surface-variant/70">
               Почта нужна, чтобы сохранить твои настройки.
@@ -179,4 +205,3 @@ export function RegistrationPage() {
     </motion.div>
   )
 }
-

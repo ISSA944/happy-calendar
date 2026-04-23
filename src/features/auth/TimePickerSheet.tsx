@@ -137,20 +137,6 @@ const WheelColumn = memo(function WheelColumn({
 })
 
 export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimePickerSheetProps) {
-  const [hourIndex, setHourIndex] = useState(7)
-  const [minuteIndex, setMinuteIndex] = useState(6)
-
-  useEffect(() => {
-    if (!isOpen || !initialTime) return
-
-    const [hours, minutes] = initialTime.split(':')
-    const nextHourIndex = HOURS.indexOf(hours)
-    if (nextHourIndex >= 0) setHourIndex(nextHourIndex)
-
-    const nextMinuteIndex = Math.round(Number(minutes) / 5)
-    setMinuteIndex(Math.max(0, Math.min(MINUTES.length - 1, nextMinuteIndex)))
-  }, [initialTime, isOpen])
-
   const title = "Установить время"
   const headerRight = (
     <button
@@ -169,8 +155,34 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
       title={title} 
       headerRight={headerRight}
     >
-      <div className="relative px-6 pb-2 pt-1">
+      {isOpen && (
+        <TimePickerContent
+          key={initialTime}
+          initialTime={initialTime}
+          onSave={onSave}
+          onCancel={onCancel}
+        />
+      )}
+    </BottomSheet>
+  )
+}
 
+function TimePickerContent({
+  initialTime,
+  onSave,
+  onCancel,
+}: Pick<TimePickerSheetProps, 'initialTime' | 'onSave' | 'onCancel'>) {
+  const [initialHours, initialMinutes] = initialTime.split(':')
+  const nextHourIndex = HOURS.indexOf(initialHours)
+  const nextMinuteIndex = Math.round(Number(initialMinutes) / 5)
+  const [hourIndex, setHourIndex] = useState(nextHourIndex >= 0 ? nextHourIndex : 7)
+  const [minuteIndex, setMinuteIndex] = useState(
+    Math.max(0, Math.min(MINUTES.length - 1, Number.isFinite(nextMinuteIndex) ? nextMinuteIndex : 6)),
+  )
+
+  return (
+    <>
+      <div className="relative px-6 pb-2 pt-1">
         <div className="relative z-10 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/65">
             ВРЕМЯ ПРАКТИКИ
@@ -215,6 +227,6 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
           Отмена
         </button>
       </footer>
-    </BottomSheet>
+    </>
   )
 }

@@ -4,7 +4,8 @@ import { PrismaService } from '../prisma';
 import type { Prisma } from '@prisma/client';
 
 export class CreateBookmarkDto {
-  @IsString() @MaxLength(32)
+  @IsString()
+  @MaxLength(32)
   type!: string;
 
   @IsObject()
