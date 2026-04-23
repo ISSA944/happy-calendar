@@ -8,8 +8,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: happy_calendar
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     # Базовые оптимизации под сервер 2 vCPU, 2GB RAM (Postgres берёт ~256MB под shared_buffers, макс коннектов 100)
