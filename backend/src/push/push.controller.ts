@@ -36,6 +36,12 @@ export class PushController {
     return this.pushService.subscribe(user.sub, dto.fcm_token);
   }
 
+  @Post('test')
+  @HttpCode(200)
+  async testPush(@CurrentUser() user: AuthUser) {
+    return this.pushService.sendTestPush(user.sub);
+  }
+
   @Delete('unsubscribe')
   @HttpCode(200)
   async unsubscribe(
