@@ -1,10 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module } from '@nestjs/common'; 
 import { NotificationCronService } from './notifications.cron.service';
-import { PrismaModule } from '../prisma';
-import { TodayModule } from '../today';
+import { TodayModule } from '../today/today.module'; // <--- ИМПОРТ
 
 @Module({
-  imports: [PrismaModule, TodayModule],
+  imports: [TodayModule], // <--- ДОБАВИЛИ ЭТО
   providers: [NotificationCronService],
 })
 export class NotificationsModule {}
