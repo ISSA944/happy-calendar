@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState, startTransition } from 
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
+import { useFirebasePush } from '../hooks'
 import { CalendarSheet } from '../features/auth/CalendarSheet'
 import { TimePickerSheet } from '../features/auth/TimePickerSheet'
 import { isValidEmail } from '../utils/validation'
@@ -14,6 +15,7 @@ const FIRST_VISIT_TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] as con
 export function SettingsPage() {
   const isFirstVisit = useRef(!settingsPageDidMount)
   const navigate = useNavigate()
+  const { permission, requestPermissionAndSubscribe, syncPushSubscription } = useFirebasePush()
 
   useEffect(() => {
     settingsPageDidMount = true
@@ -75,7 +77,14 @@ export function SettingsPage() {
   const handleSaveTime = useCallback((time: string) => {
     setIsTimePickerOpen(false)
     startTransition(() => setHoroscopeTime(time))
-  }, [setHoroscopeTime])
+    // If the user never granted notification permission during onboarding,
+    // ask now. Otherwise, refresh the FCM token just in case it rotated.
+    if (permission === 'default') {
+      void requestPermissionAndSubscribe()
+    } else if (permission === 'granted') {
+      void syncPushSubscription()
+    }
+  }, [setHoroscopeTime, permission, requestPermissionAndSubscribe, syncPushSubscription])
 
   return (
     <motion.div

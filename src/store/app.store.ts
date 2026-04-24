@@ -6,6 +6,8 @@ import {
   getTodayHoliday,
   getTodayDateStr,
 } from '../services/content.service'
+import { apiClient } from '../api'
+import { getAccessToken } from '../auth/token-storage'
 
 export type BookmarkType = 'гороскоп' | 'поддержка'
 
@@ -137,7 +139,16 @@ export const useAppStore = create<AppState>()(
       birthDate: '',
       setBirthDate: (birthDate) => set({ birthDate }),
       horoscopeTime: '09:00',
-      setHoroscopeTime: (horoscopeTime) => set({ horoscopeTime }),
+      setHoroscopeTime: (horoscopeTime) => {
+        set({ horoscopeTime })
+        // Fire-and-forget sync with backend — only when authenticated,
+        // so onboarding flow before OTP verification doesn't 401.
+        if (getAccessToken()) {
+          apiClient.patch('profile', { pushTime: horoscopeTime }).catch((err) => {
+            console.warn('[store] Failed to sync pushTime with backend', err)
+          })
+        }
+      },
 
       installBannerDismissed: false,
       dismissInstallBanner: () => set({ installBannerDismissed: true }),

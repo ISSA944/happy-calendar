@@ -1,34 +1,78 @@
-self.addEventListener('push', (event) => {
-  if (!event.data) {
-    return
-  }
+/* eslint-disable no-undef */
+// Firebase Cloud Messaging Service Worker
+//
+// ⚠️ SWs cannot read Vite env vars (they run in a separate context).
+// Fill these values from Firebase Console → Project Settings → General → Your apps → Web SDK config.
+// These are PUBLIC client-side keys — same values that end up in your bundle — safe to commit.
 
-  let payload = {}
+importScripts('https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js')
+importScripts('https://www.gstatic.com/firebasejs/10.14.0/firebase-messaging-compat.js')
 
-  try {
-    payload = event.data.json()
-  } catch {
-    payload = { notification: { title: 'Happy Calendar', body: event.data.text() } }
-  }
+const firebaseConfig = {
+  apiKey: 'REPLACE_ME',
+  authDomain: 'REPLACE_ME.firebaseapp.com',
+  projectId: 'happy-calendar-a5e69',
+  storageBucket: 'REPLACE_ME.appspot.com',
+  messagingSenderId: 'REPLACE_ME',
+  appId: 'REPLACE_ME',
+}
 
-  const notification = payload.notification || {}
-  const data = payload.data || {}
-  const title = notification.title || 'Happy Calendar'
-  const options = {
-    body: notification.body || 'У тебя есть обновление на сегодня.',
-    icon: '/pwa-192x192.png',
-    badge: '/pwa-192x192.png',
-    data: {
-      url: data.url || '/home',
-    },
-  }
+const isConfigComplete = Object.values(firebaseConfig).every(
+  (value) => typeof value === 'string' && !value.includes('REPLACE_ME'),
+)
 
-  event.waitUntil(self.registration.showNotification(title, options))
-})
+if (isConfigComplete) {
+  firebase.initializeApp(firebaseConfig)
+  const messaging = firebase.messaging()
 
+  // Handles FCM-delivered push messages while the PWA is in the background/closed.
+  messaging.onBackgroundMessage((payload) => {
+    const notification = payload.notification || {}
+    const data = payload.data || {}
+    const title = notification.title || 'Happy Calendar'
+    const options = {
+      body: notification.body || 'У тебя есть обновление на сегодня.',
+      icon: '/pwa-192x192.png',
+      badge: '/pwa-192x192.png',
+      data: { url: data.url || '/home' },
+    }
+    self.registration.showNotification(title, options)
+  })
+} else {
+  console.warn(
+    '[firebase-messaging-sw] Firebase config incomplete — background push disabled. ' +
+      'Fill firebaseConfig in public/firebase-messaging-sw.js.',
+  )
+
+  // Graceful fallback: still surface any raw Web Push event so dev/testing works
+  // without a full Firebase SDK config.
+  self.addEventListener('push', (event) => {
+    if (!event.data) return
+
+    let payload = {}
+    try {
+      payload = event.data.json()
+    } catch {
+      payload = { notification: { title: 'Happy Calendar', body: event.data.text() } }
+    }
+
+    const notification = payload.notification || {}
+    const data = payload.data || {}
+    const title = notification.title || 'Happy Calendar'
+    const options = {
+      body: notification.body || 'У тебя есть обновление на сегодня.',
+      icon: '/pwa-192x192.png',
+      badge: '/pwa-192x192.png',
+      data: { url: data.url || '/home' },
+    }
+
+    event.waitUntil(self.registration.showNotification(title, options))
+  })
+}
+
+// Click handler — focuses existing window or opens a new one at the notification's target URL.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-
   const targetUrl = event.notification.data?.url || '/home'
 
   event.waitUntil(
@@ -39,11 +83,9 @@ self.addEventListener('notificationclick', (event) => {
           return client.focus()
         }
       }
-
       if (self.clients.openWindow) {
         return self.clients.openWindow(targetUrl)
       }
-
       return undefined
     }),
   )
