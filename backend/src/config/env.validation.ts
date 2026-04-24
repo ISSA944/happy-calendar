@@ -22,6 +22,10 @@ export const envSchema = z.object({
 
   // Email (Resend)
   RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
+  RESEND_FROM_EMAIL: z
+    .string()
+    .email()
+    .default('onboarding@resend.dev'),
 
   // Firebase
   FIREBASE_PROJECT_ID: z.string().min(1, 'FIREBASE_PROJECT_ID is required'),

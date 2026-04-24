@@ -6,7 +6,6 @@ import {
   Routes,
   useLocation,
 } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
 import { BottomNav } from './components/BottomNav'
 import { useAppStore } from './store'
 
@@ -32,29 +31,22 @@ function RootGuard() {
   return hasCompletedOnboarding ? <Navigate to="/home" replace /> : <WelcomePage />
 }
 
-const TAB_FADE = { duration: 0.18, ease: [0.22, 1, 0.36, 1] as const }
-const TAB_WILL_CHANGE = { willChange: 'opacity' as const }
-
 function TabOutlet() {
   const { pathname } = useLocation()
 
+  // No shared fade — each page owns its own first-visit fade via module-level flag.
+  // Tab switches are now instant at the outlet level; the page component decides
+  // whether to animate on its own mount.
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={TAB_FADE}
-        style={{ ...TAB_WILL_CHANGE, background: '#fcf9f4' }}
-        className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
-      >
-        {pathname === '/home' && <HomePage />}
-        {pathname === '/bookmarks' && <BookmarksPage />}
-        {pathname === '/settings' && <SettingsPage />}
-        {pathname === '/notifications-list' && <NotificationsListPage />}
-      </motion.div>
-    </AnimatePresence>
+    <div
+      className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
+      style={{ background: '#fcf9f4' }}
+    >
+      {pathname === '/home' && <HomePage />}
+      {pathname === '/bookmarks' && <BookmarksPage />}
+      {pathname === '/settings' && <SettingsPage />}
+      {pathname === '/notifications-list' && <NotificationsListPage />}
+    </div>
   )
 }
 

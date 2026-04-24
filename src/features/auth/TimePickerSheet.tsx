@@ -1,4 +1,12 @@
-import { memo, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 
 interface TimePickerSheetProps {
@@ -38,14 +46,14 @@ const WheelColumn = memo(function WheelColumn({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const userScrollingRef = useRef(false)
 
-  useEffect(() => {
+  // Sync scroll position BEFORE paint so the wheel shows the correct value on
+  // the very first rendered frame when the sheet slides up. Using useEffect
+  // here caused a visible jump-to-position during the sheet's open animation.
+  useLayoutEffect(() => {
     const element = scrollRef.current
     if (!element || userScrollingRef.current) return
 
-    element.scrollTo({
-      top: selectedIndex * ITEM_HEIGHT,
-      behavior: 'auto',
-    })
+    element.scrollTop = selectedIndex * ITEM_HEIGHT
   }, [selectedIndex])
 
   useEffect(() => {

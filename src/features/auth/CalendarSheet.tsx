@@ -203,6 +203,10 @@ const CalendarGrid = memo(function CalendarGrid({
   baseYear: number
   onSelectDay: (cell: CalendarCell) => void
 }) {
+  // Block future dates — birthdates can't be in the future.
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
   return (
     <div className="grid grid-cols-7 auto-rows-[40px]">
       {cells.map((cell) => {
@@ -213,16 +217,22 @@ const CalendarGrid = memo(function CalendarGrid({
 
         const value = formatDate(cell.day, baseMonth, baseYear)
         const isSelected = value === selectedValue
+        const cellDate = new Date(baseYear, baseMonth, cell.day)
+        const isFuture = cellDate.getTime() > today.getTime()
 
         return (
           <div key={cell.key} className="flex min-w-0 items-center justify-center">
             <button
               type="button"
-              onClick={() => onSelectDay(cell)}
-              className={`flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-full text-sm font-medium transition-colors active:scale-95 ${isSelected
-                  ? 'bg-primary text-white shadow-md shadow-primary/30'
-                  : 'text-on-surface hover:bg-surface-container'
-                }`}
+              disabled={isFuture}
+              onClick={() => !isFuture && onSelectDay(cell)}
+              className={`flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-full text-sm font-medium transition-colors ${
+                isFuture
+                  ? 'text-on-surface-variant/25 cursor-not-allowed'
+                  : isSelected
+                    ? 'bg-primary text-white shadow-md shadow-primary/30 active:scale-95'
+                    : 'text-on-surface hover:bg-surface-container active:scale-95'
+              }`}
             >
               {cell.day}
             </button>

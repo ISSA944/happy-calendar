@@ -14,7 +14,11 @@ import { AnimatePresence, motion, useMotionValue, animate, useDragControls } fro
  *  - Drag-to-close only via the top pill (dragListener=false on the sheet body).
  */
 
-const SHEET_SPRING = { type: 'spring' as const, stiffness: 300, damping: 30 }
+// Critically-damped spring → zero overshoot, fast settle. Kills the "micro-bounce"
+// that made sheets feel unstable when opening. Close stays identical.
+const SHEET_SPRING = { type: 'spring' as const, stiffness: 420, damping: 42, mass: 1 }
+// Snap-back after a partial drag uses slightly softer response so it doesn't feel rigid.
+const DRAG_SNAP = { type: 'spring' as const, stiffness: 380, damping: 36, mass: 1 }
 const BACKDROP_FADE = { duration: 0.22, ease: [0.32, 0.72, 0, 1] as const }
 
 export interface BottomSheetProps {
@@ -60,7 +64,7 @@ export function BottomSheet({
     if (info.offset.y > 100 || info.velocity.y > 400) {
       onClose()
     } else {
-      animate(dragY, 0, SHEET_SPRING)
+      animate(dragY, 0, DRAG_SNAP)
     }
   }
 

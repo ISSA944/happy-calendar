@@ -75,11 +75,11 @@ export function RegistrationPage() {
       >
 
         {/* ── Headline ── shrinks its bottom margin on tiny screens */}
-        <section className="mb-4 shrink-0">
-          <h2 className="font-headline font-extrabold text-4xl text-on-surface mb-2 tracking-tight leading-tight">
+        <section className="mb-4 shrink-0 landscape:mb-2">
+          <h2 className="font-headline font-extrabold text-4xl landscape:text-2xl text-on-surface mb-2 landscape:mb-1 tracking-tight leading-tight">
             Давай начнём
           </h2>
-          <p className="text-on-surface-variant text-base font-medium leading-relaxed">
+          <p className="text-on-surface-variant text-base landscape:text-sm font-medium leading-relaxed">
             Введите данные, чтобы создать аккаунт.
           </p>
         </section>

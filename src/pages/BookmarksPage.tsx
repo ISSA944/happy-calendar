@@ -1,26 +1,24 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { Variants } from 'framer-motion'
 import { useAppStore } from '../store'
 import type { BookmarkType } from '../store/app.store'
 
-const containerVariants: Variants = {
-  hidden: { opacity: 1 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
-}
-// "Стелющаяся" cascade with GPU compositor hint
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
-}
-const STAGGER_GPU_STYLE = { willChange: 'transform, opacity' as const }
+// Module-level flag — first tab visit fades in once, subsequent visits are instant.
+let bookmarksPageDidMount = false
+
+const FIRST_VISIT_TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const }
 
 export function BookmarksPage() {
+  const isFirstVisit = useRef(!bookmarksPageDidMount)
   const navigate = useNavigate()
   const bookmarks = useAppStore(s => s.bookmarks)
   const removeBookmark = useAppStore(s => s.removeBookmark)
   const [filter, setFilter] = useState<'все' | BookmarkType>('все')
+
+  useEffect(() => {
+    bookmarksPageDidMount = true
+  }, [])
 
   const filtered = useMemo(
     () => bookmarks.filter(b => filter === 'все' || b.type === filter),
@@ -31,7 +29,13 @@ export function BookmarksPage() {
   const handleBack = useCallback(() => navigate(-1), [navigate])
 
   return (
-    <motion.div initial="hidden" animate="show" variants={containerVariants} className="flex flex-col min-h-full bg-background">
+    <motion.div
+      initial={isFirstVisit.current ? { opacity: 0 } : false}
+      animate={{ opacity: 1 }}
+      transition={isFirstVisit.current ? FIRST_VISIT_TRANSITION : undefined}
+      style={isFirstVisit.current ? { willChange: 'opacity' } : undefined}
+      className="flex flex-col min-h-full bg-background"
+    >
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
         <div className="flex items-center h-16 relative">
           <button
@@ -45,13 +49,13 @@ export function BookmarksPage() {
       </header>
 
       <main className="flex-1 w-full max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-4 pb-24">
-        <motion.div variants={itemVariants} style={STAGGER_GPU_STYLE} className="mb-6">
+        <div className="mb-6">
           <p className="text-on-surface-variant font-body text-sm leading-relaxed">
             Ваши сохраненные моменты и предсказания в одном безопасном месте.
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div variants={itemVariants} style={STAGGER_GPU_STYLE} className="flex gap-2 overflow-x-auto pb-6 no-scrollbar">
+        <div className="flex gap-2 overflow-x-auto pb-6 no-scrollbar">
           {(['все', 'гороскоп', 'поддержка'] as const).map(type => (
             <button
               key={type}
@@ -66,7 +70,7 @@ export function BookmarksPage() {
               {type === 'все' ? 'Все' : type === 'гороскоп' ? 'Гороскоп' : 'Поддержка'}
             </button>
           ))}
-        </motion.div>
+        </div>
 
         <section className="space-y-5 landscape:space-y-0 landscape:grid landscape:grid-cols-2 landscape:gap-5">
           <AnimatePresence mode="popLayout">
@@ -74,10 +78,10 @@ export function BookmarksPage() {
               <motion.div
                 layout
                 key={bm.id}
-                variants={itemVariants}
-                initial="hidden"
-                animate="show"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                 className="bg-white rounded-[24px] p-5 flex flex-col gap-4 shadow-[0_4px_16px_rgba(0,0,0,0.04)]"
               >
                 <div className="flex items-center gap-3">

@@ -1,25 +1,23 @@
-import { memo, useCallback, useRef, useState, startTransition } from 'react'
+import { memo, useCallback, useEffect, useRef, useState, startTransition } from 'react'
 import { motion } from 'framer-motion'
-import type { Variants } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
 import { CalendarSheet } from '../features/auth/CalendarSheet'
 import { TimePickerSheet } from '../features/auth/TimePickerSheet'
 import { isValidEmail } from '../utils/validation'
 
-const containerVariants: Variants = {
-  hidden: { opacity: 1 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
-}
-// "Стелющаяся" cascade with GPU compositor hint
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
-}
-const STAGGER_GPU_STYLE = { willChange: 'transform, opacity' as const }
+// Module-level flag — first tab visit fades in once, subsequent visits are instant.
+let settingsPageDidMount = false
+
+const FIRST_VISIT_TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const }
 
 export function SettingsPage() {
+  const isFirstVisit = useRef(!settingsPageDidMount)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    settingsPageDidMount = true
+  }, [])
   const {
     userName,
     email, setEmail,
@@ -81,9 +79,10 @@ export function SettingsPage() {
 
   return (
     <motion.div
-      initial="hidden"
-      animate="show"
-      variants={containerVariants}
+      initial={isFirstVisit.current ? { opacity: 0 } : false}
+      animate={{ opacity: 1 }}
+      transition={isFirstVisit.current ? FIRST_VISIT_TRANSITION : undefined}
+      style={isFirstVisit.current ? { willChange: 'opacity' } : undefined}
       className="flex flex-col min-h-full bg-background font-body"
     >
       {/* Hidden file input */}
@@ -111,7 +110,7 @@ export function SettingsPage() {
 
       <main className="w-full max-w-[430px] landscape:max-w-[860px] mx-auto px-6 pb-28 hide-scrollbar landscape:grid landscape:grid-cols-2 landscape:gap-x-6 landscape:gap-y-6 landscape:items-start">
         {/* Profile Block */}
-        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="flex items-center gap-6 mb-10 mt-4 landscape:mb-0 landscape:mt-0 landscape:col-start-1 landscape:row-start-1">
+        <section className="flex items-center gap-6 mb-10 mt-4 landscape:mb-0 landscape:mt-0 landscape:col-start-1 landscape:row-start-1">
           <button
             onClick={handlePhotoClick}
             className="relative flex-shrink-0 active:scale-95 transition-transform"
@@ -138,10 +137,10 @@ export function SettingsPage() {
               Сменить фото
             </button>
           </div>
-        </motion.section>
+        </section>
 
         {/* Account Section */}
-        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-start-1 landscape:row-start-2">
+        <section className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-start-1 landscape:row-start-2">
           <div className="flex flex-col gap-5">
 
             {/* Email */}
@@ -213,27 +212,27 @@ export function SettingsPage() {
             </div>
 
           </div>
-        </motion.section>
+        </section>
 
         {/* Контент */}
-        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-start-2 landscape:row-start-1">
+        <section className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-start-2 landscape:row-start-1">
           <h2 className="text-sm font-bold text-on-surface mb-5 px-1 uppercase tracking-wider opacity-60">Контент</h2>
           <div className="flex flex-col gap-6">
             <ToggleItem label="Гороскоп" isActive={showHoroscope} onToggle={toggleHoroscope} />
             <ToggleItem label="Праздники" isActive={showHolidays} onToggle={toggleHolidays} />
             <ToggleItem label="Поддержка на сегодня" isActive={showSupport} onToggle={toggleSupport} />
           </div>
-        </motion.section>
+        </section>
 
         {/* Reset */}
-        <motion.section variants={itemVariants} style={STAGGER_GPU_STYLE} className="mb-6 landscape:mb-0 landscape:col-start-2 landscape:row-start-2">
+        <section className="mb-6 landscape:mb-0 landscape:col-start-2 landscape:row-start-2">
           <button
             onClick={handleReset}
             className="w-full py-4 rounded-[1.5rem] border border-red-200 text-red-500 font-semibold text-sm active:scale-[0.98] transition-colors hover:bg-red-50"
           >
             Сбросить профиль и начать заново
           </button>
-        </motion.section>
+        </section>
 
         <div className="h-6 landscape:hidden" />
       </main>

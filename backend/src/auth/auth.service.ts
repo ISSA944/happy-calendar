@@ -23,6 +23,7 @@ export class AuthService {
   private readonly OTP_TTL_MIN = 15;
   private readonly BCRYPT_ROUNDS = 10;
   private readonly resend: Resend;
+  private readonly fromEmail: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -30,6 +31,8 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {
     this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
+    this.fromEmail =
+      this.config.get<string>('RESEND_FROM_EMAIL') ?? 'onboarding@resend.dev';
   }
 
   async register(email: string, name?: string, _consents?: boolean) {
@@ -141,7 +144,7 @@ export class AuthService {
 
     try {
       const { data, error } = await this.resend.emails.send({
-        from: 'Happy Calendar <onboarding@happy-calendar.app>',
+        from: `Happy Calendar <${this.fromEmail}>`,
         to,
         subject: 'Твой код доступа к Happy Calendar',
         html: this.renderOtpEmailHtml(code),
@@ -149,7 +152,7 @@ export class AuthService {
 
       if (error) {
         this.logger.error(
-          `Resend API rejected email for ${to}: ${error.name} — ${error.message}`,
+          `Resend API rejected email for ${to} (from=${this.fromEmail}): ${JSON.stringify(error)}`,
         );
         throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
       }
@@ -157,7 +160,10 @@ export class AuthService {
       this.logger.log(`OTP email sent to ${to} (resend_id=${data?.id ?? 'n/a'})`);
     } catch (err) {
       if (err instanceof InternalServerErrorException) throw err;
-      this.logger.error(`Unexpected error while sending OTP to ${to}`, err);
+      this.logger.error(
+        `Unexpected error while sending OTP to ${to} (from=${this.fromEmail})`,
+        err instanceof Error ? err.stack : err,
+      );
       throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
     }
   }
