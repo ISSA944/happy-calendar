@@ -100,11 +100,13 @@ export function NotificationsPage() {
     try {
       const result = await requestPermissionAndSubscribe()
 
-      if (!result.subscribed && result.reason !== 'permission-denied') {
-        setPushError('Разрешение сохранили, но подписка на push не завершилась. Повторим после настройки профиля.')
+      if (result.subscribed) {
+        setPushError(`✅ Подписка OK` + ('token' in result ? ` token=${String(result.token).slice(0,12)}…` : ''))
+      } else {
+        setPushError(`❌ reason=${result.reason ?? 'unknown'}`)
       }
-    } catch {
-      setPushError('Не удалось подключить push прямо сейчас. Повторим после настройки профиля.')
+    } catch (err) {
+      setPushError(`❌ exception: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setIsRequestingPush(false)
       navigate('/profile-setup')
