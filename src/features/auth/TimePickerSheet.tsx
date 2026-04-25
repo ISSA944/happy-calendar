@@ -45,15 +45,16 @@ const WheelColumn = memo(function WheelColumn({
   const scrollRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const userScrollingRef = useRef(false)
+  // Tracks visual position during scroll independently from committed selectedIndex.
+  // Without this, active-item styling lags behind the browser's snap position
+  // during the 100ms debounce window, causing visible digit jitter on mobile.
+  const [displayIndex, setDisplayIndex] = useState(selectedIndex)
 
-  // Sync scroll position BEFORE paint so the wheel shows the correct value on
-  // the very first rendered frame when the sheet slides up. Using useEffect
-  // here caused a visible jump-to-position during the sheet's open animation.
   useLayoutEffect(() => {
     const element = scrollRef.current
     if (!element || userScrollingRef.current) return
-
     element.scrollTop = selectedIndex * ITEM_HEIGHT
+    setDisplayIndex(selectedIndex)
   }, [selectedIndex])
 
   useEffect(() => {
@@ -63,18 +64,30 @@ const WheelColumn = memo(function WheelColumn({
   }, [])
 
   const handleScroll = useCallback(() => {
+    const element = scrollRef.current
+    if (!element) return
+
     userScrollingRef.current = true
+
+    // Update visual highlight immediately on every scroll event so the
+    // active digit follows the user's finger without waiting for debounce.
+    const immediate = Math.max(
+      0,
+      Math.min(items.length - 1, Math.round(element.scrollTop / ITEM_HEIGHT)),
+    )
+    setDisplayIndex(immediate)
 
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
-      const element = scrollRef.current
-      if (!element) return
-
+      if (!scrollRef.current) return
       userScrollingRef.current = false
-      const rawIndex = Math.round(element.scrollTop / ITEM_HEIGHT)
-      const clampedIndex = Math.max(0, Math.min(items.length - 1, rawIndex))
-      onChange(clampedIndex)
-    }, 50)
+      const final = Math.max(
+        0,
+        Math.min(items.length - 1, Math.round(scrollRef.current.scrollTop / ITEM_HEIGHT)),
+      )
+      setDisplayIndex(final)
+      onChange(final)
+    }, 100)
   }, [items.length, onChange])
 
   return (
@@ -109,7 +122,7 @@ const WheelColumn = memo(function WheelColumn({
         <div style={{ height: SPACER_HEIGHT, flexShrink: 0 }} />
 
         {items.map((label, index) => {
-          const distance = Math.abs(index - selectedIndex)
+          const distance = Math.abs(index - displayIndex)
           const opacity = distance === 0 ? 1 : distance === 1 ? 0.5 : 0.2
           const color = distance === 0 ? '#006a65' : '#6d7a78'
           const fontWeight = distance === 0 ? 800 : distance === 1 ? 600 : 400
@@ -129,7 +142,7 @@ const WheelColumn = memo(function WheelColumn({
                 fontWeight,
                 fontSize,
                 lineHeight: 1,
-                transition: 'opacity 0.12s ease, color 0.12s ease',
+                transition: 'opacity 0.1s ease, color 0.1s ease, font-size 0.1s ease, font-weight 0.1s ease',
                 userSelect: 'none',
               }}
             >
@@ -145,7 +158,6 @@ const WheelColumn = memo(function WheelColumn({
 })
 
 export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimePickerSheetProps) {
-  const title = "Установить время"
   const headerRight = (
     <button
       type="button"
@@ -157,10 +169,10 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
   )
 
   return (
-    <BottomSheet 
-      isOpen={isOpen} 
-      onClose={onCancel} 
-      title={title} 
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onCancel}
+      title="Установить время"
       headerRight={headerRight}
     >
       {isOpen && (
