@@ -9,12 +9,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.14.0/firebase-messaging-compat.js')
 
 const firebaseConfig = {
-  apiKey: 'REPLACE_ME',
-  authDomain: 'REPLACE_ME.firebaseapp.com',
+  apiKey: 'AIzaSyCjZLy4WTUlxP5aIyjLy_sIGkzM7LeNO9I',
+  authDomain: 'happy-calendar-a5e69.firebaseapp.com',
   projectId: 'happy-calendar-a5e69',
-  storageBucket: 'REPLACE_ME.appspot.com',
-  messagingSenderId: 'REPLACE_ME',
-  appId: 'REPLACE_ME',
+  storageBucket: 'happy-calendar-a5e69.firebasestorage.app',
+  messagingSenderId: '313374698896',
+  appId: '1:313374698896:web:83520926053d62f239d715',
 }
 
 const isConfigComplete = Object.values(firebaseConfig).every(
