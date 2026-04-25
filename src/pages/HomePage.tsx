@@ -26,12 +26,8 @@ const slideVariants: Variants = {
 const SLIDE_TRANSITION = { duration: 0.2, ease: [0.22, 1, 0.36, 1] as const }
 const SLIDE_STYLE = { willChange: 'transform, opacity' as const }
 
-// Module-level flag: first visit → gentle fade-in once. Subsequent tab switches → instant (initial={false}).
-let homePageDidMount = false
-
 export function HomePage() {
   const navigate = useNavigate()
-  const isFirstVisit = useRef(!homePageDidMount)
 
   const currentMood        = useAppStore(s => s.currentMood)
   const gender             = useAppStore(s => s.gender)
@@ -53,7 +49,6 @@ export function HomePage() {
   const quoteIdxRef = useRef<number>(-1)
 
   useEffect(() => {
-    homePageDidMount = true
     initDailyPack(zodiacSign, currentMood)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -123,14 +118,7 @@ export function HomePage() {
 
   return (
     <>
-      {/* Outer wrapper: fades in on first visit only — subsequent tab switches are instant */}
-      <motion.div
-        initial={isFirstVisit.current ? { opacity: 0 } : false}
-        animate={{ opacity: 1 }}
-        transition={isFirstVisit.current ? { duration: 0.25, ease: [0.22, 1, 0.36, 1] } : undefined}
-        style={isFirstVisit.current ? { willChange: 'opacity' } : undefined}
-        className="max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-2 pb-8"
-      >
+      <div className="max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-2 pb-8">
 
         {/* PWA Install Banner */}
         <AnimatePresence>
@@ -362,7 +350,7 @@ export function HomePage() {
           </section>
 
         </div>
-      </motion.div>
+      </div>
 
       {/* ── iOS Install Modal ── */}
       <BottomSheet

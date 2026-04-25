@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState, startTransition } from 'react'
+import { memo, useCallback, useRef, useState, startTransition } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
@@ -7,19 +7,10 @@ import { CalendarSheet } from '../features/auth/CalendarSheet'
 import { TimePickerSheet } from '../features/auth/TimePickerSheet'
 import { isValidEmail } from '../utils/validation'
 
-// Module-level flag — first tab visit fades in once, subsequent visits are instant.
-let settingsPageDidMount = false
-
-const FIRST_VISIT_TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const }
-
 export function SettingsPage() {
-  const isFirstVisit = useRef(!settingsPageDidMount)
   const navigate = useNavigate()
   const { permission, requestPermissionAndSubscribe, syncPushSubscription } = useFirebasePush()
 
-  useEffect(() => {
-    settingsPageDidMount = true
-  }, [])
   const {
     userName,
     email, setEmail,
@@ -87,13 +78,7 @@ export function SettingsPage() {
   }, [setHoroscopeTime, permission, requestPermissionAndSubscribe, syncPushSubscription])
 
   return (
-    <motion.div
-      initial={isFirstVisit.current ? { opacity: 0 } : false}
-      animate={{ opacity: 1 }}
-      transition={isFirstVisit.current ? FIRST_VISIT_TRANSITION : undefined}
-      style={isFirstVisit.current ? { willChange: 'opacity' } : undefined}
-      className="flex flex-col min-h-full bg-background font-body"
-    >
+    <div className="flex flex-col min-h-full bg-background font-body">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -261,7 +246,7 @@ export function SettingsPage() {
         onSave={handleSaveTime}
         onCancel={closeTimePicker}
       />
-    </motion.div>
+    </div>
   )
 }
 

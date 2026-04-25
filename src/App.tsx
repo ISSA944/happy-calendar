@@ -6,14 +6,19 @@ import {
   Routes,
   useLocation,
 } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { BottomNav } from './components/BottomNav'
 import { useAppStore } from './store'
 
+// App-shell tabs — static imports so Suspense never flashes a blank screen
+// when switching between Home / Bookmarks / Settings.
+import { HomePage } from './pages/HomePage'
+import { BookmarksPage } from './pages/BookmarksPage'
+import { SettingsPage } from './pages/SettingsPage'
+import { NotificationsListPage } from './pages/NotificationsListPage'
+
+// Auth + one-shot pages remain lazy (only loaded once, negligible UX cost).
 const WelcomePage = lazy(() => import('./pages/WelcomePage').then(m => ({ default: m.WelcomePage })))
-const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })))
-const BookmarksPage = lazy(() => import('./pages/BookmarksPage').then(m => ({ default: m.BookmarksPage })))
-const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
-const NotificationsListPage = lazy(() => import('./pages/NotificationsListPage').then(m => ({ default: m.NotificationsListPage })))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
 const OtpPage = lazy(() => import('./pages/OtpPage').then(m => ({ default: m.OtpPage })))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })))
@@ -34,18 +39,23 @@ function RootGuard() {
 function TabOutlet() {
   const { pathname } = useLocation()
 
-  // No shared fade — each page owns its own first-visit fade via module-level flag.
-  // Tab switches are now instant at the outlet level; the page component decides
-  // whether to animate on its own mount.
   return (
-    <div
-      className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
-      style={{ background: '#fcf9f4' }}
-    >
-      {pathname === '/home' && <HomePage />}
-      {pathname === '/bookmarks' && <BookmarksPage />}
-      {pathname === '/settings' && <SettingsPage />}
-      {pathname === '/notifications-list' && <NotificationsListPage />}
+    <div className="absolute inset-0 w-full h-full overflow-hidden" style={{ background: '#fcf9f4' }}>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, x: 15 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -15 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
+        >
+          {pathname === '/home' && <HomePage />}
+          {pathname === '/bookmarks' && <BookmarksPage />}
+          {pathname === '/settings' && <SettingsPage />}
+          {pathname === '/notifications-list' && <NotificationsListPage />}
+        </motion.div>
+      </AnimatePresence>
     </div>
   )
 }

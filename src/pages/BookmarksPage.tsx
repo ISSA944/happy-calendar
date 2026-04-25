@@ -4,21 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../store'
 import type { BookmarkType } from '../store/app.store'
 
-// Module-level flag — first tab visit fades in once, subsequent visits are instant.
-let bookmarksPageDidMount = false
-
-const FIRST_VISIT_TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const }
-
 export function BookmarksPage() {
-  const isFirstVisit = useRef(!bookmarksPageDidMount)
   const navigate = useNavigate()
   const bookmarks = useAppStore(s => s.bookmarks)
   const removeBookmark = useAppStore(s => s.removeBookmark)
   const [filter, setFilter] = useState<'все' | BookmarkType>('все')
-
-  useEffect(() => {
-    bookmarksPageDidMount = true
-  }, [])
 
   const filtered = useMemo(
     () => bookmarks.filter(b => filter === 'все' || b.type === filter),
@@ -29,13 +19,7 @@ export function BookmarksPage() {
   const handleBack = useCallback(() => navigate(-1), [navigate])
 
   return (
-    <motion.div
-      initial={isFirstVisit.current ? { opacity: 0 } : false}
-      animate={{ opacity: 1 }}
-      transition={isFirstVisit.current ? FIRST_VISIT_TRANSITION : undefined}
-      style={isFirstVisit.current ? { willChange: 'opacity' } : undefined}
-      className="flex flex-col min-h-full bg-background"
-    >
+    <div className="flex flex-col min-h-full bg-background">
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
         <div className="flex items-center h-16 relative">
           <button
@@ -127,7 +111,7 @@ export function BookmarksPage() {
           )}
         </section>
       </main>
-    </motion.div>
+    </div>
   )
 }
 
