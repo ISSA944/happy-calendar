@@ -44,15 +44,23 @@ const WheelColumn = memo(function WheelColumn({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const userScrollingRef = useRef(false)
-  // Tracks visual position during scroll independently from committed selectedIndex.
-  // Without this, active-item styling lags behind the browser's snap position
-  // during the 100ms debounce window, causing visible digit jitter on mobile.
+  // Separate refs for physical touch and scroll-event window.
+  // useLayoutEffect must not force scrollTop while either is true — doing so
+  // fights the browser's scroll-snap animation and causes visible jumps.
+  const isTouchingRef = useRef(false)
+  const isScrollingRef = useRef(false)
   const [displayIndex, setDisplayIndex] = useState(selectedIndex)
 
   useLayoutEffect(() => {
     const element = scrollRef.current
-    if (!element || userScrollingRef.current) return
+    if (!element || isTouchingRef.current || isScrollingRef.current) return
+    // Skip if the scroll position already represents the correct index.
+    // On iOS, scrollTop can carry sub-pixel values; re-assigning the same
+    // integer triggers a new scroll event and restarts the jump cycle.
+    if (Math.round(element.scrollTop / ITEM_HEIGHT) === selectedIndex) {
+      setDisplayIndex(selectedIndex)
+      return
+    }
     element.scrollTop = selectedIndex * ITEM_HEIGHT
     setDisplayIndex(selectedIndex)
   }, [selectedIndex])
@@ -63,11 +71,14 @@ const WheelColumn = memo(function WheelColumn({
     }
   }, [])
 
+  const handleTouchStart = useCallback(() => { isTouchingRef.current = true }, [])
+  const handleTouchEnd = useCallback(() => { isTouchingRef.current = false }, [])
+
   const handleScroll = useCallback(() => {
     const element = scrollRef.current
     if (!element) return
 
-    userScrollingRef.current = true
+    isScrollingRef.current = true
 
     // Update visual highlight immediately on every scroll event so the
     // active digit follows the user's finger without waiting for debounce.
@@ -78,16 +89,19 @@ const WheelColumn = memo(function WheelColumn({
     setDisplayIndex(immediate)
 
     if (timerRef.current) clearTimeout(timerRef.current)
+    // 150ms: enough for iOS scroll-snap animation to finish before we
+    // commit the value and allow useLayoutEffect to re-sync position.
     timerRef.current = setTimeout(() => {
       if (!scrollRef.current) return
-      userScrollingRef.current = false
+      isScrollingRef.current = false
+      isTouchingRef.current = false
       const final = Math.max(
         0,
         Math.min(items.length - 1, Math.round(scrollRef.current.scrollTop / ITEM_HEIGHT)),
       )
       setDisplayIndex(final)
       onChange(final)
-    }, 100)
+    }, 150)
   }, [items.length, onChange])
 
   return (
@@ -116,6 +130,11 @@ const WheelColumn = memo(function WheelColumn({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        onMouseDown={handleTouchStart}
+        onMouseUp={handleTouchEnd}
         className="[&::-webkit-scrollbar]:hidden relative z-0"
         style={scrollStyle}
       >
