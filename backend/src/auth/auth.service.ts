@@ -269,8 +269,15 @@ export class AuthService {
               <p style="margin:0 0 28px;font-size:16px;line-height:1.55;color:#2a3f3e">
                 Привет! Вот твой одноразовый код для входа:
               </p>
-              <div style="text-align:center;background:#ffffff;border:1.5px solid #2FA7A0;border-radius:16px;padding:28px 12px">
-                <div style="font-size:52px;font-weight:700;color:#006a65;letter-spacing:18px;line-height:1">${code}</div>
+              <div style="text-align:center">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto">
+                  <tr>
+                    ${code.split('').map(d => `
+                    <td style="padding:0 5px">
+                      <div style="width:56px;height:72px;background:#f0fafa;border:2px solid #2FA7A0;border-radius:14px;text-align:center;line-height:72px;font-size:40px;font-weight:800;color:#006a65;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">${d}</div>
+                    </td>`).join('')}
+                  </tr>
+                </table>
               </div>
               <p style="margin:28px 0 0;font-size:14px;line-height:1.55;color:#5a6968">
                 Код действует <strong style="color:#006a65">${this.OTP_TTL_MIN} минут</strong>. Никому его не передавай — мы не запрашиваем коды в чатах и сообщениях.
