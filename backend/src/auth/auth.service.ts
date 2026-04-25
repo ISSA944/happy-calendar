@@ -45,10 +45,21 @@ export class AuthService {
     });
 
     const code = randomInt(1000, 10_000).toString();
+    const isDev = this.config.get<string>('NODE_ENV') !== 'production';
 
-    // Отправляем письмо ПЕРВЫМ. Хэш OTP записываем в БД только после успеха,
-    // чтобы сбой Resend не ломал стейт юзера (не оставлял протухшие OTP).
-    await this.sendOtpEmail(normalizedEmail, code);
+    // Try to send email first (clean-state policy: save hash only on success).
+    // In development: if Resend fails for any reason (unverified domain, wrong recipient),
+    // we log the code to the terminal and continue — so any email can be tested locally.
+    // In production: failure still throws 500.
+    try {
+      await this.sendOtpEmail(normalizedEmail, code);
+    } catch (err) {
+      if (!isDev) throw err;
+      this.logger.warn(
+        `\n⚠️  DEV MODE — Resend failed for <${normalizedEmail}>.\n` +
+        `   OTP code: [ ${code} ]  (enter this on the OTP page)\n`,
+      );
+    }
 
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
     const otpExpiresAt = new Date(Date.now() + this.OTP_TTL_MIN * 60_000);
