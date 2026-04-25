@@ -9,13 +9,6 @@ export const apiClient = axios.create({
   },
 })
 
-// Simulate realistic network latency in development only
-if (import.meta.env.DEV) {
-  apiClient.interceptors.request.use(async (config) => {
-    await new Promise<void>((r) => setTimeout(r, 600 + Math.random() * 400))
-    return config
-  })
-}
 
 apiClient.interceptors.request.use((config) => {
   const accessToken = getAccessToken()
