@@ -9,6 +9,8 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { randomInt } from 'crypto';
 import { Resend } from 'resend';
+import * as nodemailer from 'nodemailer';
+import type { Transporter } from 'nodemailer';
 import { PrismaService } from '../prisma';
 
 export interface JwtPayload {
@@ -17,22 +19,62 @@ export interface JwtPayload {
   type: 'access' | 'refresh';
 }
 
+type EmailProvider = 'smtp' | 'resend' | 'none';
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly OTP_TTL_MIN = 15;
   private readonly BCRYPT_ROUNDS = 10;
-  private readonly resend: Resend;
-  private readonly fromEmail: string;
+
+  private readonly smtpTransport: Transporter | null;
+  private readonly smtpFromEmail: string;
+  private readonly smtpFromName: string;
+
+  private readonly resend: Resend | null;
+  private readonly resendFromEmail: string;
+
+  private readonly provider: EmailProvider;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {
-    this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
-    this.fromEmail =
+    // SMTP setup (preferred — delivers to any address)
+    const smtpHost = this.config.get<string>('SMTP_HOST');
+    const smtpUser = this.config.get<string>('SMTP_USER');
+    const smtpPassword = this.config.get<string>('SMTP_PASSWORD');
+    const smtpPort = this.config.get<number>('SMTP_PORT') ?? 587;
+
+    if (smtpHost && smtpUser && smtpPassword) {
+      this.smtpTransport = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPassword },
+      });
+    } else {
+      this.smtpTransport = null;
+    }
+    this.smtpFromEmail =
+      this.config.get<string>('SMTP_FROM_EMAIL') ?? smtpUser ?? '';
+    this.smtpFromName =
+      this.config.get<string>('SMTP_FROM_NAME') ?? 'Happy Calendar';
+
+    // Resend fallback (kept for future domain-verified prod)
+    const resendKey = this.config.get<string>('RESEND_API_KEY');
+    this.resend = resendKey ? new Resend(resendKey) : null;
+    this.resendFromEmail =
       this.config.get<string>('RESEND_FROM_EMAIL') ?? 'onboarding@resend.dev';
+
+    this.provider = this.smtpTransport
+      ? 'smtp'
+      : this.resend
+        ? 'resend'
+        : 'none';
+
+    this.logger.log(`Email provider: ${this.provider}`);
   }
 
   async register(email: string, name?: string, _consents?: boolean) {
@@ -48,15 +90,14 @@ export class AuthService {
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';
 
     // Try to send email first (clean-state policy: save hash only on success).
-    // In development: if Resend fails for any reason (unverified domain, wrong recipient),
-    // we log the code to the terminal and continue — so any email can be tested locally.
-    // In production: failure still throws 500.
+    // In development: if email send fails for any reason, log code to terminal so
+    // any email can be tested locally. In production: failure still throws 500.
     try {
       await this.sendOtpEmail(normalizedEmail, code);
     } catch (err) {
       if (!isDev) throw err;
       this.logger.warn(
-        `\n⚠️  DEV MODE — Resend failed for <${normalizedEmail}>.\n` +
+        `\n⚠️  DEV MODE — email send failed for <${normalizedEmail}>.\n` +
         `   OTP code: [ ${code} ]  (enter this on the OTP page)\n`,
       );
     }
@@ -152,31 +193,56 @@ export class AuthService {
   private async sendOtpEmail(to: string, code: string) {
     const EMAIL_FAILURE_MSG =
       'Не удалось отправить письмо с кодом. Попробуйте позже.';
+    const subject = 'Твой код доступа к Happy Calendar';
+    const html = this.renderOtpEmailHtml(code);
 
-    try {
-      const { data, error } = await this.resend.emails.send({
-        from: `Happy Calendar <${this.fromEmail}>`,
-        to,
-        subject: 'Твой код доступа к Happy Calendar',
-        html: this.renderOtpEmailHtml(code),
-      });
-
-      if (error) {
+    if (this.provider === 'smtp' && this.smtpTransport) {
+      try {
+        const info = await this.smtpTransport.sendMail({
+          from: `${this.smtpFromName} <${this.smtpFromEmail}>`,
+          to,
+          subject,
+          html,
+        });
+        this.logger.log(`OTP email sent to ${to} via SMTP (id=${info.messageId})`);
+        return;
+      } catch (err) {
         this.logger.error(
-          `Resend API rejected email for ${to} (from=${this.fromEmail}): ${JSON.stringify(error)}`,
+          `SMTP send failed for ${to} (from=${this.smtpFromEmail})`,
+          err instanceof Error ? err.stack : err,
         );
         throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
       }
-
-      this.logger.log(`OTP email sent to ${to} (resend_id=${data?.id ?? 'n/a'})`);
-    } catch (err) {
-      if (err instanceof InternalServerErrorException) throw err;
-      this.logger.error(
-        `Unexpected error while sending OTP to ${to} (from=${this.fromEmail})`,
-        err instanceof Error ? err.stack : err,
-      );
-      throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
     }
+
+    if (this.provider === 'resend' && this.resend) {
+      try {
+        const { data, error } = await this.resend.emails.send({
+          from: `Happy Calendar <${this.resendFromEmail}>`,
+          to,
+          subject,
+          html,
+        });
+        if (error) {
+          this.logger.error(
+            `Resend API rejected email for ${to} (from=${this.resendFromEmail}): ${JSON.stringify(error)}`,
+          );
+          throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
+        }
+        this.logger.log(`OTP email sent to ${to} via Resend (id=${data?.id ?? 'n/a'})`);
+        return;
+      } catch (err) {
+        if (err instanceof InternalServerErrorException) throw err;
+        this.logger.error(
+          `Unexpected Resend error for ${to}`,
+          err instanceof Error ? err.stack : err,
+        );
+        throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
+      }
+    }
+
+    this.logger.error('No email provider configured (set SMTP_* or RESEND_API_KEY)');
+    throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
   }
 
   private renderOtpEmailHtml(code: string): string {

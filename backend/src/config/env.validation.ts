@@ -20,8 +20,16 @@ export const envSchema = z.object({
   JWT_ACCESS_TTL: z.string().default('15m'),
   JWT_REFRESH_TTL: z.string().default('30d'),
 
-  // Email (Resend)
-  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
+  // Email — primary path is Gmail SMTP via nodemailer (delivers to any address).
+  // Resend remains as fallback only (kept for future domain-verified production).
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_FROM_EMAIL: z.string().email().optional(),
+  SMTP_FROM_NAME: z.string().default('Happy Calendar'),
+
+  RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z
     .string()
     .email()
