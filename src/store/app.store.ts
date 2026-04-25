@@ -1,5 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+
+function localTimeToUtc(localHHMM: string): string {
+  const [h, m] = localHHMM.split(':').map(Number)
+  const d = new Date()
+  d.setHours(h, m, 0, 0)
+  return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`
+}
 import {
   getHoroscope,
   getRandomQuote,
@@ -144,7 +151,7 @@ export const useAppStore = create<AppState>()(
         // Fire-and-forget sync with backend — only when authenticated,
         // so onboarding flow before OTP verification doesn't 401.
         if (getAccessToken()) {
-          apiClient.patch('profile', { pushTime: horoscopeTime }).catch((err) => {
+          apiClient.patch('profile', { pushTime: localTimeToUtc(horoscopeTime) }).catch((err) => {
             console.warn('[store] Failed to sync pushTime with backend', err)
           })
         }

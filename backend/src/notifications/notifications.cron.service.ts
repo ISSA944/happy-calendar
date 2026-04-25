@@ -81,14 +81,9 @@ export class NotificationCronService {
   }
 
   private getCurrentTimeKey(): string {
-    const parts = new Intl.DateTimeFormat('ru-RU', {
-      timeZone: 'Europe/Moscow',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).formatToParts(new Date());
-    const h = parts.find((p) => p.type === 'hour')?.value ?? '00';
-    const m = parts.find((p) => p.type === 'minute')?.value ?? '00';
+    const now = new Date();
+    const h = String(now.getUTCHours()).padStart(2, '0');
+    const m = String(now.getUTCMinutes()).padStart(2, '0');
     return `${h}:${m}`;
   }
 }
