@@ -1,6 +1,25 @@
+import fs from 'fs'
+import path from 'path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+
+const injectFirebaseSW = {
+  name: 'inject-firebase-sw',
+  apply: 'build' as const,
+  closeBundle() {
+    const swPath = path.resolve(__dirname, 'dist', 'firebase-messaging-sw.js')
+    if (!fs.existsSync(swPath)) return
+    let content = fs.readFileSync(swPath, 'utf-8')
+    content = content
+      .replace('%%FIREBASE_API_KEY%%', process.env.VITE_FIREBASE_API_KEY ?? '')
+      .replace('%%FIREBASE_AUTH_DOMAIN%%', process.env.VITE_FIREBASE_AUTH_DOMAIN ?? '')
+      .replace('%%FIREBASE_STORAGE_BUCKET%%', process.env.VITE_FIREBASE_STORAGE_BUCKET ?? '')
+      .replace('%%FIREBASE_MESSAGING_SENDER_ID%%', process.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '')
+      .replace('%%FIREBASE_APP_ID%%', process.env.VITE_FIREBASE_APP_ID ?? '')
+    fs.writeFileSync(swPath, content)
+  },
+}
 
 export default defineConfig({
   server: {
@@ -13,6 +32,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    injectFirebaseSW,
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',

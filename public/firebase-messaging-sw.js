@@ -9,16 +9,16 @@ importScripts('https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.14.0/firebase-messaging-compat.js')
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyCjZLy4WTUlxP5aIyjLy_sIGkzM7LeNO9I',
-  authDomain: 'happy-calendar-a5e69.firebaseapp.com',
+  apiKey: '%%FIREBASE_API_KEY%%',
+  authDomain: '%%FIREBASE_AUTH_DOMAIN%%',
   projectId: 'happy-calendar-a5e69',
-  storageBucket: 'happy-calendar-a5e69.firebasestorage.app',
-  messagingSenderId: '313374698896',
-  appId: '1:313374698896:web:83520926053d62f239d715',
+  storageBucket: '%%FIREBASE_STORAGE_BUCKET%%',
+  messagingSenderId: '%%FIREBASE_MESSAGING_SENDER_ID%%',
+  appId: '%%FIREBASE_APP_ID%%',
 }
 
 const isConfigComplete = Object.values(firebaseConfig).every(
-  (value) => typeof value === 'string' && !value.includes('REPLACE_ME'),
+  (value) => typeof value === 'string' && !value.startsWith('%%'),
 )
 
 if (isConfigComplete) {
