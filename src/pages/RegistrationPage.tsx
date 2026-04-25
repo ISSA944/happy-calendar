@@ -70,8 +70,7 @@ export function RegistrationPage() {
       </header>
 
       <main
-        className="flex-1 flex flex-col px-5 pt-4 min-h-0"
-        style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+        className="flex-1 flex flex-col px-5 pt-4 min-h-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] landscape:pb-32"
       >
 
         {/* ── Headline ── shrinks its bottom margin on tiny screens */}

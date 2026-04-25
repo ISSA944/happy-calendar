@@ -228,7 +228,7 @@ export function OtpPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col px-5 pt-10 pb-10 landscape:pt-4 landscape:pb-4">
+      <main className="flex-1 flex flex-col px-5 pt-10 pb-10 landscape:pt-4 landscape:pb-32">
         {/* ── Headline ── */}
         <section className="mb-10 shrink-0 landscape:mb-4">
           <h2 className="font-headline font-extrabold text-4xl landscape:text-2xl text-on-surface mb-3 landscape:mb-1 tracking-tight leading-tight">

@@ -98,11 +98,10 @@ export function BottomSheet({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={SHEET_SPRING}
-            className="relative w-full max-w-md mx-auto rounded-t-[24px] shadow-2xl flex flex-col overflow-hidden"
+            className="relative w-full max-w-md mx-auto rounded-t-[24px] shadow-2xl flex flex-col overflow-hidden max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] landscape:max-h-[85vh]"
             style={{
               y: dragY,
               paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
-              maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 16px)',
               background: '#fcf9f4',
               willChange: 'transform, opacity',
             }}
