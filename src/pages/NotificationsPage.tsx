@@ -210,13 +210,33 @@ export function NotificationsPage() {
       {/* Bottom Action Area — unmounted while TimePicker is open so nothing peeks through the sheet */}
       {!isTimePickerOpen && (
         <div className="w-full max-w-[430px] mx-auto px-5 pb-[env(safe-area-inset-bottom,24px)] pt-4 flex flex-col items-center space-y-4">
-          <button
-            onClick={handleAllow}
-            disabled={isRequestingPush}
-            className="w-full h-14 bg-[#2FA7A0] hover:bg-[#006a65] text-white font-headline font-bold text-base rounded-full shadow-lg shadow-[#2FA7A0]/20 transition-colors active:scale-[0.98]"
-          >
-            {isRequestingPush ? 'Подключаем push...' : 'Разрешить уведомления'}
-          </button>
+
+          {permission === 'denied' && !pushError ? (
+            /* Permission already denied — show Settings instruction immediately */
+            <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center space-y-3">
+              <p className="text-sm font-semibold text-amber-800">
+                Уведомления заблокированы
+              </p>
+              <p className="text-xs text-amber-700 leading-relaxed">
+                Настройки iPhone → найди <strong>Happy Calendar</strong> → Уведомления → Включить
+              </p>
+              <button
+                onClick={handleAllow}
+                className="w-full h-12 bg-amber-500 text-white font-bold text-sm rounded-xl active:scale-[0.98] transition-transform"
+              >
+                Я включил — попробовать снова
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleAllow}
+              disabled={isRequestingPush}
+              className="w-full h-14 bg-[#2FA7A0] hover:bg-[#006a65] text-white font-headline font-bold text-base rounded-full shadow-lg shadow-[#2FA7A0]/20 transition-colors active:scale-[0.98]"
+            >
+              {isRequestingPush ? 'Подключаем push...' : 'Разрешить уведомления'}
+            </button>
+          )}
+
           <button
             onClick={handleSkip}
             className="text-[#5A5A66] font-body font-medium text-sm hover:text-[#1B1B1F] transition-colors"

@@ -17,8 +17,10 @@ import { BookmarksPage } from './pages/BookmarksPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { NotificationsListPage } from './pages/NotificationsListPage'
 
-// Auth + one-shot pages remain lazy (only loaded once, negligible UX cost).
-const WelcomePage = lazy(() => import('./pages/WelcomePage').then(m => ({ default: m.WelcomePage })))
+// WelcomePage is static — it's the first screen new users see, no lazy flash.
+import { WelcomePage } from './pages/WelcomePage'
+
+// Remaining auth pages are lazy (loaded once per session).
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
 const OtpPage = lazy(() => import('./pages/OtpPage').then(m => ({ default: m.OtpPage })))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })))

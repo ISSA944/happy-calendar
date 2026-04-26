@@ -23,20 +23,14 @@ export function WelcomePage() {
       />
 
       {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.25 }}
-        style={{ willChange: 'opacity' }}
-        className="relative z-10 pt-12 text-center"
-      >
+      <div className="relative z-10 pt-12 text-center">
         <h1 className="font-headline font-extrabold text-4xl leading-tight text-on-surface tracking-tight mb-4">
           Здесь можно выдохнуть
         </h1>
         <p className="font-body text-on-surface-variant text-lg leading-relaxed px-2">
           Персональный гороскоп дня и поддержка по настроению. Нежно, без давления.
         </p>
-      </motion.div>
+      </div>
 
       {/* Central Orb */}
       <div className="relative z-10 flex flex-col items-center justify-center py-6">
@@ -74,13 +68,7 @@ export function WelcomePage() {
       </div>
 
       {/* Features & CTA */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.25 }}
-        style={{ willChange: 'opacity' }}
-        className="relative z-10 flex flex-col space-y-8 pb-4"
-      >
+      <div className="relative z-10 flex flex-col space-y-8 pb-4">
         <div className="space-y-4 px-2">
           <div className="flex items-center space-x-4">
             <div className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0">
@@ -112,7 +100,7 @@ export function WelcomePage() {
         >
           Начать
         </motion.button>
-      </motion.div>
+      </div>
     </motion.div>
   )
 }
