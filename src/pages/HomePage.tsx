@@ -19,11 +19,11 @@ import {
 
 // Slide variants — same pattern as CalendarSheet calendar grid, no async overhead
 const slideVariants: Variants = {
-  enter: (dir: number) => ({ x: dir > 0 ? 22 : -22, opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit:  (dir: number) => ({ x: dir < 0 ? 22 : -22, opacity: 0 }),
+  enter: (dir: number) => ({ x: dir > 0 ? 36 : -36, opacity: 0, scale: 0.98 }),
+  center: { x: 0, opacity: 1, scale: 1 },
+  exit:  (dir: number) => ({ x: dir < 0 ? 36 : -36, opacity: 0, scale: 0.98 }),
 }
-const SLIDE_TRANSITION = { duration: 0.2, ease: [0.22, 1, 0.36, 1] as const }
+const SLIDE_TRANSITION = { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }
 const SLIDE_STYLE = { willChange: 'transform, opacity' as const }
 
 export function HomePage() {
@@ -259,27 +259,33 @@ export function HomePage() {
           <section className="bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6 landscape:col-span-2 landscape:row-start-4">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-headline text-xl font-bold text-on-surface">Гороскоп на сегодня</h2>
+
+              {/* Tab switcher with spring-animated sliding indicator */}
               <div className="flex bg-surface-container rounded-full p-1 flex-shrink-0">
-                <button
-                  onClick={() => handleTabChange('short')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${
-                    horoscopeTab === 'short' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'
-                  }`}
-                >
-                  Сжато
-                </button>
-                <button
-                  onClick={() => handleTabChange('detailed')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${
-                    horoscopeTab === 'detailed' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'
-                  }`}
-                >
-                  Подробнее
-                </button>
+                {(['short', 'detailed'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => handleTabChange(tab)}
+                    className="relative px-4 py-1.5 rounded-full text-xs font-semibold"
+                  >
+                    {horoscopeTab === tab && (
+                      <motion.div
+                        layoutId="horoscope-tab-bg"
+                        className="absolute inset-0 bg-white rounded-full shadow-sm"
+                        transition={{ type: 'spring', stiffness: 420, damping: 38 }}
+                      />
+                    )}
+                    <span className={`relative z-10 transition-colors duration-150 ${
+                      horoscopeTab === tab ? 'text-primary' : 'text-on-surface-variant'
+                    }`}>
+                      {tab === 'short' ? 'Сжато' : 'Подробнее'}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Horoscope content slider — same slide pattern as CalendarSheet */}
+            {/* Horoscope content — direction-aware slide + subtle scale */}
             <div className="relative overflow-hidden">
               <AnimatePresence mode="wait" custom={tabDir}>
                 <motion.div
@@ -289,8 +295,8 @@ export function HomePage() {
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={SLIDE_TRANSITION}
-                  style={SLIDE_STYLE}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ willChange: 'transform, opacity' }}
                   className="space-y-4 text-on-surface"
                 >
                   <div className="flex gap-3">
