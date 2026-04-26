@@ -22,8 +22,8 @@ export function SettingsPage() {
     resetApp,
   } = useAppStore()
 
-  const handleReset = useCallback(() => {
-    resetApp()
+  const handleReset = useCallback(async () => {
+    await resetApp()
     navigate('/', { replace: true })
   }, [resetApp, navigate])
 

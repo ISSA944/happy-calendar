@@ -32,7 +32,7 @@ export function MoodSheet({ isOpen, onClose }: MoodSheetProps) {
   }, [])
 
   const handleSelect = useCallback((mood: string) => {
-    setMood(mood)
+    void setMood(mood)
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     closeTimerRef.current = setTimeout(onClose, 150)
   }, [setMood, onClose])

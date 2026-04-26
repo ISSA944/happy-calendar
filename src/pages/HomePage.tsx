@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useCallback, useState } from 'react'
+import { useEffect, useMemo, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import type { Variants } from 'framer-motion'
@@ -9,9 +9,6 @@ import { usePWAInstall } from '../hooks'
 import {
   getGreeting,
   getTodayFormatted,
-  getTodayHoliday,
-  getRandomQuote,
-  getHoroscope,
   getMoodImage,
   getMoodLabel,
   getFullDateStr,
@@ -34,9 +31,10 @@ export function HomePage() {
   const zodiacSign         = useAppStore(s => s.zodiacSign)
   const dailyPack          = useAppStore(s => s.dailyPack)
   const initDailyPack      = useAppStore(s => s.initDailyPack)
-  const setSupportPhrase   = useAppStore(s => s.setSupportPhrase)
+  const refreshSupportPhrase = useAppStore(s => s.refreshSupportPhrase)
   const addBookmark        = useAppStore(s => s.addBookmark)
   const bookmarks          = useAppStore(s => s.bookmarks)
+  const fetchBookmarks     = useAppStore(s => s.fetchBookmarks)
   const profilePhoto       = useAppStore(s => s.profilePhoto)
   const installBannerDismissed = useAppStore(s => s.installBannerDismissed)
   const dismissInstallBanner   = useAppStore(s => s.dismissInstallBanner)
@@ -46,10 +44,9 @@ export function HomePage() {
   const [isMoodSheetOpen, setIsMoodSheetOpen] = useState(false)
   const [showIOSModal, setShowIOSModal]       = useState(false)
 
-  const quoteIdxRef = useRef<number>(-1)
-
   useEffect(() => {
-    initDailyPack(zodiacSign, currentMood)
+    void initDailyPack()
+    void fetchBookmarks()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -71,8 +68,8 @@ export function HomePage() {
   }, [showIOSModal])
 
   const supportPhrase  = dailyPack?.supportPhrase ?? ''
-  const holiday        = useMemo(() => getTodayHoliday(), [])
-  const horoscope      = useMemo(() => getHoroscope(zodiacSign), [zodiacSign])
+  const horoscope      = dailyPack?.horoscope ?? null
+  const holidayTitle   = dailyPack?.holiday ?? null
   const moodImage      = useMemo(() => getMoodImage(currentMood), [currentMood])
   const todayStr       = useMemo(() => getFullDateStr(), [])
   const moodLabel      = useMemo(() => getMoodLabel(currentMood, gender), [currentMood, gender])
@@ -87,20 +84,18 @@ export function HomePage() {
   )
 
   const handleNewQuote = useCallback(() => {
-    const { text, index } = getRandomQuote(currentMood, quoteIdxRef.current, gender)
-    quoteIdxRef.current = index
-    setSupportPhrase(text)
-  }, [currentMood, gender, setSupportPhrase])
+    void refreshSupportPhrase()
+  }, [refreshSupportPhrase])
 
   const handleSaveQuote = useCallback(() => {
     if (!supportPhrase || savedQuote) return
-    addBookmark({ id: `q-${Date.now()}`, type: 'поддержка', date: todayStr, text: supportPhrase, icon: 'favorite' })
+    void addBookmark({ id: `tmp-q-${Date.now()}`, type: 'поддержка', date: todayStr, text: supportPhrase, icon: 'favorite' })
   }, [addBookmark, supportPhrase, savedQuote, todayStr])
 
   const handleSaveHoroscope = useCallback(() => {
-    if (savedHoroscope) return
-    const text = horoscopeTab === 'short' ? horoscope.main : horoscope.mainDetailed
-    addBookmark({ id: `h-${Date.now()}`, type: 'гороскоп', date: todayStr, text: `${zodiacSign}: ${text}`, icon: 'auto_awesome' })
+    if (savedHoroscope || !horoscope) return
+    const text = horoscopeTab === 'short' ? horoscope.main : horoscope.detailed
+    void addBookmark({ id: `tmp-h-${Date.now()}`, type: 'гороскоп', date: todayStr, text: `${zodiacSign}: ${text}`, icon: 'auto_awesome' })
   }, [addBookmark, horoscope, horoscopeTab, savedHoroscope, zodiacSign, todayStr])
 
   const handleTabChange = useCallback((tab: 'short' | 'detailed') => {
@@ -184,14 +179,13 @@ export function HomePage() {
           </section>
 
           {/* ── Holiday Card ── */}
-          {holiday && (
+          {holidayTitle && (
             <section className="bg-surface-container-lowest p-5 rounded-lg flex items-center gap-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:col-start-1 landscape:row-start-3">
               <div className="w-16 h-16 flex-shrink-0 bg-secondary-fixed/30 rounded-full flex items-center justify-center">
-                <span className="material-symbols-outlined text-[32px] text-secondary/70" style={{ fontVariationSettings: "'FILL' 1" }}>{holiday.icon}</span>
+                <span className="material-symbols-outlined text-[32px] text-secondary/70" style={{ fontVariationSettings: "'FILL' 1" }}>celebration</span>
               </div>
               <div className="space-y-1 min-w-0">
-                <h2 className="font-headline text-base font-bold text-on-surface leading-snug">Сегодня праздник: {holiday.name}</h2>
-                <p className="text-sm text-on-surface-variant leading-tight">{holiday.description}</p>
+                <h2 className="font-headline text-base font-bold text-on-surface leading-snug">Сегодня праздник: {holidayTitle}</h2>
               </div>
             </section>
           )}
@@ -303,22 +297,22 @@ export function HomePage() {
                     <span className="material-symbols-outlined text-primary-container flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
                     <p className="text-sm">
                       <span className="font-bold">Главное:</span>{' '}
-                      {horoscopeTab === 'short' ? horoscope.main : horoscope.mainDetailed}
+                      {horoscopeTab === 'short' ? horoscope?.main : horoscope?.detailed}
                     </p>
                   </div>
                   <div className="flex gap-3">
                     <span className="material-symbols-outlined text-primary-container flex-shrink-0">lightbulb</span>
-                    <p className="text-sm"><span className="font-bold">Совет:</span> {horoscope.advice}</p>
+                    <p className="text-sm"><span className="font-bold">Совет:</span> {horoscope?.advice}</p>
                   </div>
                   {horoscopeTab === 'detailed' && (
                     <>
                       <div className="flex items-center gap-3 opacity-80">
                         <span className="material-symbols-outlined text-primary-container flex-shrink-0">dark_mode</span>
-                        <p className="text-sm"><span className="font-bold">Луна:</span> {horoscope.moon}</p>
+                        <p className="text-sm"><span className="font-bold">Луна:</span> {horoscope?.moon}</p>
                       </div>
                       <div className="flex items-center gap-3 opacity-80">
                         <span className="material-symbols-outlined text-primary-container flex-shrink-0">balance</span>
-                        <p className="text-sm"><span className="font-bold">Аспект:</span> {horoscope.aspect}</p>
+                        <p className="text-sm"><span className="font-bold">Аспект:</span> {horoscope?.aspect}</p>
                       </div>
                     </>
                   )}

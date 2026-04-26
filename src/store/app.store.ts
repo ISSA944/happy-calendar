@@ -1,14 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { localTimeToUtc } from '../lib/time'
-import {
-  getHoroscope,
-  getRandomQuote,
-  getTodayHoliday,
-  getTodayDateStr,
-} from '../services/content.service'
 import { apiClient } from '../api'
-import { getAccessToken } from '../auth/token-storage'
+import { getAccessToken, clearAuthTokens } from '../auth/token-storage'
 
 export type BookmarkType = 'гороскоп' | 'поддержка'
 
@@ -21,11 +15,36 @@ export interface Bookmark {
 }
 
 export interface DailyPack {
-  date: string        // "DD.MM" — ключ дня, для детектирования нового дня
-  zodiacSign: string
-  horoscope: string   // main horoscope text
-  holiday: string     // название праздника ('' если нет)
+  date: string
+  horoscope: {
+    main: string
+    detailed: string
+    advice: string
+    moon: string
+    aspect: string
+  }
   supportPhrase: string
+  holiday: string | null
+}
+
+// Server response shapes
+type TodayResponse = {
+  date: string
+  horoscope: { main: string; detailed: string; advice: string; moon: string; aspect: string }
+  support: { text: string }
+  holiday: { title: string } | null
+}
+
+type MoodPatchResponse = {
+  currentMood: string
+  support: { text: string; mood: string }
+}
+
+type BookmarkResponse = {
+  id: string
+  type: string
+  payload: { date: string; text: string; icon: string }
+  createdAt?: string
 }
 
 type AppState = {
@@ -33,13 +52,13 @@ type AppState = {
   zodiacSign: string
   setZodiacSign: (sign: string) => void
 
-  // Daily Pack — основной контент страницы
+  // Daily Pack — основной контент страницы (приходит с бэка)
   dailyPack: DailyPack | null
-  // Инициализирует пак если он пустой или устарел (новый день / другой знак)
-  initDailyPack: (zodiacSign: string, mood: string) => void
-  // Меняет настроение И обновляет только фразу поддержки (не трогает гороскоп)
-  setMood: (mood: string) => void
-  // Обновить только фразу (кнопка "Другая фраза")
+  initDailyPack: () => Promise<void>
+  // Меняет настроение И обновляет фразу поддержки через бэк
+  setMood: (mood: string) => Promise<void>
+  // "Другая фраза" — POST /api/today/support/next
+  refreshSupportPhrase: () => Promise<void>
   setSupportPhrase: (phrase: string) => void
 
   // User Profile (onboarding)
@@ -72,13 +91,14 @@ type AppState = {
   showSupport: boolean
   toggleSupport: () => void
 
-  // Bookmarks
+  // Bookmarks (sync с бэком)
   bookmarks: Bookmark[]
-  addBookmark: (bookmark: Bookmark) => void
-  removeBookmark: (id: string) => void
+  fetchBookmarks: () => Promise<void>
+  addBookmark: (bookmark: Bookmark) => Promise<void>
+  removeBookmark: (id: string) => Promise<void>
 
-  // Reset entire app state (logout / re-onboard)
-  resetApp: () => void
+  // Logout / re-onboard
+  resetApp: () => Promise<void>
 }
 
 export const useAppStore = create<AppState>()(
@@ -91,31 +111,50 @@ export const useAppStore = create<AppState>()(
       // Daily Pack
       dailyPack: null,
 
-      initDailyPack: (zodiacSign: string, mood: string) => {
-        const today = getTodayDateStr()
-        const current = get().dailyPack
-        if (current?.date === today && current?.zodiacSign === zodiacSign) return
-        const { gender } = get()
-        set({
-          dailyPack: {
-            date: today,
-            zodiacSign,
-            horoscope: getHoroscope(zodiacSign).main,
-            holiday: getTodayHoliday()?.name ?? '',
-            supportPhrase: getRandomQuote(mood, undefined, gender).text,
-          },
-        })
+      initDailyPack: async () => {
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.get<TodayResponse>('today')
+          set({
+            dailyPack: {
+              date: data.date,
+              horoscope: data.horoscope,
+              supportPhrase: data.support.text,
+              holiday: data.holiday?.title ?? null,
+            },
+          })
+        } catch (err) {
+          console.warn('[store] Failed to fetch /today', err)
+        }
       },
 
-      setMood: (mood: string) => {
-        const pack = get().dailyPack
-        const { gender } = get()
-        set({
-          currentMood: mood,
-          dailyPack: pack
-            ? { ...pack, supportPhrase: getRandomQuote(mood, undefined, gender).text }
-            : pack,
-        })
+      setMood: async (mood: string) => {
+        // Optimistic UI update
+        set({ currentMood: mood })
+
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.patch<MoodPatchResponse>('profile/mood', { mood })
+          const pack = get().dailyPack
+          if (pack) {
+            set({ dailyPack: { ...pack, supportPhrase: data.support.text } })
+          }
+        } catch (err) {
+          console.warn('[store] Failed to PATCH /profile/mood', err)
+        }
+      },
+
+      refreshSupportPhrase: async () => {
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.post<{ support: { text: string } }>('today/support/next')
+          const pack = get().dailyPack
+          if (pack) {
+            set({ dailyPack: { ...pack, supportPhrase: data.support.text } })
+          }
+        } catch (err) {
+          console.warn('[store] Failed to POST /today/support/next', err)
+        }
       },
 
       setSupportPhrase: (phrase: string) => {
@@ -138,12 +177,17 @@ export const useAppStore = create<AppState>()(
       email: '',
       setEmail: (email) => set({ email }),
       birthDate: '',
-      setBirthDate: (birthDate) => set({ birthDate }),
+      setBirthDate: (birthDate) => {
+        set({ birthDate })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { birthdate: birthDate }).catch((err) => {
+            console.warn('[store] Failed to sync birthdate with backend', err)
+          })
+        }
+      },
       horoscopeTime: '09:00',
       setHoroscopeTime: (horoscopeTime) => {
         set({ horoscopeTime })
-        // Fire-and-forget sync with backend — only when authenticated,
-        // so onboarding flow before OTP verification doesn't 401.
         if (getAccessToken()) {
           apiClient.patch('profile', { pushTime: localTimeToUtc(horoscopeTime) }).catch((err) => {
             console.warn('[store] Failed to sync pushTime with backend', err)
@@ -163,25 +207,82 @@ export const useAppStore = create<AppState>()(
 
       // Bookmarks
       bookmarks: [],
-      addBookmark: (bookmark) => set((state) => ({
-        bookmarks: [bookmark, ...state.bookmarks],
-      })),
-      removeBookmark: (id) => set((state) => ({
-        bookmarks: state.bookmarks.filter((b) => b.id !== id),
-      })),
 
-      resetApp: () => set({
-        hasCompletedOnboarding: false,
-        userName: '',
-        email: '',
-        birthDate: '',
-        zodiacSign: '',
-        gender: 'UNKNOWN',
-        profilePhoto: '',
-        currentMood: 'Воодушевлена',
-        dailyPack: null,
-        bookmarks: [],
-      }),
+      fetchBookmarks: async () => {
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.get<BookmarkResponse[]>('bookmarks')
+          set({
+            bookmarks: data.map((b) => ({
+              id: b.id,
+              type: b.type as BookmarkType,
+              date: b.payload?.date ?? '',
+              text: b.payload?.text ?? '',
+              icon: b.payload?.icon ?? 'bookmark',
+            })),
+          })
+        } catch (err) {
+          console.warn('[store] Failed to fetch /bookmarks', err)
+        }
+      },
+
+      addBookmark: async (bookmark: Bookmark) => {
+        if (!getAccessToken()) {
+          // Offline fallback — keep local-only id
+          set((state) => ({ bookmarks: [bookmark, ...state.bookmarks] }))
+          return
+        }
+        try {
+          const { data } = await apiClient.post<BookmarkResponse>('bookmarks', {
+            type: bookmark.type,
+            payload: { date: bookmark.date, text: bookmark.text, icon: bookmark.icon },
+          })
+          // Use backend-generated id
+          set((state) => ({
+            bookmarks: [{ ...bookmark, id: data.id }, ...state.bookmarks],
+          }))
+        } catch (err) {
+          console.warn('[store] Failed to POST /bookmarks', err)
+        }
+      },
+
+      removeBookmark: async (id: string) => {
+        // Optimistic remove
+        const prev = get().bookmarks
+        set({ bookmarks: prev.filter((b) => b.id !== id) })
+
+        if (!getAccessToken()) return
+        try {
+          await apiClient.delete(`bookmarks/${id}`)
+        } catch (err) {
+          console.warn('[store] Failed to DELETE /bookmarks/:id', err)
+          // Rollback on server failure
+          set({ bookmarks: prev })
+        }
+      },
+
+      resetApp: async () => {
+        if (getAccessToken()) {
+          try {
+            await apiClient.post('auth/logout')
+          } catch (err) {
+            console.warn('[store] Logout API call failed', err)
+          }
+        }
+        clearAuthTokens()
+        set({
+          hasCompletedOnboarding: false,
+          userName: '',
+          email: '',
+          birthDate: '',
+          zodiacSign: '',
+          gender: 'UNKNOWN',
+          profilePhoto: '',
+          currentMood: 'Воодушевлена',
+          dailyPack: null,
+          bookmarks: [],
+        })
+      },
     }),
     { name: 'happy-calendar-store' }
   )

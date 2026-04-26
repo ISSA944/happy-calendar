@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../store'
@@ -7,15 +7,21 @@ import type { BookmarkType } from '../store/app.store'
 export function BookmarksPage() {
   const navigate = useNavigate()
   const bookmarks = useAppStore(s => s.bookmarks)
+  const fetchBookmarks = useAppStore(s => s.fetchBookmarks)
   const removeBookmark = useAppStore(s => s.removeBookmark)
   const [filter, setFilter] = useState<'все' | BookmarkType>('все')
+
+  // Refresh from server on mount — keeps bookmarks in sync across devices
+  useEffect(() => {
+    void fetchBookmarks()
+  }, [fetchBookmarks])
 
   const filtered = useMemo(
     () => bookmarks.filter(b => filter === 'все' || b.type === filter),
     [bookmarks, filter],
   )
 
-  const handleRemove = useCallback((id: string) => removeBookmark(id), [removeBookmark])
+  const handleRemove = useCallback((id: string) => { void removeBookmark(id) }, [removeBookmark])
   const handleBack = useCallback(() => navigate(-1), [navigate])
 
   return (
