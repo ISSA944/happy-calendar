@@ -8,6 +8,7 @@ import {
 } from 'class-validator';
 import { PrismaService } from '../prisma';
 import { AiService } from '../ai';
+import { TodayService } from '../today/today.service';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -56,6 +57,7 @@ export class ProfileService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ai: AiService,
+    private readonly today: TodayService,
   ) {}
 
   async getFullProfile(userId: string) {
@@ -106,13 +108,14 @@ export class ProfileService {
   }
 
   /**
-   * Смена настроения: обновляет Profile.currentMood + пишет в MoodLog.
-   * Генерация support — задача Phase 2 (AI + support_phrases pool).
+   * Partial update: updates Profile.currentMood, gets a new AI support phrase,
+   * and replaces only the supportPhraseId in today's DailyFeed — horoscope untouched.
    */
   async patchMood(userId: string, mood: string) {
     this.logger.log(`PATCH mood userId=${userId}, mood=${mood}`);
 
-    await Promise.all([
+    const [{ supportPhrase }] = await Promise.all([
+      this.ai.updateMoodSupport(userId, mood),
       this.prisma.profile.upsert({
         where: { userId },
         update: { currentMood: mood },
@@ -123,7 +126,8 @@ export class ProfileService {
       }),
     ]);
 
-    const { supportPhrase } = await this.ai.updateMoodSupport(userId, mood);
+    // Persist new phrase and update DailyFeed — horoscope stays the same
+    await this.today.replaceSupportPhrase(userId, mood, supportPhrase);
 
     return { currentMood: mood, support: { text: supportPhrase, mood } };
   }

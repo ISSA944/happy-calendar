@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { validate } from './config/env.validation';
 import { PrismaModule } from './prisma';
 import { AiModule } from './ai';
+import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { TodayModule } from './today';
 import { BookmarksModule } from './bookmarks';
@@ -29,6 +30,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     AiModule,
+    RedisModule,
     AuthModule,
     TodayModule,
     BookmarksModule,

@@ -29,6 +29,15 @@ services:
         limits:
           memory: 512M
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --save ""
+    deploy:
+      resources:
+        limits:
+          memory: 160M
+
   api:
     build: .
     restart: unless-stopped
@@ -36,6 +45,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     ports:
       - "4000:4000"
     # Runs pending migrations on every deploy, then starts the server.

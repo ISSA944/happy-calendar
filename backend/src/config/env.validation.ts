@@ -7,8 +7,11 @@ export const envSchema = z.object({
     .enum(['development', 'production', 'test'])
     .default('development'),
 
-  // AI — станет обязательным в Phase 2
+  // AI
   AI_API_KEY: z.string().optional(),
+
+  // Redis — optional; if absent, AI pack caching is disabled
+  REDIS_URL: z.string().optional(),
 
   // Auth (JWT)
   JWT_ACCESS_SECRET: z
