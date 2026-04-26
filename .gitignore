@@ -28,6 +28,10 @@ CLAUDE.md
 
 .vercel
 .env*.local
+.env
+.env.*
+backend/.env
+backend/.env.*
 
 # NotebookLM analytical snapshots (local only)
 NotebookLM_Export/
