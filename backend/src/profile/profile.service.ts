@@ -7,6 +7,7 @@ import {
   Matches,
 } from 'class-validator';
 import { PrismaService } from '../prisma';
+import { AiService } from '../ai';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -52,7 +53,10 @@ export class UpdateProfileDto {
 export class ProfileService {
   private readonly logger = new Logger(ProfileService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ai: AiService,
+  ) {}
 
   async getFullProfile(userId: string) {
     const [user, profile, prefs] = await Promise.all([
@@ -108,21 +112,19 @@ export class ProfileService {
   async patchMood(userId: string, mood: string) {
     this.logger.log(`PATCH mood userId=${userId}, mood=${mood}`);
 
-    await this.prisma.profile.upsert({
-      where: { userId },
-      update: { currentMood: mood },
-      create: { userId, currentMood: mood },
-    });
-    await this.prisma.moodLog.create({
-      data: { userId, mood },
-    });
+    await Promise.all([
+      this.prisma.profile.upsert({
+        where: { userId },
+        update: { currentMood: mood },
+        create: { userId, currentMood: mood },
+      }),
+      this.prisma.moodLog.create({
+        data: { userId, mood },
+      }),
+    ]);
 
-    // TODO Phase 2: достать новую фразу из support_phrases по mood.
-    return {
-      mood,
-      support: {
-        text: 'Новая фраза поддержки появится после интеграции AI (Phase 2).',
-      },
-    };
+    const { supportPhrase } = await this.ai.updateMoodSupport(userId, mood);
+
+    return { currentMood: mood, support: { text: supportPhrase, mood } };
   }
 }

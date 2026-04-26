@@ -12,7 +12,7 @@ datasource db {
 // ─────────────────────────────────────────────────────────────
 model User {
   id               String    @id @default(uuid())
-  email            String?   @unique
+  email            String    @unique
   name             String?
   passwordHash     String?   @map("password_hash")
   otpHash          String?   @map("otp_hash")
@@ -85,6 +85,7 @@ model Horoscope {
   dailyFeeds DailyFeed[]
 
   @@unique([date, zodiacSign])
+  @@index([date])
   @@map("horoscopes")
 }
 
