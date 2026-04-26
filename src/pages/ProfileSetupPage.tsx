@@ -151,7 +151,7 @@ export function ProfileSetupPage() {
         onChange={handleFileChange}
       />
 
-      <main className="flex-1 flex flex-col pt-24 px-5 mobile-ls:pb-32">
+      <main className="flex-1 flex flex-col pt-24 px-5 landscape:pb-32">
 
         {/* Avatar Section */}
         <div className="flex flex-col items-center mb-10">

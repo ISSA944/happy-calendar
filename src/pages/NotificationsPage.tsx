@@ -144,7 +144,7 @@ export function NotificationsPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col pt-10 pb-8 w-full px-5 space-y-6 mobile-ls:max-w-[860px] mobile-ls:mx-auto mobile-ls:grid mobile-ls:grid-cols-2 mobile-ls:gap-5 mobile-ls:space-y-0 mobile-ls:items-start">
+      <main className="flex-1 flex flex-col pt-10 pb-8 w-full px-5 space-y-6 landscape:max-w-[860px] landscape:mx-auto landscape:grid landscape:grid-cols-2 landscape:gap-5 landscape:space-y-0 landscape:items-start">
         {/* Card 1: Time Selection */}
         <section className="bg-white rounded-[24px] p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.04)]">
           <h2 className="font-headline font-bold text-lg mb-5 text-[#1B1B1F]">Во сколько присылать гороскоп?</h2>

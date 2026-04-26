@@ -79,12 +79,5 @@ export default {
       },
     },
   },
-  plugins: [
-    // mobile-ls: triggers ONLY on touch devices in landscape.
-    // hover:none + pointer:coarse = touch screen (phone/tablet).
-    // Desktop mice have hover:hover, so this never fires on desktop.
-    function({ addVariant }) {
-      addVariant('mobile-ls', '@media (orientation: landscape) and (hover: none) and (pointer: coarse)')
-    },
-  ],
+  plugins: [],
 }

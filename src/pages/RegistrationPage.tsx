@@ -70,15 +70,15 @@ export function RegistrationPage() {
       </header>
 
       <main
-        className="flex-1 flex flex-col px-5 pt-4 min-h-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] mobile-ls:pb-32"
+        className="flex-1 flex flex-col px-5 pt-4 min-h-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] landscape:pb-32"
       >
 
         {/* ── Headline ── shrinks its bottom margin on tiny screens */}
-        <section className="mb-4 shrink-0 mobile-ls:mb-2">
-          <h2 className="font-headline font-extrabold text-4xl mobile-ls:text-2xl text-on-surface mb-2 mobile-ls:mb-1 tracking-tight leading-tight">
+        <section className="mb-4 shrink-0 landscape:mb-2">
+          <h2 className="font-headline font-extrabold text-4xl landscape:text-2xl text-on-surface mb-2 landscape:mb-1 tracking-tight leading-tight">
             Давай начнём
           </h2>
-          <p className="text-on-surface-variant text-base mobile-ls:text-sm font-medium leading-relaxed">
+          <p className="text-on-surface-variant text-base landscape:text-sm font-medium leading-relaxed">
             Введите данные, чтобы создать аккаунт.
           </p>
         </section>

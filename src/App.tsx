@@ -67,7 +67,7 @@ function AppLayout() {
       style={{ background: '#fcf9f4' }}
     >
       <div
-        className="w-full max-w-[430px] mobile-ls:max-w-[860px] mx-auto h-full relative flex flex-col overflow-hidden"
+        className="w-full max-w-[430px] landscape:max-w-[860px] mx-auto h-full relative flex flex-col overflow-hidden"
         style={{ background: '#fcf9f4' }}
       >
         <main className="flex-1 w-full relative overflow-hidden" style={{ background: '#fcf9f4' }}>
