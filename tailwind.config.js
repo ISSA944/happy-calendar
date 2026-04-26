@@ -80,11 +80,11 @@ export default {
     },
   },
   plugins: [
-    // mobile-ls: triggers ONLY on phone in landscape (height ≤ 500px).
-    // Unlike built-in `landscape:` which fires on any wide viewport (including desktop),
-    // this stays silent on desktop browsers (height > 600px).
+    // mobile-ls: triggers ONLY on touch devices in landscape.
+    // hover:none + pointer:coarse = touch screen (phone/tablet).
+    // Desktop mice have hover:hover, so this never fires on desktop.
     function({ addVariant }) {
-      addVariant('mobile-ls', '@media (orientation: landscape) and (max-height: 500px)')
+      addVariant('mobile-ls', '@media (orientation: landscape) and (hover: none) and (pointer: coarse)')
     },
   ],
 }
