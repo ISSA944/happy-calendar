@@ -100,14 +100,25 @@ export function NotificationsPage() {
     try {
       const result = await requestPermissionAndSubscribe()
 
-      if (!result.subscribed && result.reason !== 'permission-denied') {
-        setPushError('Разрешение сохранили, но подписка на push не завершилась. Повторим после настройки профиля.')
+      if (result.subscribed) {
+        navigate('/profile-setup')
+        return
       }
+
+      if (result.reason === 'permission-denied') {
+        // iOS remembers the denial — user must enable manually in Settings
+        setPushError(
+          'Уведомления заблокированы системой. Открой: Настройки iPhone → Happy Calendar → Уведомления → Включить. Затем вернись и нажми снова.'
+        )
+        return
+      }
+
+      // Firebase не настроен или токен недоступен — продолжаем без пушей
+      navigate('/profile-setup')
     } catch {
-      setPushError('Не удалось подключить push прямо сейчас. Повторим после настройки профиля.')
+      setPushError('Не удалось подключить push. Попробуй ещё раз или пропусти.')
     } finally {
       setIsRequestingPush(false)
-      navigate('/profile-setup')
     }
   }
 
