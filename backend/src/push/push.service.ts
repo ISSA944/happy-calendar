@@ -29,13 +29,15 @@ export class PushService {
       return { subscribed: true, tokensCount: prefs.fcmTokens.length };
     }
 
-    const nextTokens = Array.from(
-      new Set([...prefs.fcmTokens, normalizedToken]),
-    );
-    const updated = await this.prisma.prefs.update({
-      where: { userId },
-      data: { fcmTokens: { set: nextTokens } },
-    });
+    // Use $executeRaw for atomic append to prevent race condition when
+    // two devices subscribe simultaneously (read-modify-write pattern).
+    await this.prisma.$executeRaw`
+      UPDATE prefs
+      SET fcm_tokens = array_append(fcm_tokens, ${normalizedToken}::text)
+      WHERE user_id = ${userId}::uuid
+        AND NOT (fcm_tokens @> ARRAY[${normalizedToken}]::text[])
+    `;
+    const updated = await this.prisma.prefs.findUniqueOrThrow({ where: { userId } });
 
     return { subscribed: true, tokensCount: updated.fcmTokens.length };
   }
