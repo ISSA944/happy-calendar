@@ -79,5 +79,12 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // mobile-ls: triggers ONLY on phone in landscape (height ≤ 500px).
+    // Unlike built-in `landscape:` which fires on any wide viewport (including desktop),
+    // this stays silent on desktop browsers (height > 600px).
+    function({ addVariant }) {
+      addVariant('mobile-ls', '@media (orientation: landscape) and (max-height: 500px)')
+    },
+  ],
 }

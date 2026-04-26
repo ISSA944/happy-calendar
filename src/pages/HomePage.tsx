@@ -118,7 +118,7 @@ export function HomePage() {
 
   return (
     <>
-      <div className="max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-2 pb-8">
+      <div className="max-w-[430px] mobile-ls:max-w-[860px] mx-auto px-5 pt-2 pb-8">
 
         {/* PWA Install Banner */}
         <AnimatePresence>
@@ -156,10 +156,10 @@ export function HomePage() {
           )}
         </AnimatePresence>
 
-        <div className="flex flex-col gap-8 landscape:grid landscape:grid-cols-2 landscape:gap-x-6 landscape:gap-y-8">
+        <div className="flex flex-col gap-8 mobile-ls:grid mobile-ls:grid-cols-2 mobile-ls:gap-x-6 mobile-ls:gap-y-8">
 
           {/* ── Header ── */}
-          <header className="flex justify-between items-center py-2 landscape:col-span-2 landscape:row-start-1">
+          <header className="flex justify-between items-center py-2 mobile-ls:col-span-2 mobile-ls:row-start-1">
             <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high border-2 border-surface-container-lowest flex items-center justify-center">
               {profilePhoto
                 ? <img src={profilePhoto} className="w-full h-full object-cover" alt="Фото профиля" />
@@ -176,7 +176,7 @@ export function HomePage() {
           </header>
 
           {/* ── Greeting ── */}
-          <section className="space-y-1 landscape:col-start-1 landscape:row-start-2">
+          <section className="space-y-1 mobile-ls:col-start-1 mobile-ls:row-start-2">
             <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface leading-tight">{getGreeting()}</h1>
             <div className="inline-flex items-center px-3 py-1 bg-surface-container rounded-full text-xs font-medium text-on-surface-variant gap-1.5">
               <span>Твой знак: {zodiacSign || '—'}</span>
@@ -185,7 +185,7 @@ export function HomePage() {
 
           {/* ── Holiday Card ── */}
           {holiday && (
-            <section className="bg-surface-container-lowest p-5 rounded-lg flex items-center gap-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:col-start-1 landscape:row-start-3">
+            <section className="bg-surface-container-lowest p-5 rounded-lg flex items-center gap-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] mobile-ls:col-start-1 mobile-ls:row-start-3">
               <div className="w-16 h-16 flex-shrink-0 bg-secondary-fixed/30 rounded-full flex items-center justify-center">
                 <span className="material-symbols-outlined text-[32px] text-secondary/70" style={{ fontVariationSettings: "'FILL' 1" }}>{holiday.icon}</span>
               </div>
@@ -197,7 +197,7 @@ export function HomePage() {
           )}
 
           {/* ── Mood Banner ── */}
-          <section className="w-full h-[200px] rounded-lg overflow-hidden relative landscape:col-start-2 landscape:row-start-2">
+          <section className="w-full h-[200px] rounded-lg overflow-hidden relative mobile-ls:col-start-2 mobile-ls:row-start-2">
             <img src={moodImage} alt={currentMood} className="w-full h-full object-cover" loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
             <div className="absolute top-4 right-4 z-10 bg-white/90 text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
@@ -206,7 +206,7 @@ export function HomePage() {
           </section>
 
           {/* ── Support Card ── */}
-          <section className="bg-surface-container-low p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-4 landscape:col-start-2 landscape:row-start-3">
+          <section className="bg-surface-container-low p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-4 mobile-ls:col-start-2 mobile-ls:row-start-3">
             <div className="flex justify-between items-start gap-3">
               <h2 className="font-headline text-xl font-bold text-on-surface">Поддержка на сегодня</h2>
               <span className="flex-shrink-0 bg-primary-container/20 text-on-primary-container px-3 py-1 rounded-full text-xs font-semibold tracking-wide">{moodLabel}</span>
@@ -256,7 +256,7 @@ export function HomePage() {
           </section>
 
           {/* ── Horoscope Card ── */}
-          <section className="bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6 landscape:col-start-1 landscape:row-start-4">
+          <section className="bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6 mobile-ls:col-start-1 mobile-ls:row-start-4">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-headline text-xl font-bold text-on-surface">Гороскоп на сегодня</h2>
               <div className="flex bg-surface-container rounded-full p-1 flex-shrink-0">
@@ -336,7 +336,7 @@ export function HomePage() {
           </section>
 
           {/* ── Change Mood ── */}
-          <section className="pb-4 landscape:col-start-2 landscape:row-start-4">
+          <section className="pb-4 mobile-ls:col-start-2 mobile-ls:row-start-4">
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={() => setIsMoodSheetOpen(true)}

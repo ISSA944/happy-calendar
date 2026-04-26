@@ -32,7 +32,7 @@ export function BookmarksPage() {
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-4 pb-24">
+      <main className="flex-1 w-full max-w-[430px] mobile-ls:max-w-[860px] mx-auto px-5 pt-4 pb-24">
         <div className="mb-6">
           <p className="text-on-surface-variant font-body text-sm leading-relaxed">
             Ваши сохраненные моменты и предсказания в одном безопасном месте.
@@ -56,7 +56,7 @@ export function BookmarksPage() {
           ))}
         </div>
 
-        <section className="space-y-5 landscape:space-y-0 landscape:grid landscape:grid-cols-2 landscape:gap-5">
+        <section className="space-y-5 mobile-ls:space-y-0 mobile-ls:grid mobile-ls:grid-cols-2 mobile-ls:gap-5">
           <AnimatePresence mode="popLayout">
             {filtered.map(bm => (
               <motion.div
@@ -100,7 +100,7 @@ export function BookmarksPage() {
           </AnimatePresence>
 
           {filtered.length === 0 && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-20 text-center space-y-3 landscape:col-span-2">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-20 text-center space-y-3 mobile-ls:col-span-2">
               <span className="material-symbols-outlined text-on-surface-variant/30 text-[48px]">bookmark_border</span>
               <p className="text-on-surface-variant text-sm">
                 {bookmarks.length === 0
