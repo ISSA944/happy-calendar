@@ -264,13 +264,11 @@ export function CalendarSheet({ isOpen, onClose, onSelect, currentValue }: Calen
       title={title} 
       headerRight={headerRight}
     >
-      {isOpen && (
-        <CalendarSheetContent
-          key={currentValue || '__empty__'}
-          currentValue={currentValue}
-          onSelect={onSelect}
-        />
-      )}
+      <CalendarSheetContent
+        key={currentValue || '__empty__'}
+        currentValue={currentValue}
+        onSelect={onSelect}
+      />
     </BottomSheet>
   )
 }

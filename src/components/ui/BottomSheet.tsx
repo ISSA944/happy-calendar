@@ -1,26 +1,22 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, useMotionValue, animate, useDragControls } from 'framer-motion'
+import { AnimatePresence, motion, useDragControls } from 'framer-motion'
 
 /**
- * Unified bottom-sheet wrapper used by every modal in the app
- * (MoodSheet, TimePickerSheet, CalendarSheet).
+ * Unified bottom-sheet wrapper used by every modal in the app.
  *
  * Architecture: two separate AnimatePresence blocks so each motion.div
  * is a DIRECT child of its own AnimatePresence. Framer Motion only runs
  * exit animations on direct children — nesting both inside a plain <div>
  * caused the wrapper to be removed instantly, cutting off all exit animations.
  *
- * Rules enforced here:
- *  - Backdrop fades 0→1 on open, 1→0 on close (no black flash)
- *  - Sheet slides from y:100% → y:0 on open, reverses on close
- *  - iOS-style spring: stiffness 420, damping 42 (critically damped, no bounce)
- *  - Drag-to-close only via the top pill (dragListener=false on sheet body)
+ * Physics: iOS UIModalPresentationStyle.pageSheet bezier — smooth, no bounce.
+ * Drag-to-close only via the top pill (dragListener=false on sheet body).
+ * Snap-back is handled automatically by dragConstraints (no manual animate call).
  */
 
-const SHEET_SPRING = { type: 'spring' as const, stiffness: 420, damping: 42, mass: 1 }
-const DRAG_SNAP    = { type: 'spring' as const, stiffness: 380, damping: 36, mass: 1 }
-const BACKDROP_FADE = { duration: 0.22, ease: [0.32, 0.72, 0, 1] as const }
+const SHEET_TRANSITION = { duration: 0.35, ease: [0.32, 0.72, 0, 1] as const }
+const BACKDROP_FADE    = { duration: 0.22, ease: [0.32, 0.72, 0, 1] as const }
 
 export interface BottomSheetProps {
   isOpen: boolean
@@ -40,7 +36,6 @@ export function BottomSheet({
   hideDragIndicator = false,
 }: BottomSheetProps) {
   const [mounted] = useState(() => typeof document !== 'undefined')
-  const dragY = useMotionValue(0)
   const dragControls = useDragControls()
   const sheetRef = useRef<HTMLDivElement>(null)
 
@@ -50,21 +45,19 @@ export function BottomSheet({
     const savedHtmlOverflow = document.documentElement.style.overflow
     document.body.style.overflow = 'hidden'
     document.documentElement.style.overflow = 'hidden'
-    dragY.set(0)
     return () => {
       document.body.style.overflow = savedBodyOverflow
       document.documentElement.style.overflow = savedHtmlOverflow
     }
-  }, [isOpen, dragY])
+  }, [isOpen])
 
   if (!mounted) return null
 
   const handleDragEnd = (_: unknown, info: { offset: { y: number }; velocity: { y: number } }) => {
     if (info.offset.y > 100 || info.velocity.y > 400) {
       onClose()
-    } else {
-      animate(dragY, 0, DRAG_SNAP)
     }
+    // else: dragConstraints + dragElastic auto-snap back to y=0 — no manual animate needed
   }
 
   const content = (
@@ -98,17 +91,17 @@ export function BottomSheet({
             dragControls={dragControls}
             dragListener={false}
             dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 1 }}
+            dragElastic={{ top: 0, bottom: 0.6 }}
             dragMomentum={false}
+            dragTransition={{ bounceStiffness: 300, bounceDamping: 40 }}
             onDragEnd={handleDragEnd}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={SHEET_SPRING}
+            transition={SHEET_TRANSITION}
             className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-md rounded-t-[24px] shadow-2xl flex flex-col overflow-hidden max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] landscape:max-h-[85vh]"
             style={{
               zIndex: 101,
-              y: dragY,
               paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
               background: '#fcf9f4',
               willChange: 'transform',
