@@ -134,7 +134,7 @@ export function SettingsPage() {
         </section>
 
         {/* Account Section */}
-        <section className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-start-1 landscape:row-start-2">
+        <section className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-span-2 landscape:row-start-2">
           <div className="flex flex-col gap-5">
 
             {/* Email */}
@@ -219,7 +219,7 @@ export function SettingsPage() {
         </section>
 
         {/* Reset */}
-        <section className="mb-6 landscape:mb-0 landscape:col-start-2 landscape:row-start-2">
+        <section className="mb-6 landscape:mb-0 landscape:col-span-2 landscape:row-start-3">
           <button
             onClick={handleReset}
             className="w-full py-4 rounded-[1.5rem] border border-red-200 text-red-500 font-semibold text-sm active:scale-[0.98] transition-colors hover:bg-red-50"

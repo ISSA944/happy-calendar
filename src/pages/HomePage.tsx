@@ -197,7 +197,7 @@ export function HomePage() {
           )}
 
           {/* ── Mood Banner ── */}
-          <section className="w-full h-[200px] rounded-lg overflow-hidden relative landscape:col-start-2 landscape:row-start-2">
+          <section className="w-full h-[200px] landscape:h-[140px] rounded-lg overflow-hidden relative landscape:col-start-2 landscape:row-start-2">
             <img src={moodImage} alt={currentMood} className="w-full h-full object-cover" loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
             <div className="absolute top-4 right-4 z-10 bg-white/90 text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
@@ -256,7 +256,7 @@ export function HomePage() {
           </section>
 
           {/* ── Horoscope Card ── */}
-          <section className="bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6 landscape:col-start-1 landscape:row-start-4">
+          <section className="bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6 landscape:col-span-2 landscape:row-start-4">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-headline text-xl font-bold text-on-surface">Гороскоп на сегодня</h2>
               <div className="flex bg-surface-container rounded-full p-1 flex-shrink-0">
@@ -336,7 +336,7 @@ export function HomePage() {
           </section>
 
           {/* ── Change Mood ── */}
-          <section className="pb-4 landscape:col-start-2 landscape:row-start-4">
+          <section className="pb-4 landscape:col-span-2 landscape:row-start-5">
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={() => setIsMoodSheetOpen(true)}
