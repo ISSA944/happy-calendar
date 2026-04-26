@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef } from 'react'
 import { useAppStore } from '../../store'
 import { getMoodLabel } from '../../services/content.service'
 import { BottomSheet } from '../../components/ui/BottomSheet'
@@ -22,11 +23,19 @@ export function MoodSheet({ isOpen, onClose }: MoodSheetProps) {
   const currentMood = useAppStore((state) => state.currentMood)
   const setMood = useAppStore((state) => state.setMood)
   const gender = useAppStore((state) => state.gender)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const handleSelect = (mood: string) => {
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    }
+  }, [])
+
+  const handleSelect = useCallback((mood: string) => {
     setMood(mood)
-    setTimeout(() => onClose(), 150)
-  }
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    closeTimerRef.current = setTimeout(onClose, 150)
+  }, [setMood, onClose])
 
   const title = (
     <div>

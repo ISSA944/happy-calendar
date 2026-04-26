@@ -4,13 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiClient } from '../api'
 import { useFirebasePush } from '../hooks'
 import { useAppStore } from '../store'
-
-function localTimeToUtc(localHHMM: string): string {
-  const [h, m] = localHHMM.split(':').map(Number)
-  const d = new Date()
-  d.setHours(h, m, 0, 0)
-  return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`
-}
+import { localTimeToUtc } from '../lib/time'
 
 // Helper function to calculate Zodiac
 function getZodiac(dateStr: string): string | null {
