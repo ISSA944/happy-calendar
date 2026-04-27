@@ -42,7 +42,7 @@ model Profile {
   zodiacSign  String?  @map("zodiac_sign")
   gender      String?
   avatarUrl   String?  @map("avatar_url")
-  currentMood String   @default("Спокойное") @map("current_mood")
+  currentMood String   @default("Нормально") @map("current_mood")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

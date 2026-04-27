@@ -9,14 +9,12 @@ interface MoodSheetProps {
 }
 
 const MOODS = [
-  { id: 'Воодушевлена', icon: 'sunny' },
   { id: 'Спокойна',     icon: 'waves' },
-  { id: 'Счастлива',    icon: 'sentiment_very_satisfied' },
-  { id: 'Нейтрально',   icon: 'fiber_manual_record' },
+  { id: 'Нормально',    icon: 'fiber_manual_record' },
   { id: 'Устала',       icon: 'nights_stay' },
-  { id: 'Тревога',      icon: 'cloud' },
-  { id: 'Грусть',       icon: 'water_drop' },
-  { id: 'Злость',       icon: 'local_fire_department' },
+  { id: 'Тревожна',     icon: 'cloud' },
+  { id: 'Грустна',      icon: 'water_drop' },
+  { id: 'Воодушевлена', icon: 'sunny' },
 ]
 
 export function MoodSheet({ isOpen, onClose }: MoodSheetProps) {

@@ -3,15 +3,14 @@
 // Horoscope text and support phrases come from the backend (GET /api/today).
 
 // ══════════ MOOD IMAGES (Unsplash) ══════════
+// Ключи — женские формы (база в БД). Мужские формы преобразуются через MOOD_LABELS_M.
 export const MOOD_IMAGES: Record<string, string> = {
+  'Спокойна':     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=400&fit=crop&q=80',
+  'Нормально':    'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop&q=80',
+  'Устала':       'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=800&h=400&fit=crop&q=80',
+  'Тревожна':     'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=400&fit=crop&q=80',
+  'Грустна':      'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?w=800&h=400&fit=crop&q=80',
   'Воодушевлена': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop&q=80',
-  'Спокойна': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=400&fit=crop&q=80',
-  'Тревога': 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=400&fit=crop&q=80',
-  'Устала': 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=800&h=400&fit=crop&q=80',
-  'Грусть': 'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?w=800&h=400&fit=crop&q=80',
-  'Счастлива': 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=800&h=400&fit=crop&q=80',
-  'Злость': 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&h=400&fit=crop&q=80',
-  'Нейтрально': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop&q=80',
 }
 
 // ══════════ HOLIDAY CALENDAR ══════════
@@ -173,16 +172,14 @@ export const HOLIDAYS: Record<string, Holiday> = {
 }
 
 // ══════════ GENDER-AWARE MOOD LABELS ══════════
-
+// Базовые ключи (БД) — женские формы. Мужские формы — через этот словарь.
 export const MOOD_LABELS_M: Record<string, string> = {
-  'Воодушевлена': 'Воодушевлён',
   'Спокойна':     'Спокоен',
-  'Счастлива':    'Счастлив',
-  'Нейтрально':   'Нейтрально',
+  'Нормально':    'Нормально',
   'Устала':       'Устал',
-  'Тревога':      'Тревога',
-  'Грусть':       'Грусть',
-  'Злость':       'Злость',
+  'Тревожна':     'Тревожен',
+  'Грустна':      'Грустен',
+  'Воодушевлена': 'Воодушевлён',
 }
 
 export function getMoodLabel(id: string, gender: 'F' | 'M' | 'UNKNOWN'): string {

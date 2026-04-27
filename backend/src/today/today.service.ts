@@ -32,7 +32,7 @@ export class TodayService {
     // ── 2. Profile lookup ──────────────────────────────────────────────────────
     const profile = await this.prisma.profile.findUnique({ where: { userId } });
     const zodiacSign = profile?.zodiacSign ?? '';
-    const mood       = profile?.currentMood ?? 'Спокойное';
+    const mood       = profile?.currentMood ?? 'Нормально';
     const gender     = profile?.gender ?? 'UNKNOWN';
 
     // ── 3. Redis hit (shared by zodiacSign + mood + date) ──────────────────────

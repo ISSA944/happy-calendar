@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
+import { resolveHoliday } from './holidays.data';
 
 /** Структура дневного пакета, возвращаемого AI */
 export interface AiDailyPack {
@@ -105,50 +106,55 @@ export class AiService {
   };
 
   // ─── Mock support phrases (Fallback Policy) ───────────────────────────────
+  // Keys = canonical mood IDs (feminine forms — base in DB).
   private readonly supportPhrases: Record<string, string[]> = {
-    Спокойное: [
+    Спокойна: [
       'Ты на правильном пути. Каждый шаг имеет значение.',
       'Сегодня прекрасный день, чтобы просто быть собой.',
-      'Спокойствие — это суперсила. Ты уже победил.',
+      'Спокойствие — это суперсила. Ты уже всё знаешь.',
       'Тишина внутри — лучший советчик.',
+      'Доверься потоку. Всё происходит вовремя.',
     ],
-    Радостное: [
-      'Твоя радость заразительна! Делись ею с миром.',
-      'Когда сердце поёт — весь мир танцует.',
-      'Запомни этот момент. Ты создаёшь счастье прямо сейчас.',
-      'Улыбка — твой лучший аксессуар сегодня.',
+    Нормально: [
+      'Иногда «нормально» — это уже маленькая победа.',
+      'Ровный день — лучшая основа для глубоких решений.',
+      'Не каждый день должен быть ярким. И в этом тоже сила.',
+      'Сегодня можно просто быть. Без подвигов.',
+      'Баланс — это то, что ты создаёшь прямо сейчас.',
     ],
-    Грустное: [
+    Устала: [
+      'Отдых — это не слабость, а мудрость. Позволь себе восстановиться.',
+      'Даже самые сильные деревья склоняются перед ветром.',
+      'Сегодня можно просто быть. Без подвигов. Без рекордов.',
+      'Усталость — знак, что ты много отдала миру.',
+      'Закрой глаза. Мир подождёт.',
+    ],
+    Тревожна: [
+      'Вдохни глубоко. Ты в безопасности прямо сейчас.',
+      'Тревога лжёт. Реальность добрее, чем кажется.',
+      'Шаг за шагом. Не нужно решать всё сразу.',
+      'Ты справлялась раньше — справишься и сейчас.',
+      'Эта волна пройдёт. Ты крепче, чем она.',
+    ],
+    Грустна: [
       'Грусть — это не слабость. Это глубина твоей души.',
       'После дождя всегда выходит солнце. Подожди немного.',
       'Ты сильнее, чем думаешь. Это пройдёт.',
       'Разреши себе чувствовать — это нормально и важно.',
+      'Каждая слеза поливает семена будущей радости.',
     ],
-    Тревожное: [
-      'Вдохни глубоко. Ты в безопасности прямо сейчас.',
-      'Тревога лжёт. Реальность добрее, чем кажется.',
-      'Шаг за шагом. Не нужно решать всё сразу.',
-      'Ты справлялся раньше — справишься и сейчас.',
-    ],
-    Энергичное: [
-      'Направь эту энергию в созидание — результат удивит!',
-      'Мир не успевает за тобой сегодня. Вперёд!',
-      'Энергия — это дар. Используй его мудро.',
-      'Сегодня ты можешь свернуть горы. Какую выберешь?',
+    Воодушевлена: [
+      'Твоя энергия сегодня — подарок миру. Делись ею.',
+      'Когда сердце поёт — весь мир танцует с тобой.',
+      'Сегодня — идеальный день, чтобы начать то, о чём мечтаешь.',
+      'Ты — магнит для чудес. Доверяй своей внутренней силе.',
+      'Запомни этот момент. Ты создаёшь счастье прямо сейчас.',
     ],
   };
 
-  // ─── Mock holidays (resolved locally, never by LLM) ──────────────────────
-  private readonly holidays: Record<
-    string,
-    { name: string; description: string; icon: string }
-  > = {
-    '01.01': { name: 'Новый год',                   description: 'С Новым годом! Пусть этот год принесёт счастье.', icon: 'celebration' },
-    '08.03': { name: 'Международный женский день',  description: 'Поздравляем всех женщин!',                       icon: 'favorite' },
-    '14.02': { name: 'День святого Валентина',      description: 'День любви и нежности.',                         icon: 'favorite' },
-    '09.05': { name: 'День Победы',                 description: 'Помним и гордимся.',                             icon: 'military_tech' },
-    '31.12': { name: 'Канун Нового года',            description: 'Время подводить итоги и мечтать!',               icon: 'celebration' },
-  };
+  // ─── Holidays: resolved locally (never by LLM), always returns a value ──
+  // Real holiday → from HOLIDAYS_FULL dict; otherwise → wellness theme rotation.
+  // See backend/src/ai/holidays.data.ts for the full calendar.
 
   // ─────────────────────────────────────────────────────────────────────────
   // generateDailyPack — Full Pack
@@ -197,12 +203,12 @@ export class AiService {
           supportPhrase: string;
         };
 
-        const holiday = this.holidays[context.date] ?? null;
+        const holiday = resolveHoliday(context.date);
         this.logger.log(
           `generateDailyPack LLM OK, tokens=${completion.usage?.total_tokens ?? '?'}`,
         );
 
-        return { ...parsed, holiday: holiday?.name ?? null };
+        return { ...parsed, holiday: holiday.name };
       } catch (err) {
         this.logger.error(
           'generateDailyPack LLM failed — using fallback',
@@ -215,8 +221,8 @@ export class AiService {
     const horoscope =
       this.horoscopes[context.zodiacSign] ?? this.horoscopes['Овен ♈︎'];
     const phrases =
-      this.supportPhrases[context.mood] ?? this.supportPhrases['Спокойное'];
-    const holiday = this.holidays[context.date] ?? null;
+      this.supportPhrases[context.mood] ?? this.supportPhrases['Нормально'];
+    const holiday = resolveHoliday(context.date);
 
     return {
       horoscope:         horoscope.main,
@@ -224,7 +230,7 @@ export class AiService {
       advice:            horoscope.advice,
       moon:              horoscope.moon,
       aspect:            horoscope.aspect,
-      holiday:           holiday?.name ?? null,
+      holiday:           holiday.name,
       supportPhrase:     phrases[Math.floor(Math.random() * phrases.length)],
     };
   }
@@ -274,7 +280,7 @@ export class AiService {
 
     // ── Fallback ─────────────────────────────────────────────────────────────
     const phrases =
-      this.supportPhrases[newMood] ?? this.supportPhrases['Спокойное'];
+      this.supportPhrases[newMood] ?? this.supportPhrases['Нормально'];
     return {
       supportPhrase: phrases[Math.floor(Math.random() * phrases.length)],
     };

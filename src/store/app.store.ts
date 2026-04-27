@@ -104,7 +104,7 @@ type AppState = {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      currentMood: 'Воодушевлена',
+      currentMood: 'Нормально',
       zodiacSign: '',
       setZodiacSign: (sign) => set({ zodiacSign: sign }),
 
@@ -278,7 +278,7 @@ export const useAppStore = create<AppState>()(
           zodiacSign: '',
           gender: 'UNKNOWN',
           profilePhoto: '',
-          currentMood: 'Воодушевлена',
+          currentMood: 'Нормально',
           dailyPack: null,
           bookmarks: [],
         })
