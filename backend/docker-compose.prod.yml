@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: happy_calendar
+      POSTGRES_DB: yoyojoy_day
     # Performance tuning for 2GB RAM VPS
     command: >
       postgres
@@ -20,7 +20,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d happy_calendar"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d yoyojoy_day"]
       interval: 10s
       timeout: 5s
       retries: 5

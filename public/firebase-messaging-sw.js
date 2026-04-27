@@ -29,7 +29,7 @@ if (isConfigComplete) {
   messaging.onBackgroundMessage((payload) => {
     const notification = payload.notification || {}
     const data = payload.data || {}
-    const title = notification.title || 'Happy Calendar'
+    const title = notification.title || 'YoYoJoy Day'
     const options = {
       body: notification.body || 'У тебя есть обновление на сегодня.',
       icon: '/pwa-192x192.png',
@@ -53,12 +53,12 @@ if (isConfigComplete) {
     try {
       payload = event.data.json()
     } catch {
-      payload = { notification: { title: 'Happy Calendar', body: event.data.text() } }
+      payload = { notification: { title: 'YoYoJoy Day', body: event.data.text() } }
     }
 
     const notification = payload.notification || {}
     const data = payload.data || {}
-    const title = notification.title || 'Happy Calendar'
+    const title = notification.title || 'YoYoJoy Day'
     const options = {
       body: notification.body || 'У тебя есть обновление на сегодня.',
       icon: '/pwa-192x192.png',

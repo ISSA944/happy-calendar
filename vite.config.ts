@@ -57,10 +57,9 @@ export default defineConfig(({ mode }) => {
         injectRegister: 'auto',
         includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
-          name: 'Happy Calendar',
-          short_name: 'HappyCal',
-          description:
-            'Happy Calendar — персональный AI-компаньон для ежедневных ритуалов: гороскоп, поддержка по настроению и праздники.',
+          name: 'YoYoJoy Day',
+          short_name: 'YoYoJoy',
+          description: 'YoYoJoy Day — персональный AI-компаньон для ежедневных ритуалов: гороскоп, поддержка по настроению и праздники.',
           theme_color: '#2FA7A0',
           background_color: '#fcf9f4',
           display: 'standalone',

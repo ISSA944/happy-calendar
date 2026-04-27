@@ -1,5 +1,5 @@
-const ACCESS_TOKEN_KEY = 'happy-calendar-access-token'
-const REFRESH_TOKEN_KEY = 'happy-calendar-refresh-token'
+const ACCESS_TOKEN_KEY = 'yoyojoy-access-token'
+const REFRESH_TOKEN_KEY = 'yoyojoy-refresh-token'
 
 function hasWindow() {
   return typeof window !== 'undefined'

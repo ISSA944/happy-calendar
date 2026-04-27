@@ -28,7 +28,7 @@ export const useRegistrationDraft = create<RegistrationDraftState>()(
       clear: () => set(EMPTY_DRAFT),
     }),
     {
-      name: 'happy-calendar-registration-draft',
+      name: 'yoyojoy-registration-draft',
       storage: createJSONStorage(() => sessionStorage),
     },
   ),

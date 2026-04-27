@@ -1,4 +1,4 @@
-# Happy Calendar — Backend Development Roadmap
+# YoYoJoy Day — Backend Development Roadmap
 
 ## Phase 1: Auth Module & DB Schema (DONE)
 - NestJS bootstrap (Config, Throttler, Prisma, Firebase Admin)

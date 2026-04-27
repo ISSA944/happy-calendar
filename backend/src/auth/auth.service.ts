@@ -60,7 +60,7 @@ export class AuthService {
     this.smtpFromEmail =
       this.config.get<string>('SMTP_FROM_EMAIL') ?? smtpUser ?? '';
     this.smtpFromName =
-      this.config.get<string>('SMTP_FROM_NAME') ?? 'Happy Calendar';
+      this.config.get<string>('SMTP_FROM_NAME') ?? 'YoYoJoy Day';
 
     // Resend fallback (kept for future domain-verified prod)
     const resendKey = this.config.get<string>('RESEND_API_KEY');
@@ -193,7 +193,7 @@ export class AuthService {
   private async sendOtpEmail(to: string, code: string) {
     const EMAIL_FAILURE_MSG =
       'Не удалось отправить письмо с кодом. Попробуйте позже.';
-    const subject = 'Твой код доступа к Happy Calendar';
+    const subject = 'Твой код доступа к YoYoJoy Day';
     const html = this.renderOtpEmailHtml(code);
 
     if (this.provider === 'smtp' && this.smtpTransport) {
@@ -218,7 +218,7 @@ export class AuthService {
     if (this.provider === 'resend' && this.resend) {
       try {
         const { data, error } = await this.resend.emails.send({
-          from: `Happy Calendar <${this.resendFromEmail}>`,
+          from: `YoYoJoy Day <${this.resendFromEmail}>`,
           to,
           subject,
           html,
@@ -251,7 +251,7 @@ export class AuthService {
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Calendar</title>
+<title>YoYoJoy Day</title>
 </head>
 <body style="margin:0;padding:32px 16px;background:#f5f2ed;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
@@ -260,7 +260,7 @@ export class AuthService {
         <table role="presentation" width="480" cellspacing="0" cellpadding="0" border="0" style="max-width:480px;background:#fcf9f4;border-radius:24px;overflow:hidden">
           <tr>
             <td style="padding:40px 40px 28px;background:#006a65;text-align:center">
-              <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px">Happy Calendar 🌿</div>
+              <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px">YoYoJoy Day 🌿</div>
               <div style="color:#a4d8d5;font-size:13px;margin-top:6px">Твой персональный компаньон дня</div>
             </td>
           </tr>

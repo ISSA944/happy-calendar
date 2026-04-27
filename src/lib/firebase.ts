@@ -6,7 +6,7 @@ import {
   type Messaging,
 } from 'firebase/messaging'
 
-const FCM_TOKEN_KEY = 'happy-calendar-fcm-token'
+const FCM_TOKEN_KEY = 'yoyojoy-fcm-token'
 const FIREBASE_SW_PATH = '/firebase-messaging-sw.js'
 
 type FirebaseMessagingContext = {

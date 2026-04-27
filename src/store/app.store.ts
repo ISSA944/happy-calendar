@@ -284,6 +284,6 @@ export const useAppStore = create<AppState>()(
         })
       },
     }),
-    { name: 'happy-calendar-store' }
+    { name: 'yoyojoy-store' }
   )
 )

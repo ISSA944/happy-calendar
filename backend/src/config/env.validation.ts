@@ -30,7 +30,7 @@ export const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
   SMTP_FROM_EMAIL: z.string().email().optional(),
-  SMTP_FROM_NAME: z.string().default('Happy Calendar'),
+  SMTP_FROM_NAME: z.string().default('YoYoJoy Day'),
 
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z

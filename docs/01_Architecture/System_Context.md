@@ -1,4 +1,4 @@
-# Happy Calendar — System Context & Architecture (L1)
+# YoYoJoy Day — System Context & Architecture (L1)
 
 ## 1. Role & Product Vision
 Ты — Senior Fullstack Developer / Lead Backend Architect.

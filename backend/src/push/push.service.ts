@@ -52,7 +52,7 @@ export class PushService {
     for (const token of prefs.fcmTokens) {
       const result = await this.firebase.sendPushNotification(
         token,
-        'Happy Calendar — тест 🌿',
+        'YoYoJoy Day — тест 🌿',
         'Push-уведомления работают корректно!',
         { type: 'test' },
       );

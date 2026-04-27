@@ -1,0 +1,2031 @@
+================================================================
+  HAPPY CALENDAR — PROJECT BRAIN V3
+  Актуальный слепок архитектуры после полной интеграции API
+  Дата: 26.04.2026
+================================================================
+
+АРХИТЕКТУРА (КРАТКОЕ ОПИСАНИЕ)
+================================
+
+YoYoJoy Day — мобильная PWA с полноценным бэкендом NestJS.
+Фронтенд и бэкенд ПОЛНОСТЬЮ ИНТЕГРИРОВАНЫ (Phase 3).
+
+СТЕК:
+  Frontend : React 19 + TypeScript + Vite + Tailwind CSS + Zustand + Framer Motion + Vite PWA Plugin
+  Backend  : Node.js + NestJS 11 + Prisma ORM 6 + PostgreSQL 15
+  AI       : OpenAI (gpt-5.4-mini-2026-03-17, Structured Outputs, strict: true)
+  Push     : Firebase Cloud Messaging (FCM) — Admin SDK на бэке, Web SDK на фронте
+  Email    : SMTP (Gmail App Password) primary, Resend fallback
+  Deploy   : Vercel (Frontend) + Timeweb VPS/Docker (Backend — Phase 4)
+
+ПОТОК ДАННЫХ:
+  PWA → apiClient (Axios + JWT Bearer) → NestJS API → PostgreSQL
+  AI генерирует контент только на сервере. PWA — dumb client.
+
+API ENDPOINTS:
+  POST   /api/auth/register        — регистрация, отправка OTP
+  POST   /api/auth/verify-otp      — верификация OTP, выдача JWT
+  POST   /api/auth/refresh          — ротация refresh-токена
+  POST   /api/auth/logout           — инвалидация refresh-токена
+  GET    /api/profile               — получение профиля
+  PATCH  /api/profile               — обновление профиля (birthdate, zodiac, pushTime...)
+  PATCH  /api/profile/mood          — смена настроения + AI-генерация новой фразы поддержки
+  GET    /api/today                 — дневной пак (гороскоп + поддержка + праздник)
+  POST   /api/today/support/next    — "другая фраза" (без смены настроения)
+  GET    /api/bookmarks             — список закладок
+  POST   /api/bookmarks             — добавить закладку
+  DELETE /api/bookmarks/:id         — удалить закладку
+  POST   /api/push/subscribe        — сохранить FCM-токен
+  DELETE /api/push/unsubscribe      — удалить FCM-токен
+
+КЛЮЧЕВЫЕ ПРАВИЛА АРХИТЕКТУРЫ:
+  1. LLM-ключи ТОЛЬКО в .env бэкенда. PWA не знает об AI.
+  2. При смене настроения пересобирается ТОЛЬКО блок поддержки (экономия токенов).
+  3. Закладки — JSONB snapshot (immutable). Изменение базы не меняет текст в закладках.
+  4. PWA отвечает только за fcm_token. Расписание push — строго на сервере (CRON).
+  5. Fallback Policy: при падении AI бэкенд отдаёт mock-данные, не падает.
+  6. Landscape-адаптация: строго через Tailwind `landscape:`. Никаких md:/lg:.
+
+### ===========================================
+FILE: backend/docker-compose.yml
+===========================================
+
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: yoyojoy_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: yoyojoy_day
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Базовые оптимизации под сервер 2 vCPU, 2GB RAM (Postgres берёт ~256MB под shared_buffers, макс коннектов 100)
+    command: postgres -c shared_buffers=256MB -c max_connections=100 -c work_mem=4MB -c maintenance_work_mem=64MB
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+### ===========================================
+FILE: backend/docker-compose.prod.yml
+===========================================
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: yoyojoy_day
+    # Performance tuning for 2GB RAM VPS
+    command: >
+      postgres
+      -c shared_buffers=256MB
+      -c max_connections=100
+      -c effective_cache_size=512MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c log_min_duration_statement=1000
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d yoyojoy_day"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env.prod
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    # Runs pending migrations on every deploy, then starts the server.
+    # Safe: prisma migrate deploy is idempotent (skips already-applied migrations).
+    command: sh -c "npx prisma migrate deploy && node dist/main.js"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+volumes:
+  postgres_data:
+
+### ===========================================
+FILE: vite.config.ts
+===========================================
+
+import fs from 'fs'
+import path from 'path'
+import { defineConfig, loadEnv } from 'vite'
+import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  function injectIntoSW(content: string): string {
+    return content
+      .replace('%%FIREBASE_API_KEY%%', env.VITE_FIREBASE_API_KEY ?? '')
+      .replace('%%FIREBASE_AUTH_DOMAIN%%', env.VITE_FIREBASE_AUTH_DOMAIN ?? '')
+      .replace('%%FIREBASE_STORAGE_BUCKET%%', env.VITE_FIREBASE_STORAGE_BUCKET ?? '')
+      .replace('%%FIREBASE_MESSAGING_SENDER_ID%%', env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '')
+      .replace('%%FIREBASE_APP_ID%%', env.VITE_FIREBASE_APP_ID ?? '')
+  }
+
+  const injectFirebaseSW = {
+    name: 'inject-firebase-sw',
+    // Dev: intercept the SW request and serve it with real values
+    configureServer(server: import('vite').ViteDevServer) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url?.startsWith('/firebase-messaging-sw.js')) {
+          const swPath = path.resolve(__dirname, 'public', 'firebase-messaging-sw.js')
+          const content = injectIntoSW(fs.readFileSync(swPath, 'utf-8'))
+          res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+          res.setHeader('Service-Worker-Allowed', '/')
+          res.end(content)
+          return
+        }
+        next()
+      })
+    },
+    // Build: inject into the copied dist file
+    closeBundle() {
+      const swPath = path.resolve(__dirname, 'dist', 'firebase-messaging-sw.js')
+      if (!fs.existsSync(swPath)) return
+      fs.writeFileSync(swPath, injectIntoSW(fs.readFileSync(swPath, 'utf-8')))
+    },
+  }
+
+  return {
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:4000',
+          changeOrigin: true,
+        },
+      },
+    },
+    plugins: [
+      react(),
+      injectFirebaseSW,
+      VitePWA({
+        registerType: 'autoUpdate',
+        injectRegister: 'auto',
+        includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
+        manifest: {
+          name: 'YoYoJoy Day',
+          short_name: 'YoYoJoy',
+          description:
+            'YoYoJoy Day — персональный AI-компаньон для ежедневных ритуалов: гороскоп, поддержка по настроению и праздники.',
+          theme_color: '#2FA7A0',
+          background_color: '#fcf9f4',
+          display: 'standalone',
+          orientation: 'any',
+          scope: '/',
+          start_url: '/',
+          lang: 'ru',
+          icons: [
+            { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          ],
+        },
+        workbox: {
+          skipWaiting: true,
+          clientsClaim: true,
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
+          navigateFallback: 'index.html',
+          navigateFallbackDenylist: [/^\/api\//],
+          cleanupOutdatedCaches: true,
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/images\.unsplash\.com\//,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'unsplash-images',
+                expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+            {
+              urlPattern: /^https:\/\/lh3\.googleusercontent\.com\//,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'googleusercontent-images',
+                expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+            {
+              urlPattern: ({ request }) => request.destination === 'image',
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'runtime-images',
+                expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 14 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.googleapis\.com\//,
+              handler: 'StaleWhileRevalidate',
+              options: { cacheName: 'google-fonts-stylesheets' },
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.gstatic\.com\//,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts-webfonts',
+                expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+          ],
+        },
+      }),
+    ],
+  }
+})
+
+### ===========================================
+FILE: backend/prisma/schema.prisma
+===========================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// CORE: users + auth credentials
+// ─────────────────────────────────────────────────────────────
+model User {
+  id               String    @id @default(uuid())
+  email            String    @unique
+  name             String?
+  passwordHash     String?   @map("password_hash")
+  otpHash          String?   @map("otp_hash")
+  otpExpiresAt     DateTime? @map("otp_expires_at")
+  refreshTokenHash String?   @map("refresh_token_hash")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  profile       Profile?
+  prefs         Prefs?
+  dailyFeeds    DailyFeed[]
+  bookmarks     Bookmark[]
+  moodLogs      MoodLog[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────
+// PROFILE: кто такой юзер (астрология + текущее настроение)
+// ─────────────────────────────────────────────────────────────
+model Profile {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  birthdate   String?
+  zodiacSign  String?  @map("zodiac_sign")
+  gender      String?
+  avatarUrl   String?  @map("avatar_url")
+  currentMood String   @default("Спокойное") @map("current_mood")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("profile")
+}
+
+// ─────────────────────────────────────────────────────────────
+// PREFS: настройки + устройства + согласие ПД
+// ─────────────────────────────────────────────────────────────
+model Prefs {
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pushTime         String   @default("09:00") @map("push_time")
+  fcmTokens        String[] @default([]) @map("fcm_tokens")
+  horoscopeEnabled Boolean  @default(true) @map("horoscope_enabled")
+  holidaysEnabled  Boolean  @default(false) @map("holidays_enabled")
+  consentPd        Boolean  @default(false) @map("consent_pd")
+  timezone         String   @default("Europe/Moscow")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("prefs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// SHARED REF TABLES — расшариваются между юзерами
+// Экономия LLM: 1 гороскоп на (date, zodiacSign) на всех
+// ─────────────────────────────────────────────────────────────
+model Horoscope {
+  id         String   @id @default(uuid())
+  date       String
+  zodiacSign String   @map("zodiac_sign")
+  main       String
+  advice     String
+  moon       String
+  aspect     String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  dailyFeeds DailyFeed[]
+
+  @@unique([date, zodiacSign])
+  @@index([date])
+  @@map("horoscopes")
+}
+
+model Holiday {
+  id          String   @id @default(uuid())
+  date        String   @unique
+  title       String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  dailyFeeds DailyFeed[]
+
+  @@map("holidays")
+}
+
+model SupportPhrase {
+  id        String   @id @default(uuid())
+  mood      String
+  text      String
+  usedCount Int      @default(0) @map("used_count")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  dailyFeeds DailyFeed[]
+
+  @@index([mood])
+  @@map("support_phrases")
+}
+
+model Prompt {
+  id        String   @id @default(uuid())
+  type      String   @unique
+  template  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("prompts")
+}
+
+// ─────────────────────────────────────────────────────────────
+// DAILY FEED: join-таблица user↔ref-content на конкретный день
+// ─────────────────────────────────────────────────────────────
+model DailyFeed {
+  id              String         @id @default(uuid())
+  userId          String         @map("user_id")
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            String
+  horoscopeId     String?        @map("horoscope_id")
+  horoscope       Horoscope?     @relation(fields: [horoscopeId], references: [id])
+  supportPhraseId String?        @map("support_phrase_id")
+  supportPhrase   SupportPhrase? @relation(fields: [supportPhraseId], references: [id])
+  holidayId       String?        @map("holiday_id")
+  holiday         Holiday?       @relation(fields: [holidayId], references: [id])
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@unique([userId, date])
+  @@map("daily_feed")
+}
+
+// ─────────────────────────────────────────────────────────────
+// BOOKMARKS: snapshot на момент сохранения (immutable)
+// ─────────────────────────────────────────────────────────────
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("bookmarks")
+}
+
+// ─────────────────────────────────────────────────────────────
+// AUDIT LOGS
+// ─────────────────────────────────────────────────────────────
+model MoodLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mood      String
+  changedAt DateTime @default(now()) @map("changed_at")
+
+  @@index([userId])
+  @@map("mood_logs")
+}
+
+model Notification {
+  id     String   @id @default(uuid())
+  userId String   @map("user_id")
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sentAt DateTime @default(now()) @map("sent_at")
+  type   String
+  status String
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+### ===========================================
+FILE: backend/src/main.ts
+===========================================
+
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }));
+  const logger = new Logger('Bootstrap');
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: true,
+    }),
+  );
+
+  app.enableCors({
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin) return callback(null, true);
+
+      const isDev = process.env.NODE_ENV !== 'production';
+      const allowed =
+        origin === 'http://localhost:5173' ||
+        origin === 'http://localhost:4173' ||
+        (isDev && /^http:\/\/192\.168\.\d+\.\d+:\d+$/.test(origin)) ||
+        /^https:\/\/happy-calendar[a-z0-9-]*\.vercel\.app$/.test(origin) ||
+        /^https:\/\/[a-z0-9-]+\.(ngrok-free\.app|ngrok\.io|trycloudflare\.com)$/.test(origin);
+
+      if (allowed) return callback(null, true);
+
+      callback(new Error(`CORS: origin '${origin}' not allowed`));
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    credentials: true,
+  });
+
+  const port = process.env.PORT ?? 4000;
+  await app.listen(port);
+  logger.log(`Backend running on http://localhost:${port}`);
+  logger.log(`Endpoints:`);
+  logger.log(`  POST   /api/auth/register`);
+  logger.log(`  POST   /api/auth/verify-otp`);
+  logger.log(`  POST   /api/auth/refresh`);
+  logger.log(`  POST   /api/auth/logout`);
+  logger.log(`  GET    /api/profile`);
+  logger.log(`  PATCH  /api/profile`);
+  logger.log(`  PATCH  /api/profile/mood`);
+  logger.log(`  GET    /api/today`);
+  logger.log(`  POST   /api/today/support/next`);
+  logger.log(`  GET    /api/bookmarks?type=...`);
+  logger.log(`  POST   /api/bookmarks`);
+  logger.log(`  DELETE /api/bookmarks/:id`);
+  logger.log(`  POST   /api/push/subscribe`);
+  logger.log(`  DELETE /api/push/unsubscribe`);
+}
+
+void bootstrap();
+
+### ===========================================
+FILE: backend/src/ai/ai.service.ts
+===========================================
+
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import OpenAI from 'openai';
+
+/** Структура дневного пакета, возвращаемого AI */
+export interface AiDailyPack {
+  horoscope: string;
+  horoscopeDetailed: string;
+  advice: string;
+  moon: string;
+  aspect: string;
+  holiday: string | null;
+  supportPhrase: string;
+}
+
+/** Контекст для генерации пакета */
+export interface PromptContext {
+  zodiacSign: string;
+  mood: string;
+  gender: string;
+  date: string;
+}
+
+// ─── Structured Output schemas (strict: true) ───────────────────────────────
+
+const DAILY_PACK_SCHEMA = {
+  type: 'json_schema' as const,
+  json_schema: {
+    name: 'daily_pack',
+    strict: true,
+    schema: {
+      type: 'object',
+      properties: {
+        horoscope:         { type: 'string' },
+        horoscopeDetailed: { type: 'string' },
+        advice:            { type: 'string' },
+        moon:              { type: 'string' },
+        aspect:            { type: 'string' },
+        supportPhrase:     { type: 'string' },
+      },
+      required: ['horoscope', 'horoscopeDetailed', 'advice', 'moon', 'aspect', 'supportPhrase'],
+      additionalProperties: false,
+    },
+  },
+};
+
+const SUPPORT_PHRASE_SCHEMA = {
+  type: 'json_schema' as const,
+  json_schema: {
+    name: 'support_phrase',
+    strict: true,
+    schema: {
+      type: 'object',
+      properties: {
+        supportPhrase: { type: 'string' },
+      },
+      required: ['supportPhrase'],
+      additionalProperties: false,
+    },
+  },
+};
+
+const LLM_MODEL = 'gpt-5.4-mini-2026-03-17' as const;
+
+@Injectable()
+export class AiService {
+  private readonly logger = new Logger(AiService.name);
+  private readonly openai: OpenAI | null;
+
+  constructor(private readonly config: ConfigService) {
+    const apiKey = this.config.get<string>('AI_API_KEY');
+    this.openai = apiKey ? new OpenAI({ apiKey }) : null;
+    if (!this.openai) {
+      this.logger.warn('AI_API_KEY not set — running in mock fallback mode');
+    }
+  }
+
+  // ─── Mock horoscope bank (Fallback Policy) ────────────────────────────────
+  private readonly horoscopes: Record<
+    string,
+    { main: string; detailed: string; advice: string; moon: string; aspect: string }
+  > = {
+    'Овен ♈︎': {
+      main:     'Сегодня день решительных действий. Ваша энергия на пике — используйте её для важных начинаний.',
+      detailed: 'Марс активно влияет на ваш знак, придавая мощную внутреннюю силу. Не бойтесь брать инициативу.',
+      advice:   'Действуйте смело, но избегайте конфликтов — сила в спокойствии.',
+      moon:     'Растущая Луна усиливает вашу интуицию.',
+      aspect:   'Марс в тригоне с Юпитером — удача на вашей стороне.',
+    },
+    'Телец ♉︎': {
+      main:     'Финансовые вопросы выходят на первый план. Присмотритесь к новым возможностям.',
+      detailed: 'Венера благоволит стабильности. Сегодня хороший день для долгосрочных инвестиций и планирования.',
+      advice:   'Не торопитесь с крупными тратами — подождите пару дней.',
+      moon:     'Луна в вашем знаке — время самозаботы.',
+      aspect:   'Венера секстиль Сатурн — надёжность во всём.',
+    },
+    'Близнецы ♊︎': {
+      main:     'Коммуникация — ваш главный инструмент сегодня. Важный разговор может изменить всё.',
+      detailed: 'Меркурий усиливает ваше красноречие. Используйте слова как мост к новым возможностям.',
+      advice:   'Слушайте больше, чем говорите — так вы узнаете главное.',
+      moon:     'Луна в воздушном знаке — лёгкость в общении.',
+      aspect:   'Меркурий конъюнкция Солнце — ясность мысли.',
+    },
+  };
+
+  // ─── Mock support phrases (Fallback Policy) ───────────────────────────────
+  private readonly supportPhrases: Record<string, string[]> = {
+    Спокойное: [
+      'Ты на правильном пути. Каждый шаг имеет значение.',
+      'Сегодня прекрасный день, чтобы просто быть собой.',
+      'Спокойствие — это суперсила. Ты уже победил.',
+      'Тишина внутри — лучший советчик.',
+    ],
+    Радостное: [
+      'Твоя радость заразительна! Делись ею с миром.',
+      'Когда сердце поёт — весь мир танцует.',
+      'Запомни этот момент. Ты создаёшь счастье прямо сейчас.',
+      'Улыбка — твой лучший аксессуар сегодня.',
+    ],
+    Грустное: [
+      'Грусть — это не слабость. Это глубина твоей души.',
+      'После дождя всегда выходит солнце. Подожди немного.',
+      'Ты сильнее, чем думаешь. Это пройдёт.',
+      'Разреши себе чувствовать — это нормально и важно.',
+    ],
+    Тревожное: [
+      'Вдохни глубоко. Ты в безопасности прямо сейчас.',
+      'Тревога лжёт. Реальность добрее, чем кажется.',
+      'Шаг за шагом. Не нужно решать всё сразу.',
+      'Ты справлялся раньше — справишься и сейчас.',
+    ],
+    Энергичное: [
+      'Направь эту энергию в созидание — результат удивит!',
+      'Мир не успевает за тобой сегодня. Вперёд!',
+      'Энергия — это дар. Используй его мудро.',
+      'Сегодня ты можешь свернуть горы. Какую выберешь?',
+    ],
+  };
+
+  // ─── Mock holidays (resolved locally, never by LLM) ──────────────────────
+  private readonly holidays: Record<
+    string,
+    { name: string; description: string; icon: string }
+  > = {
+    '01.01': { name: 'Новый год',                   description: 'С Новым годом!',          icon: 'celebration' },
+    '08.03': { name: 'Международный женский день',  description: 'Поздравляем всех женщин!', icon: 'favorite' },
+    '14.02': { name: 'День святого Валентина',      description: 'День любви и нежности.',   icon: 'favorite' },
+    '09.05': { name: 'День Победы',                 description: 'Помним и гордимся.',       icon: 'military_tech' },
+    '31.12': { name: 'Канун Нового года',           description: 'Время мечтать!',           icon: 'celebration' },
+  };
+
+  async generateDailyPack(userId: string, context: PromptContext): Promise<AiDailyPack> {
+    this.logger.log(`generateDailyPack user=${userId}, sign=${context.zodiacSign}, mood=${context.mood}`);
+
+    if (this.openai) {
+      try {
+        const completion = await this.openai.chat.completions.create({
+          model: LLM_MODEL,
+          temperature: 0.3,
+          response_format: DAILY_PACK_SCHEMA,
+          messages: [
+            {
+              role: 'system',
+              content: 'Ты — астрологический API-модуль. Отдавай только JSON строго по схеме. Без пояснений.',
+            },
+            {
+              role: 'user',
+              content:
+                `Знак зодиака: ${context.zodiacSign}. ` +
+                `Настроение: ${context.mood}. ` +
+                `Пол: ${context.gender}. ` +
+                `Дата: ${context.date}. ` +
+                `Сгенерируй персональный гороскоп и вдохновляющую фразу поддержки на русском языке.`,
+            },
+          ],
+        });
+
+        const raw = completion.choices[0]?.message?.content ?? '';
+        const parsed = JSON.parse(raw) as {
+          horoscope: string; horoscopeDetailed: string; advice: string; moon: string; aspect: string; supportPhrase: string;
+        };
+
+        const holiday = this.holidays[context.date] ?? null;
+        this.logger.log(`generateDailyPack LLM OK, tokens=${completion.usage?.total_tokens ?? '?'}`);
+
+        return { ...parsed, holiday: holiday?.name ?? null };
+      } catch (err) {
+        this.logger.error('generateDailyPack LLM failed — using fallback', (err as Error).message);
+      }
+    }
+
+    // ── Fallback: mock dictionaries ──────────────────────────────────────────
+    const horoscope = this.horoscopes[context.zodiacSign] ?? this.horoscopes['Овен ♈︎'];
+    const phrases = this.supportPhrases[context.mood] ?? this.supportPhrases['Спокойное'];
+    const holiday = this.holidays[context.date] ?? null;
+
+    return {
+      horoscope:         horoscope.main,
+      horoscopeDetailed: horoscope.detailed,
+      advice:            horoscope.advice,
+      moon:              horoscope.moon,
+      aspect:            horoscope.aspect,
+      holiday:           holiday?.name ?? null,
+      supportPhrase:     phrases[Math.floor(Math.random() * phrases.length)],
+    };
+  }
+
+  async updateMoodSupport(userId: string, newMood: string): Promise<{ supportPhrase: string }> {
+    this.logger.log(`updateMoodSupport user=${userId}, mood=${newMood}`);
+
+    if (this.openai) {
+      try {
+        const completion = await this.openai.chat.completions.create({
+          model: LLM_MODEL,
+          temperature: 0.5,
+          response_format: SUPPORT_PHRASE_SCHEMA,
+          messages: [
+            {
+              role: 'system',
+              content: 'Ты — генератор фраз поддержки. Отдавай только JSON строго по схеме. Без пояснений.',
+            },
+            {
+              role: 'user',
+              content: `Настроение пользователя: ${newMood}. Напиши одну короткую вдохновляющую фразу поддержки на русском языке.`,
+            },
+          ],
+        });
+
+        const raw = completion.choices[0]?.message?.content ?? '';
+        const parsed = JSON.parse(raw) as { supportPhrase: string };
+        this.logger.log('updateMoodSupport LLM OK');
+        return { supportPhrase: parsed.supportPhrase };
+      } catch (err) {
+        this.logger.error('updateMoodSupport LLM failed — using fallback', (err as Error).message);
+      }
+    }
+
+    const phrases = this.supportPhrases[newMood] ?? this.supportPhrases['Спокойное'];
+    return { supportPhrase: phrases[Math.floor(Math.random() * phrases.length)] };
+  }
+}
+
+### ===========================================
+FILE: backend/src/auth/auth.service.ts
+===========================================
+
+import {
+  Injectable, InternalServerErrorException, Logger, UnauthorizedException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcrypt';
+import { randomInt } from 'crypto';
+import { Resend } from 'resend';
+import * as nodemailer from 'nodemailer';
+import type { Transporter } from 'nodemailer';
+import { PrismaService } from '../prisma';
+
+export interface JwtPayload {
+  sub: string;
+  email: string | null;
+  type: 'access' | 'refresh';
+}
+
+type EmailProvider = 'smtp' | 'resend' | 'none';
+
+@Injectable()
+export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+  private readonly OTP_TTL_MIN = 15;
+  private readonly BCRYPT_ROUNDS = 10;
+
+  private readonly smtpTransport: Transporter | null;
+  private readonly smtpFromEmail: string;
+  private readonly smtpFromName: string;
+  private readonly resend: Resend | null;
+  private readonly resendFromEmail: string;
+  private readonly provider: EmailProvider;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwt: JwtService,
+    private readonly config: ConfigService,
+  ) {
+    const smtpHost = this.config.get<string>('SMTP_HOST');
+    const smtpUser = this.config.get<string>('SMTP_USER');
+    const smtpPassword = this.config.get<string>('SMTP_PASSWORD');
+    const smtpPort = this.config.get<number>('SMTP_PORT') ?? 587;
+
+    if (smtpHost && smtpUser && smtpPassword) {
+      this.smtpTransport = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPassword },
+      });
+    } else {
+      this.smtpTransport = null;
+    }
+    this.smtpFromEmail = this.config.get<string>('SMTP_FROM_EMAIL') ?? smtpUser ?? '';
+    this.smtpFromName = this.config.get<string>('SMTP_FROM_NAME') ?? 'YoYoJoy Day';
+
+    const resendKey = this.config.get<string>('RESEND_API_KEY');
+    this.resend = resendKey ? new Resend(resendKey) : null;
+    this.resendFromEmail = this.config.get<string>('RESEND_FROM_EMAIL') ?? 'onboarding@resend.dev';
+
+    this.provider = this.smtpTransport ? 'smtp' : this.resend ? 'resend' : 'none';
+    this.logger.log(`Email provider: ${this.provider}`);
+  }
+
+  async register(email: string, name?: string, _consents?: boolean) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await this.prisma.user.upsert({
+      where: { email: normalizedEmail },
+      update: { name: name ?? undefined },
+      create: { email: normalizedEmail, name: name ?? null },
+    });
+
+    const code = randomInt(1000, 10_000).toString();
+    const isDev = this.config.get<string>('NODE_ENV') !== 'production';
+
+    try {
+      await this.sendOtpEmail(normalizedEmail, code);
+    } catch (err) {
+      if (!isDev) throw err;
+      this.logger.warn(
+        `\n⚠️  DEV MODE — email send failed for <${normalizedEmail}>.\n` +
+        `   OTP code: [ ${code} ]  (enter this on the OTP page)\n`,
+      );
+    }
+
+    const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
+    const otpExpiresAt = new Date(Date.now() + this.OTP_TTL_MIN * 60_000);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { otpHash, otpExpiresAt },
+    });
+
+    this.logger.log(`OTP отправлен на ${normalizedEmail} (TTL ${this.OTP_TTL_MIN} мин)`);
+    return { ok: true, email: normalizedEmail };
+  }
+
+  async verifyOtp(email: string, code: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (!user || !user.otpHash || !user.otpExpiresAt) {
+      throw new UnauthorizedException('OTP not requested');
+    }
+    if (user.otpExpiresAt.getTime() < Date.now()) {
+      throw new UnauthorizedException('OTP expired');
+    }
+
+    const ok = await bcrypt.compare(code, user.otpHash);
+    if (!ok) throw new UnauthorizedException('Invalid OTP');
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { otpHash: null, otpExpiresAt: null },
+    });
+
+    await this.prisma.profile.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: { userId: user.id },
+    });
+    await this.prisma.prefs.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: { userId: user.id },
+    });
+
+    return this.issueTokens(user.id, user.email);
+  }
+
+  async refresh(refreshToken: string) {
+    let payload: JwtPayload;
+    try {
+      payload = await this.jwt.verifyAsync<JwtPayload>(refreshToken, {
+        secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (payload.type !== 'refresh') throw new UnauthorizedException('Wrong token type');
+
+    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+    if (!user || !user.refreshTokenHash) throw new UnauthorizedException('Session revoked');
+
+    const ok = await bcrypt.compare(refreshToken, user.refreshTokenHash);
+    if (!ok) throw new UnauthorizedException('Refresh token mismatch');
+
+    return this.issueTokens(user.id, user.email);
+  }
+
+  async logout(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshTokenHash: null },
+    });
+  }
+
+  private async sendOtpEmail(to: string, code: string) {
+    const EMAIL_FAILURE_MSG = 'Не удалось отправить письмо с кодом. Попробуйте позже.';
+    const subject = 'Твой код доступа к YoYoJoy Day';
+    const html = this.renderOtpEmailHtml(code);
+
+    if (this.provider === 'smtp' && this.smtpTransport) {
+      try {
+        const info = await this.smtpTransport.sendMail({
+          from: `${this.smtpFromName} <${this.smtpFromEmail}>`,
+          to, subject, html,
+        });
+        this.logger.log(`OTP email sent to ${to} via SMTP (id=${info.messageId})`);
+        return;
+      } catch (err) {
+        this.logger.error(`SMTP send failed for ${to}`, err instanceof Error ? err.stack : err);
+        throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
+      }
+    }
+
+    if (this.provider === 'resend' && this.resend) {
+      try {
+        const { data, error } = await this.resend.emails.send({
+          from: `YoYoJoy Day <${this.resendFromEmail}>`,
+          to, subject, html,
+        });
+        if (error) throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
+        this.logger.log(`OTP email sent to ${to} via Resend (id=${data?.id ?? 'n/a'})`);
+        return;
+      } catch (err) {
+        if (err instanceof InternalServerErrorException) throw err;
+        throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
+      }
+    }
+
+    throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
+  }
+
+  private renderOtpEmailHtml(code: string): string {
+    return `<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="utf-8"/><title>YoYoJoy Day</title></head>
+<body style="margin:0;padding:32px 16px;background:#f5f2ed;font-family:-apple-system,sans-serif;color:#2a3f3e">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr><td align="center">
+      <table role="presentation" width="480" cellspacing="0" cellpadding="0" border="0"
+        style="max-width:480px;background:#fcf9f4;border-radius:24px;overflow:hidden">
+        <tr><td style="padding:40px;background:#006a65;text-align:center">
+          <div style="color:#fff;font-size:22px;font-weight:700">YoYoJoy Day 🌿</div>
+          <div style="color:#a4d8d5;font-size:13px;margin-top:6px">Твой персональный компаньон дня</div>
+        </td></tr>
+        <tr><td style="padding:40px 40px 8px">
+          <p style="margin:0 0 28px;font-size:16px;line-height:1.55">Привет! Вот твой одноразовый код для входа:</p>
+          <div style="text-align:center">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto"><tr>
+              ${code.split('').map(d => `<td style="padding:0 5px">
+                <div style="width:56px;height:72px;background:#f0fafa;border:2px solid #2FA7A0;border-radius:14px;
+                  text-align:center;line-height:72px;font-size:40px;font-weight:800;color:#006a65">${d}</div>
+              </td>`).join('')}
+            </tr></table>
+          </div>
+          <p style="margin:28px 0 0;font-size:14px;color:#5a6968">
+            Код действует <strong style="color:#006a65">${this.OTP_TTL_MIN} минут</strong>.
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+  }
+
+  private async issueTokens(userId: string, email: string | null) {
+    const accessPayload: JwtPayload  = { sub: userId, email, type: 'access' };
+    const refreshPayload: JwtPayload = { sub: userId, email, type: 'refresh' };
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwt.signAsync(accessPayload as object, {
+        secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
+        expiresIn: this.config.getOrThrow<string>('JWT_ACCESS_TTL') as unknown as number,
+      }),
+      this.jwt.signAsync(refreshPayload as object, {
+        secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+        expiresIn: this.config.getOrThrow<string>('JWT_REFRESH_TTL') as unknown as number,
+      }),
+    ]);
+
+    const refreshHash = await bcrypt.hash(refreshToken, this.BCRYPT_ROUNDS);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshTokenHash: refreshHash },
+    });
+
+    return { accessToken, refreshToken };
+  }
+}
+
+### ===========================================
+FILE: backend/src/today/today.service.ts
+===========================================
+
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma';
+import { AiService, type PromptContext } from '../ai';
+
+@Injectable()
+export class TodayService {
+  private readonly logger = new Logger(TodayService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ai: AiService,
+  ) {}
+
+  async getTodayPack(userId: string) {
+    const today = this.getTodayDateStr();
+
+    const profile = await this.prisma.profile.findUnique({ where: { userId } });
+
+    const context: PromptContext = {
+      zodiacSign: profile?.zodiacSign ?? '',
+      mood: profile?.currentMood ?? 'Спокойное',
+      gender: profile?.gender ?? 'UNKNOWN',
+      date: today,
+    };
+
+    const pack = await this.ai.generateDailyPack(userId, context);
+
+    return {
+      date: today,
+      horoscope: {
+        main: pack.horoscope,
+        detailed: pack.horoscopeDetailed,
+        advice: pack.advice,
+        moon: pack.moon,
+        aspect: pack.aspect,
+      },
+      support: { text: pack.supportPhrase },
+      holiday: pack.holiday ? { title: pack.holiday } : null,
+    };
+  }
+
+  private getTodayDateStr(): string {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    return `${day}.${month}`;
+  }
+}
+
+### ===========================================
+FILE: backend/src/profile/profile.service.ts
+===========================================
+
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { IsBoolean, IsOptional, IsString, MaxLength, Matches } from 'class-validator';
+import { PrismaService } from '../prisma';
+import { AiService } from '../ai';
+
+export class UpdateProfileDto {
+  @IsOptional() @IsString() @MaxLength(32) birthdate?: string;
+  @IsOptional() @IsString() @MaxLength(32) zodiacSign?: string;
+  @IsOptional() @IsString() @MaxLength(16) gender?: string;
+  @IsOptional() @IsString() @MaxLength(500) avatarUrl?: string;
+  @IsOptional() @IsString() @Matches(/^\d{2}:\d{2}$/, { message: 'pushTime must be HH:MM' }) pushTime?: string;
+  @IsOptional() @IsBoolean() horoscopeEnabled?: boolean;
+  @IsOptional() @IsBoolean() holidaysEnabled?: boolean;
+  @IsOptional() @IsString() @MaxLength(64) timezone?: string;
+}
+
+@Injectable()
+export class ProfileService {
+  private readonly logger = new Logger(ProfileService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ai: AiService,
+  ) {}
+
+  async getFullProfile(userId: string) {
+    const [user, profile, prefs] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId } }),
+      this.prisma.profile.findUnique({ where: { userId } }),
+      this.prisma.prefs.findUnique({ where: { userId } }),
+    ]);
+    if (!user) throw new NotFoundException('User not found');
+    return { user, profile, prefs };
+  }
+
+  async patch(userId: string, dto: UpdateProfileDto) {
+    this.logger.log(`PATCH profile userId=${userId}`);
+
+    const profileData: Record<string, unknown> = {};
+    if (dto.birthdate !== undefined) profileData.birthdate = dto.birthdate;
+    if (dto.zodiacSign !== undefined) profileData.zodiacSign = dto.zodiacSign;
+    if (dto.gender !== undefined) profileData.gender = dto.gender;
+    if (dto.avatarUrl !== undefined) profileData.avatarUrl = dto.avatarUrl;
+
+    const prefsData: Record<string, unknown> = {};
+    if (dto.pushTime !== undefined) prefsData.pushTime = dto.pushTime;
+    if (dto.horoscopeEnabled !== undefined) prefsData.horoscopeEnabled = dto.horoscopeEnabled;
+    if (dto.holidaysEnabled !== undefined) prefsData.holidaysEnabled = dto.holidaysEnabled;
+    if (dto.timezone !== undefined) prefsData.timezone = dto.timezone;
+
+    const [profile, prefs] = await Promise.all([
+      Object.keys(profileData).length
+        ? this.prisma.profile.upsert({ where: { userId }, update: profileData, create: { userId, ...profileData } })
+        : this.prisma.profile.findUnique({ where: { userId } }),
+      Object.keys(prefsData).length
+        ? this.prisma.prefs.upsert({ where: { userId }, update: prefsData, create: { userId, ...prefsData } })
+        : this.prisma.prefs.findUnique({ where: { userId } }),
+    ]);
+
+    return { profile, prefs };
+  }
+
+  async patchMood(userId: string, mood: string) {
+    this.logger.log(`PATCH mood userId=${userId}, mood=${mood}`);
+
+    await Promise.all([
+      this.prisma.profile.upsert({
+        where: { userId },
+        update: { currentMood: mood },
+        create: { userId, currentMood: mood },
+      }),
+      this.prisma.moodLog.create({ data: { userId, mood } }),
+    ]);
+
+    const { supportPhrase } = await this.ai.updateMoodSupport(userId, mood);
+    return { currentMood: mood, support: { text: supportPhrase, mood } };
+  }
+}
+
+### ===========================================
+FILE: backend/src/bookmarks/bookmarks.service.ts
+===========================================
+
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { IsString, MaxLength, IsObject } from 'class-validator';
+import { PrismaService } from '../prisma';
+import type { Prisma } from '@prisma/client';
+
+export class CreateBookmarkDto {
+  @IsString() @MaxLength(32) type!: string;
+  @IsObject() payload!: Record<string, unknown>;
+}
+
+@Injectable()
+export class BookmarksService {
+  private readonly logger = new Logger(BookmarksService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(userId: string, dto: CreateBookmarkDto) {
+    this.logger.log(`create bookmark user=${userId}, type=${dto.type}`);
+    return this.prisma.bookmark.create({
+      data: { userId, type: dto.type, payload: dto.payload as Prisma.InputJsonValue },
+    });
+  }
+
+  async findAll(userId: string, type?: string) {
+    return this.prisma.bookmark.findMany({
+      where: { userId, ...(type ? { type } : {}) },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async remove(id: string, userId: string) {
+    const result = await this.prisma.bookmark.deleteMany({ where: { id, userId } });
+    if (result.count === 0) throw new NotFoundException('Bookmark not found');
+    return { deleted: true };
+  }
+}
+
+### ===========================================
+FILE: backend/src/push/push.service.ts
+===========================================
+
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma';
+import { FirebaseService } from '../firebase/firebase.service';
+
+@Injectable()
+export class PushService {
+  private readonly logger = new Logger(PushService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly firebase: FirebaseService,
+  ) {}
+
+  async subscribe(userId: string, fcmToken: string) {
+    const normalizedToken = fcmToken.trim();
+    this.logger.log(`subscribe userId=${userId}`);
+
+    const prefs = await this.prisma.prefs.upsert({
+      where: { userId },
+      update: {},
+      create: { userId },
+    });
+
+    if (!normalizedToken) return { subscribed: false, tokensCount: prefs.fcmTokens.length };
+    if (prefs.fcmTokens.includes(normalizedToken)) return { subscribed: true, tokensCount: prefs.fcmTokens.length };
+
+    // Atomic append — prevents race condition on concurrent subscribes
+    await this.prisma.$executeRaw`
+      UPDATE prefs
+      SET fcm_tokens = array_append(fcm_tokens, ${normalizedToken}::text)
+      WHERE user_id = ${userId}::uuid
+        AND NOT (fcm_tokens @> ARRAY[${normalizedToken}]::text[])
+    `;
+    const updated = await this.prisma.prefs.findUniqueOrThrow({ where: { userId } });
+    return { subscribed: true, tokensCount: updated.fcmTokens.length };
+  }
+
+  async sendTestPush(userId: string) {
+    const prefs = await this.prisma.prefs.findUnique({ where: { userId } });
+    if (!prefs?.fcmTokens.length) return { sent: 0, total: 0, reason: 'No FCM tokens registered' };
+
+    let sent = 0;
+    for (const token of prefs.fcmTokens) {
+      const result = await this.firebase.sendPushNotification(
+        token, 'YoYoJoy Day — тест 🌿', 'Push-уведомления работают корректно!', { type: 'test' },
+      );
+      if (result) sent++;
+    }
+    return { sent, total: prefs.fcmTokens.length };
+  }
+
+  async unsubscribe(userId: string, fcmToken?: string) {
+    const normalizedToken = fcmToken?.trim();
+    this.logger.log(`unsubscribe userId=${userId}`);
+
+    const prefs = await this.prisma.prefs.findUnique({ where: { userId } });
+    if (!prefs) return { unsubscribed: true, tokensCount: 0 };
+
+    const nextTokens = normalizedToken ? prefs.fcmTokens.filter((t) => t !== normalizedToken) : [];
+    const updated = await this.prisma.prefs.update({
+      where: { userId },
+      data: { fcmTokens: { set: nextTokens } },
+    });
+    return { unsubscribed: true, tokensCount: updated.fcmTokens.length };
+  }
+}
+
+### ===========================================
+FILE: backend/src/notifications/notifications.cron.service.ts
+===========================================
+
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { PrismaService } from '../prisma';
+import { FirebaseService } from '../firebase/firebase.service';
+import { TodayService } from '../today/today.service';
+
+@Injectable()
+export class NotificationCronService {
+  private readonly logger = new Logger(NotificationCronService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly firebaseService: FirebaseService,
+    private readonly todayService: TodayService,
+  ) {}
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async handleCron() {
+    const currentTime = this.getCurrentTimeKey();
+    this.logger.log(`Push CRON tick: ${currentTime}`);
+
+    const prefsList = await this.prisma.prefs.findMany({
+      where: { pushTime: currentTime, horoscopeEnabled: true, fcmTokens: { isEmpty: false } },
+      select: { userId: true, fcmTokens: true },
+    });
+
+    if (!prefsList.length) {
+      this.logger.log(`No push recipients for ${currentTime}`);
+      return;
+    }
+
+    for (const prefs of prefsList) {
+      try {
+        const pack = await this.todayService.getTodayPack(prefs.userId);
+        const title = 'Твой гороскоп на сегодня';
+        const body = pack.horoscope.main;
+
+        let hasSuccessfulSend = false;
+        for (const token of prefs.fcmTokens) {
+          const response = await this.firebaseService.sendPushNotification(
+            token, title, body, { userId: prefs.userId, date: pack.date, type: 'daily_horoscope' },
+          );
+          if (response) hasSuccessfulSend = true;
+        }
+
+        if (hasSuccessfulSend) {
+          await this.prisma.notification.create({
+            data: { userId: prefs.userId, type: 'daily_horoscope', status: 'sent' },
+          });
+        }
+      } catch (error) {
+        this.logger.error(`Failed to send scheduled push for userId=${prefs.userId}`, error);
+      }
+    }
+  }
+
+  private getCurrentTimeKey(): string {
+    const now = new Date();
+    const h = String(now.getUTCHours()).padStart(2, '0');
+    const m = String(now.getUTCMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
+  }
+}
+
+### ===========================================
+FILE: src/api/client.ts
+===========================================
+
+import axios from 'axios'
+import { getAccessToken } from '../auth/token-storage'
+
+export const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+apiClient.interceptors.request.use((config) => {
+  const accessToken = getAccessToken()
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`
+  }
+  return config
+})
+
+### ===========================================
+FILE: src/store/app.store.ts
+===========================================
+
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import { localTimeToUtc } from '../lib/time'
+import { apiClient } from '../api'
+import { getAccessToken, clearAuthTokens } from '../auth/token-storage'
+
+export type BookmarkType = 'гороскоп' | 'поддержка'
+
+export interface Bookmark {
+  id: string
+  type: BookmarkType
+  date: string
+  text: string
+  icon: string
+}
+
+export interface DailyPack {
+  date: string
+  horoscope: {
+    main: string
+    detailed: string
+    advice: string
+    moon: string
+    aspect: string
+  }
+  supportPhrase: string
+  holiday: string | null
+}
+
+// Server response shapes
+type TodayResponse = {
+  date: string
+  horoscope: { main: string; detailed: string; advice: string; moon: string; aspect: string }
+  support: { text: string }
+  holiday: { title: string } | null
+}
+
+type MoodPatchResponse = {
+  currentMood: string
+  support: { text: string; mood: string }
+}
+
+type BookmarkResponse = {
+  id: string
+  type: string
+  payload: { date: string; text: string; icon: string }
+  createdAt?: string
+}
+
+type AppState = {
+  currentMood: string
+  zodiacSign: string
+  setZodiacSign: (sign: string) => void
+
+  dailyPack: DailyPack | null
+  initDailyPack: () => Promise<void>
+  setMood: (mood: string) => Promise<void>
+  refreshSupportPhrase: () => Promise<void>
+  setSupportPhrase: (phrase: string) => void
+
+  userName: string
+  setUserName: (name: string) => void
+  gender: 'F' | 'M' | 'UNKNOWN'
+  setGender: (gender: 'F' | 'M' | 'UNKNOWN') => void
+  hasCompletedOnboarding: boolean
+  setHasCompletedOnboarding: (v: boolean) => void
+
+  profilePhoto: string
+  setProfilePhoto: (url: string) => void
+
+  email: string
+  setEmail: (email: string) => void
+  birthDate: string
+  setBirthDate: (date: string) => void
+  horoscopeTime: string
+  setHoroscopeTime: (time: string) => void
+
+  installBannerDismissed: boolean
+  dismissInstallBanner: () => void
+
+  showHoroscope: boolean
+  toggleHoroscope: () => void
+  showHolidays: boolean
+  toggleHolidays: () => void
+  showSupport: boolean
+  toggleSupport: () => void
+
+  bookmarks: Bookmark[]
+  fetchBookmarks: () => Promise<void>
+  addBookmark: (bookmark: Bookmark) => Promise<void>
+  removeBookmark: (id: string) => Promise<void>
+
+  resetApp: () => Promise<void>
+}
+
+export const useAppStore = create<AppState>()(
+  persist(
+    (set, get) => ({
+      currentMood: 'Воодушевлена',
+      zodiacSign: '',
+      setZodiacSign: (sign) => set({ zodiacSign: sign }),
+
+      dailyPack: null,
+
+      initDailyPack: async () => {
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.get<TodayResponse>('today')
+          set({
+            dailyPack: {
+              date: data.date,
+              horoscope: data.horoscope,
+              supportPhrase: data.support.text,
+              holiday: data.holiday?.title ?? null,
+            },
+          })
+        } catch (err) {
+          console.warn('[store] Failed to fetch /today', err)
+        }
+      },
+
+      setMood: async (mood: string) => {
+        set({ currentMood: mood })
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.patch<MoodPatchResponse>('profile/mood', { mood })
+          const pack = get().dailyPack
+          if (pack) set({ dailyPack: { ...pack, supportPhrase: data.support.text } })
+        } catch (err) {
+          console.warn('[store] Failed to PATCH /profile/mood', err)
+        }
+      },
+
+      refreshSupportPhrase: async () => {
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.post<{ support: { text: string } }>('today/support/next')
+          const pack = get().dailyPack
+          if (pack) set({ dailyPack: { ...pack, supportPhrase: data.support.text } })
+        } catch (err) {
+          console.warn('[store] Failed to POST /today/support/next', err)
+        }
+      },
+
+      setSupportPhrase: (phrase: string) => {
+        const pack = get().dailyPack
+        if (!pack) return
+        set({ dailyPack: { ...pack, supportPhrase: phrase } })
+      },
+
+      userName: '',
+      setUserName: (userName) => set({ userName }),
+      gender: 'UNKNOWN',
+      setGender: (gender) => set({ gender }),
+      hasCompletedOnboarding: false,
+      setHasCompletedOnboarding: (hasCompletedOnboarding) => set({ hasCompletedOnboarding }),
+
+      profilePhoto: '',
+      setProfilePhoto: (profilePhoto) => set({ profilePhoto }),
+
+      email: '',
+      setEmail: (email) => set({ email }),
+      birthDate: '',
+      setBirthDate: (birthDate) => {
+        set({ birthDate })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { birthdate: birthDate }).catch((err) => {
+            console.warn('[store] Failed to sync birthdate with backend', err)
+          })
+        }
+      },
+      horoscopeTime: '09:00',
+      setHoroscopeTime: (horoscopeTime) => {
+        set({ horoscopeTime })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { pushTime: localTimeToUtc(horoscopeTime) }).catch((err) => {
+            console.warn('[store] Failed to sync pushTime with backend', err)
+          })
+        }
+      },
+
+      installBannerDismissed: false,
+      dismissInstallBanner: () => set({ installBannerDismissed: true }),
+
+      showHoroscope: true,
+      toggleHoroscope: () => set((state) => ({ showHoroscope: !state.showHoroscope })),
+      showHolidays: false,
+      toggleHolidays: () => set((state) => ({ showHolidays: !state.showHolidays })),
+      showSupport: true,
+      toggleSupport: () => set((state) => ({ showSupport: !state.showSupport })),
+
+      bookmarks: [],
+
+      fetchBookmarks: async () => {
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.get<BookmarkResponse[]>('bookmarks')
+          set({
+            bookmarks: data.map((b) => ({
+              id: b.id,
+              type: b.type as BookmarkType,
+              date: b.payload?.date ?? '',
+              text: b.payload?.text ?? '',
+              icon: b.payload?.icon ?? 'bookmark',
+            })),
+          })
+        } catch (err) {
+          console.warn('[store] Failed to fetch /bookmarks', err)
+        }
+      },
+
+      addBookmark: async (bookmark: Bookmark) => {
+        if (!getAccessToken()) {
+          set((state) => ({ bookmarks: [bookmark, ...state.bookmarks] }))
+          return
+        }
+        try {
+          const { data } = await apiClient.post<BookmarkResponse>('bookmarks', {
+            type: bookmark.type,
+            payload: { date: bookmark.date, text: bookmark.text, icon: bookmark.icon },
+          })
+          set((state) => ({
+            bookmarks: [{ ...bookmark, id: data.id }, ...state.bookmarks],
+          }))
+        } catch (err) {
+          console.warn('[store] Failed to POST /bookmarks', err)
+        }
+      },
+
+      removeBookmark: async (id: string) => {
+        const prev = get().bookmarks
+        set({ bookmarks: prev.filter((b) => b.id !== id) })
+        if (!getAccessToken()) return
+        try {
+          await apiClient.delete(`bookmarks/${id}`)
+        } catch (err) {
+          console.warn('[store] Failed to DELETE /bookmarks/:id', err)
+          set({ bookmarks: prev })
+        }
+      },
+
+      resetApp: async () => {
+        if (getAccessToken()) {
+          try { await apiClient.post('auth/logout') } catch (err) {
+            console.warn('[store] Logout API call failed', err)
+          }
+        }
+        clearAuthTokens()
+        set({
+          hasCompletedOnboarding: false,
+          userName: '',
+          email: '',
+          birthDate: '',
+          zodiacSign: '',
+          gender: 'UNKNOWN',
+          profilePhoto: '',
+          currentMood: 'Воодушевлена',
+          dailyPack: null,
+          bookmarks: [],
+        })
+      },
+    }),
+    { name: 'yoyojoy-store' }
+  )
+)
+
+### ===========================================
+FILE: src/services/content.service.ts
+===========================================
+
+// ─── Content Service ─────────────────────────────────────────
+// Static content that stays on frontend: mood images, labels,
+// date/greeting helpers, and local zodiac/holiday dictionaries.
+// Horoscope text and support phrases now come from the backend AI.
+
+export const MOOD_IMAGES: Record<string, string> = {
+  'Воодушевлена': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop&q=80',
+  'Спокойна':     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=400&fit=crop&q=80',
+  'Тревога':      'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=400&fit=crop&q=80',
+  'Устала':       'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=800&h=400&fit=crop&q=80',
+  'Грусть':       'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?w=800&h=400&fit=crop&q=80',
+  'Счастлива':    'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=800&h=400&fit=crop&q=80',
+  'Злость':       'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&h=400&fit=crop&q=80',
+  'Нейтрально':   'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop&q=80',
+}
+
+export const MOOD_LABELS_M: Record<string, string> = {
+  'Воодушевлена': 'Воодушевлён',
+  'Спокойна':     'Спокоен',
+  'Счастлива':    'Счастлив',
+  'Нейтрально':   'Нейтрально',
+  'Устала':       'Устал',
+  'Тревога':      'Тревога',
+  'Грусть':       'Грусть',
+  'Злость':       'Злость',
+}
+
+export function getMoodLabel(id: string, gender: 'F' | 'M' | 'UNKNOWN'): string {
+  if (gender === 'M') return MOOD_LABELS_M[id] ?? id
+  return id
+}
+
+export function getTodayFormatted(): string {
+  const now = new Date()
+  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря']
+  return `${now.getDate()} ${months[now.getMonth()]}`
+}
+
+export function getGreeting(): string {
+  const h = new Date().getHours()
+  if (h < 6)  return 'Доброй ночи'
+  if (h < 12) return 'Доброе утро'
+  if (h < 18) return 'Добрый день'
+  return 'Добрый вечер'
+}
+
+export function getMoodImage(mood: string): string {
+  return MOOD_IMAGES[mood] ?? MOOD_IMAGES['Нейтрально']
+}
+
+export function getFullDateStr(): string {
+  const now = new Date()
+  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря']
+  return `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`
+}
+
+### ===========================================
+FILE: src/pages/HomePage.tsx
+===========================================
+
+import { useEffect, useMemo, useCallback, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
+import type { Variants } from 'framer-motion'
+import { useAppStore } from '../store'
+import { MoodSheet } from '../features/mood/MoodSheet'
+import { BottomSheet } from '../components/ui/BottomSheet'
+import { usePWAInstall } from '../hooks'
+import {
+  getGreeting, getTodayFormatted, getMoodImage, getMoodLabel, getFullDateStr,
+} from '../services/content.service'
+
+const slideVariants: Variants = {
+  enter:  (dir: number) => ({ x: dir > 0 ? 36 : -36, opacity: 0, scale: 0.98 }),
+  center: { x: 0, opacity: 1, scale: 1 },
+  exit:   (dir: number) => ({ x: dir < 0 ? 36 : -36, opacity: 0, scale: 0.98 }),
+}
+const SLIDE_TRANSITION = { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }
+const SLIDE_STYLE = { willChange: 'transform, opacity' as const }
+
+export function HomePage() {
+  const navigate = useNavigate()
+
+  const currentMood            = useAppStore(s => s.currentMood)
+  const gender                 = useAppStore(s => s.gender)
+  const zodiacSign             = useAppStore(s => s.zodiacSign)
+  const dailyPack              = useAppStore(s => s.dailyPack)
+  const initDailyPack          = useAppStore(s => s.initDailyPack)
+  const refreshSupportPhrase   = useAppStore(s => s.refreshSupportPhrase)
+  const addBookmark            = useAppStore(s => s.addBookmark)
+  const bookmarks              = useAppStore(s => s.bookmarks)
+  const fetchBookmarks         = useAppStore(s => s.fetchBookmarks)
+  const profilePhoto           = useAppStore(s => s.profilePhoto)
+  const installBannerDismissed = useAppStore(s => s.installBannerDismissed)
+  const dismissInstallBanner   = useAppStore(s => s.dismissInstallBanner)
+
+  const [horoscopeTab, setHoroscopeTab]   = useState<'short' | 'detailed'>('short')
+  const [tabDir, setTabDir]               = useState(1)
+  const [isMoodSheetOpen, setIsMoodSheetOpen] = useState(false)
+  const [showIOSModal, setShowIOSModal]       = useState(false)
+
+  useEffect(() => {
+    void initDailyPack()
+    void fetchBookmarks()
+  }, [])
+
+  const supportPhrase = dailyPack?.supportPhrase ?? ''
+  const horoscope     = dailyPack?.horoscope ?? null
+  const holidayTitle  = dailyPack?.holiday ?? null
+  const moodImage     = useMemo(() => getMoodImage(currentMood), [currentMood])
+  const todayStr      = useMemo(() => getFullDateStr(), [])
+  const moodLabel     = useMemo(() => getMoodLabel(currentMood, gender), [currentMood, gender])
+
+  const savedQuote     = useMemo(() => bookmarks.some(b => b.type === 'поддержка' && b.text === supportPhrase), [bookmarks, supportPhrase])
+  const savedHoroscope = useMemo(() => bookmarks.some(b => b.type === 'гороскоп' && b.date === todayStr), [bookmarks, todayStr])
+
+  const handleNewQuote      = useCallback(() => { void refreshSupportPhrase() }, [refreshSupportPhrase])
+  const handleSaveQuote     = useCallback(() => {
+    if (!supportPhrase || savedQuote) return
+    void addBookmark({ id: `tmp-q-${Date.now()}`, type: 'поддержка', date: todayStr, text: supportPhrase, icon: 'favorite' })
+  }, [addBookmark, supportPhrase, savedQuote, todayStr])
+
+  const handleSaveHoroscope = useCallback(() => {
+    if (savedHoroscope || !horoscope) return
+    const text = horoscopeTab === 'short' ? horoscope.main : horoscope.detailed
+    void addBookmark({ id: `tmp-h-${Date.now()}`, type: 'гороскоп', date: todayStr, text: `${zodiacSign}: ${text}`, icon: 'auto_awesome' })
+  }, [addBookmark, horoscope, horoscopeTab, savedHoroscope, zodiacSign, todayStr])
+
+  const handleTabChange = useCallback((tab: 'short' | 'detailed') => {
+    setTabDir(tab === 'detailed' ? 1 : -1)
+    setHoroscopeTab(tab)
+  }, [])
+
+  const { isInstallable, isInstalled, isIOS, triggerInstall } = usePWAInstall()
+  const showInstallBanner = isInstallable && !isInstalled && !installBannerDismissed
+  const handleInstallClick = useCallback(() => {
+    if (isIOS) setShowIOSModal(true)
+    else triggerInstall()
+  }, [isIOS, triggerInstall])
+
+  return (
+    <>
+      <div className="max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-2 pb-8">
+        {/* PWA Install Banner, Header, Greeting, Holiday, Mood Banner,
+            Support Card, Horoscope Card, Change Mood button */}
+        {/* ... (full JSX as in src/pages/HomePage.tsx) ... */}
+      </div>
+      <MoodSheet isOpen={isMoodSheetOpen} onClose={() => setIsMoodSheetOpen(false)} />
+    </>
+  )
+}
+
+### ===========================================
+FILE: src/pages/SettingsPage.tsx
+===========================================
+
+// (Includes: profile photo, email edit, birth date via CalendarSheet,
+//  horoscope time via TimePickerSheet, content toggles, reset button)
+// handleReset calls resetApp() → POST /api/auth/logout → clearAuthTokens() → navigate('/')
+// handleSaveTime calls syncPushSubscription() or requestPermissionAndSubscribe()
+// setBirthDate and setHoroscopeTime both sync to PATCH /api/profile
+
+### ===========================================
+FILE: src/pages/BookmarksPage.tsx
+===========================================
+
+// On mount: fetchBookmarks() → GET /api/bookmarks → populates store
+// removeBookmark(id) → optimistic remove → DELETE /api/bookmarks/:id → rollback on error
+// Filter chips: все / гороскоп / поддержка
+// AnimatePresence layout animation on remove
+
+### ===========================================
+FILE: src/features/mood/MoodSheet.tsx
+===========================================
+
+// 8 moods: Воодушевлена, Спокойна, Счастлива, Нейтрально, Устала, Тревога, Грусть, Злость
+// handleSelect: void setMood(mood) → optimistic currentMood update + PATCH /api/profile/mood
+//   → response updates supportPhrase in dailyPack (Hybrid Partial Update)
+// Auto-closes 150ms after selection
+
+### ===========================================
+FILE: src/App.tsx
+===========================================
+
+import { lazy, Suspense } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import { BottomNav } from './components/BottomNav'
+import { useAppStore } from './store'
+
+import { HomePage } from './pages/HomePage'
+import { BookmarksPage } from './pages/BookmarksPage'
+import { SettingsPage } from './pages/SettingsPage'
+import { NotificationsListPage } from './pages/NotificationsListPage'
+import { WelcomePage } from './pages/WelcomePage'
+
+const NotificationsPage  = lazy(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
+const OtpPage            = lazy(() => import('./pages/OtpPage').then(m => ({ default: m.OtpPage })))
+const PrivacyPolicyPage  = lazy(() => import('./pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })))
+const ProfileSetupPage   = lazy(() => import('./pages/ProfileSetupPage').then(m => ({ default: m.ProfileSetupPage })))
+const RegistrationPage   = lazy(() => import('./pages/RegistrationPage').then(m => ({ default: m.RegistrationPage })))
+
+const APP_SHELL_ROUTES: readonly string[] = ['/home', '/bookmarks', '/settings', '/notifications-list']
+
+function RootGuard() {
+  const hasCompletedOnboarding = useAppStore(s => s.hasCompletedOnboarding)
+  return hasCompletedOnboarding ? <Navigate to="/home" replace /> : <WelcomePage />
+}
+
+function TabOutlet() {
+  const { pathname } = useLocation()
+  return (
+    <div className="absolute inset-0 w-full h-full overflow-hidden" style={{ background: '#fcf9f4' }}>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, x: 15 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -15 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
+        >
+          {pathname === '/home' && <HomePage />}
+          {pathname === '/bookmarks' && <BookmarksPage />}
+          {pathname === '/settings' && <SettingsPage />}
+          {pathname === '/notifications-list' && <NotificationsListPage />}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function AppLayout() {
+  return (
+    <div className="bg-background text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden"
+      style={{ background: '#fcf9f4' }}>
+      <div className="w-full max-w-[430px] landscape:max-w-[860px] mx-auto h-full relative flex flex-col overflow-hidden"
+        style={{ background: '#fcf9f4' }}>
+        <main className="flex-1 w-full relative overflow-hidden" style={{ background: '#fcf9f4' }}>
+          <TabOutlet />
+        </main>
+        <BottomNav />
+      </div>
+    </div>
+  )
+}
+
+function AppRoutes() {
+  const location = useLocation()
+  const routeKey = APP_SHELL_ROUTES.includes(location.pathname) ? 'app-shell' : location.key
+  return (
+    <Routes location={location} key={routeKey}>
+      <Route path="/" element={<RootGuard />} />
+      <Route path="/register" element={<RegistrationPage />} />
+      <Route path="/otp" element={<OtpPage />} />
+      <Route path="/notifications" element={<NotificationsPage />} />
+      <Route path="/profile-setup" element={<ProfileSetupPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+      <Route element={<AppLayout />}>
+        <Route path="/home" element={null} />
+        <Route path="/bookmarks" element={null} />
+        <Route path="/settings" element={null} />
+        <Route path="/notifications-list" element={null} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <div className="relative w-full h-[100dvh] overflow-hidden" style={{ background: '#fcf9f4' }}>
+        <Suspense fallback={<div className="h-[100dvh] w-full" style={{ background: '#fcf9f4' }} />}>
+          <AppRoutes />
+        </Suspense>
+      </div>
+    </BrowserRouter>
+  )
+}
+
+### ===========================================
+FILE: src/hooks/usePWAInstall.ts
+===========================================
+
+import { useState, useEffect, useCallback } from 'react'
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
+
+interface UsePWAInstall {
+  isInstallable: boolean
+  isInstalled: boolean
+  isIOS: boolean
+  triggerInstall: () => Promise<void>
+}
+
+function getIsStandalone(): boolean {
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    ('standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true)
+  )
+}
+
+function detectIOS(): boolean {
+  return (
+    /iphone|ipad|ipod/i.test(navigator.userAgent) &&
+    !(window as { MSStream?: unknown }).MSStream &&
+    !getIsStandalone()
+  )
+}
+
+export function usePWAInstall(): UsePWAInstall {
+  const [isIOS] = useState(() => detectIOS())
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [isInstallable, setIsInstallable]   = useState(() => isIOS)
+  const [isInstalled, setIsInstalled]       = useState(() => getIsStandalone())
+
+  useEffect(() => {
+    if (isIOS) return
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault()
+      setDeferredPrompt(e as BeforeInstallPromptEvent)
+      setIsInstallable(true)
+    }
+    const handleAppInstalled = () => {
+      setIsInstallable(false)
+      setIsInstalled(true)
+      setDeferredPrompt(null)
+    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', handleAppInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', handleAppInstalled)
+    }
+  }, [isIOS])
+
+  const triggerInstall = useCallback(async () => {
+    if (!deferredPrompt) return
+    await deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+    if (outcome === 'accepted') {
+      setIsInstallable(false)
+      setDeferredPrompt(null)
+    }
+  }, [deferredPrompt])
+
+  return { isInstallable, isInstalled, isIOS, triggerInstall }
+}
+
+================================================================
+  СТАТУС ПРОЕКТА (26.04.2026)
+================================================================
+
+Phase 1 — Core Auth & Push          ✅ DONE
+Phase 2 — AI Brain Foundation       ✅ DONE
+Phase 3 — PWA Magic & Integration   ✅ DONE
+Phase 4 — Production Deployment     ⏳ NEXT
+
+ЧТО ОСТАЛОСЬ ДЛЯ PHASE 4:
+  1. Купить VPS Timeweb (~600₽) и домен Reg.ru (~150₽)
+  2. Настроить Docker на VPS: docker-compose.prod.yml
+  3. Добавить боевой AI_API_KEY в .env.prod на VPS
+  4. Сменить VITE_API_BASE_URL в Vercel на боевой домен
+  5. Запустить: npx prisma migrate deploy && node dist/main.js
+  6. Настроить Nginx + Let's Encrypt (SSL)
+
+ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ ДЛЯ PROD (.env.prod на VPS):
+  DATABASE_URL=postgresql://...
+  PORT=4000
+  NODE_ENV=production
+  AI_API_KEY=sk-...           # Реальный ключ OpenAI
+  JWT_ACCESS_SECRET=...       # Сгенерировать: openssl rand -base64 32
+  JWT_REFRESH_SECRET=...      # Сгенерировать: openssl rand -base64 32
+  JWT_ACCESS_TTL=15m
+  JWT_REFRESH_TTL=30d
+  FIREBASE_PROJECT_ID=...
+  FIREBASE_CLIENT_EMAIL=...
+  FIREBASE_PRIVATE_KEY=...
+  SMTP_HOST=smtp.gmail.com
+  SMTP_PORT=587
+  SMTP_USER=...
+  SMTP_PASSWORD=...           # Gmail App Password
+  SMTP_FROM_EMAIL=...
+  SMTP_FROM_NAME=YoYoJoy Day
+================================================================

@@ -108,7 +108,7 @@ export function NotificationsPage() {
       if (result.reason === 'permission-denied') {
         // iOS remembers the denial — user must enable manually in Settings
         setPushError(
-          'Уведомления заблокированы системой. Открой: Настройки iPhone → Happy Calendar → Уведомления → Включить. Затем вернись и нажми снова.'
+          'Уведомления заблокированы системой. Открой: Настройки iPhone → YoYoJoy Day → Уведомления → Включить. Затем вернись и нажми снова.'
         )
         return
       }
@@ -218,7 +218,7 @@ export function NotificationsPage() {
                 Уведомления заблокированы
               </p>
               <p className="text-xs text-amber-700 leading-relaxed">
-                Настройки iPhone → найди <strong>Happy Calendar</strong> → Уведомления → Включить
+                Настройки iPhone → найди <strong>YoYoJoy Day</strong> → Уведомления → Включить
               </p>
               <button
                 onClick={handleAllow}
