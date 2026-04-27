@@ -19,7 +19,7 @@ interface TimePickerSheetProps {
 const HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'))
 const MINUTES = Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, '0'))
 
-const ITEM_HEIGHT = 60
+const ITEM_HEIGHT = 76
 const VISIBLE_ITEMS = 5
 const SPACER_HEIGHT = ITEM_HEIGHT * 2
 
@@ -142,10 +142,10 @@ const WheelColumn = memo(function WheelColumn({
 
         {items.map((label, index) => {
           const distance = Math.abs(index - displayIndex)
-          const opacity = distance === 0 ? 1 : distance === 1 ? 0.5 : 0.2
-          const color = distance === 0 ? '#006a65' : '#6d7a78'
-          const fontWeight = distance === 0 ? 800 : distance === 1 ? 600 : 400
-          const fontSize = distance === 0 ? 54 : distance === 1 ? 36 : 26
+          const opacity = distance === 0 ? 1 : distance === 1 ? 0.4 : 0.2
+          const color = distance === 0 ? '#006a65' : '#3d4948'
+          const fontWeight = 600
+          const fontSize = distance === 0 ? 72 : distance === 1 ? 48 : 36
 
           return (
             <div
@@ -227,13 +227,13 @@ function TimePickerContent({
         </div>
 
         <div className="relative z-10 mt-6 flex items-center justify-center">
-          <div className="pointer-events-none absolute left-0 right-0 h-[60px] rounded-2xl bg-primary/[0.04]" />
+          <div className="pointer-events-none absolute left-0 right-0 h-[76px] rounded-2xl bg-primary/[0.04]" />
 
           <div className="flex items-center justify-center gap-2">
             <WheelColumn items={HOURS} selectedIndex={hourIndex} onChange={setHourIndex} />
             <div
-              className="select-none font-headline font-bold text-primary"
-              style={{ fontSize: 60, lineHeight: 1, marginBottom: 4 }}
+              className="select-none font-headline font-semibold text-primary"
+              style={{ fontSize: 72, lineHeight: 1, marginBottom: 4 }}
             >
               :
             </div>

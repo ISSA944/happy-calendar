@@ -351,11 +351,13 @@ function CalendarSheetContent({
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className="fixed inset-x-0 top-0 z-[110] flex flex-col mx-auto w-full max-w-md"
             style={{
-              height: 'calc(100dvh - env(safe-area-inset-top) - 16px)',
-              marginTop: 'env(safe-area-inset-top)',
+              // Use padding-top instead of margin-top to avoid layout shift on safe-area resolve.
+              height: '100dvh',
+              paddingTop: 'env(safe-area-inset-top)',
               background: '#fcf9f4',
               paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
               willChange: 'opacity',
+              transform: 'translateZ(0)',
             }}
           >
             <GridMonthPicker

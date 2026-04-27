@@ -192,7 +192,7 @@ export function HomePage() {
 
           {/* ── Mood Banner ── */}
           <section className="w-full h-[200px] landscape:h-[140px] rounded-lg overflow-hidden relative landscape:col-start-2 landscape:row-start-2">
-            <img src={moodImage} alt={currentMood} className="w-full h-full object-cover" loading="lazy" />
+            <img src={moodImage} alt={currentMood} className="w-full h-full object-cover" loading="eager" fetchPriority="high" decoding="async" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
             <div className="absolute top-4 right-4 z-10 bg-white/90 text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
               {moodLabel}
