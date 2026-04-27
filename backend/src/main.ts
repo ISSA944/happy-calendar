@@ -20,25 +20,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      // Allow requests with no origin (mobile apps, curl, Postman)
-      if (!origin) return callback(null, true);
-
-      const isDev = process.env.NODE_ENV !== 'production';
-      const allowed =
-        origin === 'http://localhost:5173' ||
-        origin === 'http://localhost:4173' ||
-        // Local network access from phone/tablet during dev
-        (isDev && /^http:\/\/192\.168\.\d+\.\d+:\d+$/.test(origin)) ||
-        // Any Vercel preview / prod deployment owned by this project
-        /^https:\/\/happy-calendar[a-z0-9-]*\.vercel\.app$/.test(origin) ||
-        // Any ngrok/cloudflare tunnel used for local-backend exposure
-        /^https:\/\/[a-z0-9-]+\.(ngrok-free\.app|ngrok\.io|trycloudflare\.com)$/.test(origin);
-
-      if (allowed) return callback(null, true);
-
-      callback(new Error(`CORS: origin '${origin}' not allowed`));
-    },
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
   });
