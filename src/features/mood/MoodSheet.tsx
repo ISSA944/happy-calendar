@@ -36,9 +36,9 @@ export function MoodSheet({ isOpen, onClose }: MoodSheetProps) {
   }, [setMood, onClose])
 
   const title = (
-    <div>
-      <h2 className="font-headline text-xl font-bold text-on-surface">Сменить настроение</h2>
-      <p className="text-on-surface-variant text-sm font-medium mt-0.5">Сейчас: {getMoodLabel(currentMood, gender)}</p>
+    <div className="space-y-0.5">
+      <h2 className="font-headline text-2xl font-bold text-on-surface">Сменить настроение</h2>
+      <p className="text-on-surface-variant text-sm font-medium">Сейчас: {getMoodLabel(currentMood, gender)}</p>
     </div>
   )
 
@@ -53,34 +53,45 @@ export function MoodSheet({ isOpen, onClose }: MoodSheetProps) {
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={title} headerRight={headerRight}>
-      <div className="flex flex-col px-5 pb-5">
+      <div className="flex flex-col gap-2 px-4 pb-6 overflow-y-auto">
         {MOODS.map((mood) => {
           const isSelected = currentMood === mood.id
           return (
             <button
               key={mood.id}
               onClick={() => handleSelect(mood.id)}
-              className={`flex items-center justify-between px-3 py-2.5 rounded-2xl text-left active:scale-[0.98] transition-colors ${
-                isSelected ? 'bg-accent/10' : 'hover:bg-surface-container/50'
+              className={`flex items-center justify-between p-4 rounded-2xl text-left active:scale-[0.98] transition-all ${
+                isSelected
+                  ? 'bg-[#2FA7A0]/10 border border-[#2FA7A0]/30'
+                  : 'bg-transparent border border-transparent hover:bg-surface-container/50'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center ${
-                  isSelected ? 'bg-accent/20' : 'bg-accent/10'
-                }`}>
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center ${
+                  isSelected ? 'bg-[#2FA7A0]/20' : 'bg-[#2FA7A0]/12'
+                }`}
+                  style={{ backgroundColor: isSelected ? 'rgba(47,167,160,0.18)' : 'rgba(47,167,160,0.12)' }}
+                >
                   <span
                     className="material-symbols-outlined"
-                    style={{ fontSize: '18px', color: isSelected ? '#006a65' : '#2FA7A0', fontVariationSettings: isSelected ? "'FILL' 1" : "'FILL' 0" }}
+                    style={{
+                      fontSize: '20px',
+                      color: isSelected ? '#006a65' : '#2FA7A0',
+                      fontVariationSettings: isSelected ? "'FILL' 1" : "'FILL' 0",
+                    }}
                   >
                     {mood.icon}
                   </span>
                 </div>
-                <span className={`font-semibold font-headline text-[15px] ${isSelected ? 'text-primary' : 'text-on-surface'}`}>
+                <span className={`font-semibold font-headline text-base ${isSelected ? 'text-primary' : 'text-on-surface'}`}>
                   {getMoodLabel(mood.id, gender)}
                 </span>
               </div>
               {isSelected && (
-                <span className="material-symbols-outlined text-primary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                <span
+                  className="material-symbols-outlined text-primary text-xl"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
                   check_circle
                 </span>
               )}

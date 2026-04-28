@@ -193,6 +193,7 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
       onClose={onCancel}
       title="Установить время"
       headerRight={headerRight}
+      draggable={false}
     >
       <TimePickerContent
         key={initialTime}

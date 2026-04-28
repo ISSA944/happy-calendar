@@ -2,19 +2,6 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useDragControls } from 'framer-motion'
 
-/**
- * Unified bottom-sheet wrapper used by every modal in the app.
- *
- * Architecture: two separate AnimatePresence blocks so each motion.div
- * is a DIRECT child of its own AnimatePresence. Framer Motion only runs
- * exit animations on direct children — nesting both inside a plain <div>
- * caused the wrapper to be removed instantly, cutting off all exit animations.
- *
- * Physics: iOS UIModalPresentationStyle.pageSheet bezier — smooth, no bounce.
- * Drag-to-close only via the top pill (dragListener=false on sheet body).
- * Snap-back is handled automatically by dragConstraints (no manual animate call).
- */
-
 const SHEET_TRANSITION = { duration: 0.35, ease: [0.32, 0.72, 0, 1] as const }
 const BACKDROP_FADE    = { duration: 0.22, ease: [0.32, 0.72, 0, 1] as const }
 
@@ -25,6 +12,8 @@ export interface BottomSheetProps {
   title?: ReactNode
   headerRight?: ReactNode
   hideDragIndicator?: boolean
+  /** When false, disables swipe-to-close — sheet closes only via buttons. Default: true */
+  draggable?: boolean
 }
 
 export function BottomSheet({
@@ -34,6 +23,7 @@ export function BottomSheet({
   title,
   headerRight,
   hideDragIndicator = false,
+  draggable = true,
 }: BottomSheetProps) {
   const [mounted] = useState(() => typeof document !== 'undefined')
   const dragControls = useDragControls()
@@ -57,13 +47,23 @@ export function BottomSheet({
     if (info.offset.y > 100 || info.velocity.y > 400) {
       onClose()
     }
-    // else: dragConstraints + dragElastic auto-snap back to y=0 — no manual animate needed
   }
+
+  const dragProps = draggable
+    ? {
+        drag: 'y' as const,
+        dragControls,
+        dragListener: false,
+        dragConstraints: { top: 0, bottom: 0 },
+        dragElastic: { top: 0, bottom: 0.6 },
+        dragMomentum: false,
+        dragTransition: { bounceStiffness: 300, bounceDamping: 40 },
+        onDragEnd: handleDragEnd,
+      }
+    : {}
 
   const content = (
     <>
-      {/* ── Backdrop ────────────────────────────────────────────────────────────
-          Direct child of its own AnimatePresence → exit fade fires correctly. */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -80,21 +80,12 @@ export function BottomSheet({
         )}
       </AnimatePresence>
 
-      {/* ── Sheet ───────────────────────────────────────────────────────────────
-          Direct child of its own AnimatePresence → exit slide fires correctly. */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             key="hc-sheet"
             ref={sheetRef}
-            drag="y"
-            dragControls={dragControls}
-            dragListener={false}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.6 }}
-            dragMomentum={false}
-            dragTransition={{ bounceStiffness: 300, bounceDamping: 40 }}
-            onDragEnd={handleDragEnd}
+            {...dragProps}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -107,13 +98,13 @@ export function BottomSheet({
               willChange: 'transform',
             }}
           >
-            {/* Drag handle zone — ONLY this area initiates drag-to-close */}
+            {/* Header zone — drag handle + title/actions */}
             <div
-              onPointerDown={(e) => dragControls.start(e)}
-              className="px-6 pt-3 pb-4 select-none cursor-grab active:cursor-grabbing touch-none"
+              onPointerDown={draggable ? (e) => dragControls.start(e) : undefined}
+              className={`px-6 pt-3 pb-4 select-none touch-none ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
               style={{ paddingBottom: title || headerRight ? '10px' : '16px' }}
             >
-              {!hideDragIndicator && (
+              {!hideDragIndicator && draggable && (
                 <div className="w-9 h-[5px] bg-on-surface-variant/25 rounded-full mx-auto mb-3" />
               )}
               {(title || headerRight) && (
@@ -134,8 +125,6 @@ export function BottomSheet({
               )}
             </div>
 
-            {/* Content — scrolls freely; dragListener=false prevents scroll from
-                triggering close on the sheet body. */}
             <div
               className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden"
               style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
