@@ -31,18 +31,9 @@ const PICKER_MIN_YEAR = 1900
 const PICKER_MAX_YEAR = new Date().getFullYear()
 
 const slideVariants: Variants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 24 : -24,
-    opacity: 0,
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-  },
-  exit: (direction: number) => ({
-    x: direction < 0 ? 24 : -24,
-    opacity: 0,
-  }),
+  enter: (direction: number) => ({ x: direction > 0 ? 20 : -20, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (direction: number) => ({ x: direction < 0 ? 20 : -20, opacity: 0 }),
 }
 
 function getDaysInMonth(year: number, month: number) {
@@ -349,7 +340,7 @@ function CalendarSheetContent({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="fixed inset-x-0 top-0 z-[110] flex flex-col mx-auto w-full max-w-md"
+            className="fixed inset-x-0 top-0 z-[110] flex flex-col mx-auto w-full max-w-md landscape:max-w-xl"
             style={{
               // Use padding-top instead of margin-top to avoid layout shift on safe-area resolve.
               height: '100dvh',
@@ -419,7 +410,6 @@ function CalendarSheetContent({
           <AnimatePresence
             initial={false}
             custom={direction}
-            mode="wait"
             onExitComplete={() => setDisableSlideAnimation(false)}
           >
             <motion.div
@@ -429,10 +419,10 @@ function CalendarSheetContent({
               initial="enter"
               animate="center"
               exit="exit"
-              transition={disableSlideAnimation ? { duration: 0 } : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              transition={disableSlideAnimation ? { duration: 0 } : { duration: 0.16, ease: 'easeOut' }}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.08}
+              dragElastic={0.05}
               onDragEnd={handleCalendarDragEnd}
               className="absolute inset-0"
               style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}

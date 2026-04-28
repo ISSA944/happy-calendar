@@ -126,7 +126,7 @@ export function ProfileSetupPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       style={{ willChange: 'opacity' }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none scroll-smooth"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] landscape:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none scroll-smooth"
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
@@ -151,13 +151,14 @@ export function ProfileSetupPage() {
         onChange={handleFileChange}
       />
 
-      <main className="flex-1 flex flex-col pt-24 px-5 landscape:pb-32">
+      {/* Portrait: single column. Landscape: 2-column grid */}
+      <main className="flex-1 landscape:grid landscape:grid-cols-2 landscape:gap-6 landscape:items-start px-5 pb-8 landscape:pb-6 pt-6 landscape:pt-4">
 
-        {/* Avatar Section */}
-        <div className="flex flex-col items-center mb-10">
+        {/* LEFT column (portrait: above form, landscape: avatar + zodiac) */}
+        <div className="flex flex-col items-center landscape:items-center landscape:justify-center landscape:pt-4 mb-8 landscape:mb-0">
           <button
             onClick={handlePhotoClick}
-            className="relative w-28 h-28 active:scale-95 transition-transform"
+            className="relative w-28 h-28 landscape:w-24 landscape:h-24 active:scale-95 transition-transform"
             aria-label="Сменить фото профиля"
           >
             <div className="w-full h-full rounded-full bg-surface shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-outline-variant/20 flex items-center justify-center overflow-hidden text-outline-variant">
@@ -171,20 +172,23 @@ export function ProfileSetupPage() {
             </div>
           </button>
           <button onClick={handlePhotoClick} className="mt-3 text-sm font-semibold text-primary">Добавить фото</button>
+
+          {/* Zodiac — shows in left col on landscape */}
+          <div className="hidden landscape:flex mt-6 w-full bg-white/50 border border-outline-variant/30 rounded-3xl p-4 items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+            <span className="text-[15px] font-medium text-on-surface-variant">Твой знак</span>
+            <span className="text-lg font-bold text-on-surface">{zodiacSign || '—'}</span>
+          </div>
         </div>
 
-        {/* Input Section */}
-        <div className="space-y-6">
+        {/* RIGHT column (portrait: full width, landscape: form + cta) */}
+        <div className="flex flex-col gap-5">
           {/* Date Field */}
           <div className="space-y-2">
             <label className="block text-[15px] font-semibold text-on-surface-variant ml-1">Когда вы родились?</label>
-            <div 
-              className="relative cursor-pointer"
-              onClick={() => setIsCalendarOpen(true)}
-            >
-              <input 
-                className="w-full h-[60px] px-5 rounded-2xl border-none bg-white shadow-[0_4px_20px_rgba(0,0,0,0.05)] text-lg font-medium focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline-variant transition-colors outline-none cursor-pointer" 
-                placeholder="ДД.ММ.ГГГГ" 
+            <div className="relative cursor-pointer" onClick={() => setIsCalendarOpen(true)}>
+              <input
+                className="w-full h-[60px] px-5 rounded-2xl border-none bg-white shadow-[0_4px_20px_rgba(0,0,0,0.05)] text-lg font-medium focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline-variant transition-colors outline-none cursor-pointer"
+                placeholder="ДД.ММ.ГГГГ"
                 value={birthDate}
                 readOnly
               />
@@ -195,28 +199,26 @@ export function ProfileSetupPage() {
             <p className="text-[13px] text-on-surface-variant/80 ml-1">Нужна только для знака зодиака.</p>
           </div>
 
-          {/* Zodiac Result */}
-          <div className="bg-white/50 border border-outline-variant/30 rounded-3xl p-4 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.05)] min-h-[60px]">
+          {/* Zodiac — shows inline on portrait */}
+          <div className="landscape:hidden bg-white/50 border border-outline-variant/30 rounded-3xl p-4 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
             <span className="text-[15px] font-medium text-on-surface-variant">Твой знак</span>
-            <span className="text-lg font-bold text-on-surface flex items-center gap-2">
-              {zodiacSign || ''}
-            </span>
+            <span className="text-lg font-bold text-on-surface">{zodiacSign || '—'}</span>
           </div>
 
-          {/* Gender Section */}
-          <div className="space-y-3 pt-2">
+          {/* Gender */}
+          <div className="space-y-3">
             <p className="text-[15px] font-semibold text-on-surface-variant ml-1">Пол (необязательно)</p>
             <div className="relative flex p-1 bg-surface-container rounded-full h-[56px] shadow-sm gap-1">
               {[
                 { id: 'F', label: 'Ж' },
                 { id: 'M', label: 'М' },
-                { id: 'UNKNOWN', label: 'Не указывать', extraClass: 'text-[13px]' }
+                { id: 'UNKNOWN', label: 'Не указывать', extraClass: 'text-[13px]' },
               ].map((g) => {
-                const isSelected = gender === g.id;
+                const isSelected = gender === g.id
                 return (
                   <button
                     key={g.id}
-                    onClick={() => setGender(g.id as "F" | "M" | "UNKNOWN")}
+                    onClick={() => setGender(g.id as 'F' | 'M' | 'UNKNOWN')}
                     className={`relative flex-1 rounded-full font-semibold transition-colors duration-200 z-10 select-none touch-manipulation active:scale-95 ${
                       g.extraClass || 'text-[15px]'
                     } ${isSelected ? 'bg-white text-on-surface shadow-sm' : 'text-on-surface-variant hover:text-on-surface/80'}`}
@@ -224,38 +226,27 @@ export function ProfileSetupPage() {
                   >
                     {g.label}
                   </button>
-                );
+                )
               })}
             </div>
           </div>
+
+          {/* CTA */}
+          <button
+            onClick={handleSubmit}
+            disabled={!isValid || isSubmitting}
+            style={{ marginTop: 'auto', paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
+            className={`w-full h-14 rounded-full font-headline font-bold text-lg flex items-center justify-center transition-colors mt-4 ${
+              isValid && !isSubmitting
+                ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 active:scale-[0.98] cursor-pointer'
+                : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
+            }`}
+          >
+            {isSubmitting ? 'Сохраняем...' : 'Продолжить'}
+          </button>
+          {submitError && <p className="text-center text-sm font-medium text-red-500">{submitError}</p>}
         </div>
       </main>
-
-      {/* Footer CTA */}
-      <footer
-        className="px-5 pt-5 mt-auto"
-        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
-      >
-        <button
-          onClick={handleSubmit}
-          disabled={!isValid || isSubmitting}
-          className={`w-full h-16 rounded-full font-headline font-bold text-lg flex items-center justify-center transition-colors ${
-            isValid && !isSubmitting
-              ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 active:scale-[0.98] cursor-pointer'
-              : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
-          }`}
-        >
-          {isSubmitting ? 'Сохраняем...' : 'Продолжить'}
-        </button>
-        {submitError && (
-          <p className="mt-3 text-center text-sm font-medium text-red-500">
-            {submitError}
-          </p>
-        )}
-      </footer>
-
-      {/* Glassmorphism Background Elements */}
-
 
       <CalendarSheet
         isOpen={isCalendarOpen}

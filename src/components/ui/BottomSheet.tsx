@@ -90,7 +90,7 @@ export function BottomSheet({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={SHEET_TRANSITION}
-            className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-md rounded-t-[24px] shadow-2xl flex flex-col overflow-hidden max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] landscape:max-h-[85vh]"
+            className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-md landscape:max-w-xl rounded-t-[24px] shadow-2xl flex flex-col overflow-hidden max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] landscape:max-h-[90vh]"
             style={{
               zIndex: 101,
               paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
