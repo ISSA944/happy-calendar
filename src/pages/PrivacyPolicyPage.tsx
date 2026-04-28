@@ -26,7 +26,7 @@ export function PrivacyPolicyPage() {
 
   return (
     <div
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] landscape:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
@@ -45,7 +45,7 @@ export function PrivacyPolicyPage() {
       </header>
 
       <main
-        className="px-6 pt-8"
+        className="px-6 pt-8 landscape:max-w-[600px] landscape:mx-auto"
         style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
       >
         {/* Hero */}

@@ -75,7 +75,7 @@ export function NotificationsListPage() {
         </div>
       </header>
 
-      <main className="flex-1 px-5 pb-28">
+      <main className="flex-1 px-5 pb-28 w-full max-w-[430px] landscape:max-w-[860px] mx-auto landscape:grid landscape:grid-cols-2 landscape:gap-5 landscape:items-start landscape:pt-4">
         {/* Hero */}
         <motion.div variants={itemVariants} className="mb-8 mt-4">
           <h2 className="font-headline text-2xl font-extrabold text-on-surface tracking-tight mb-2">Мягкие напоминания</h2>
