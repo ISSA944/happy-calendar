@@ -16,7 +16,10 @@ export class TodayService {
   ) {}
 
   async getTodayPack(userId: string) {
-    const today = this.getTodayDateStr();
+    // ── 0. Timezone-aware "today" ──────────────────────────────────────────────
+    // Prefs lookup is cheap (PK) and needed for timezone correctness.
+    const prefs = await this.prisma.prefs.findUnique({ where: { userId } });
+    const today = this.getTodayDateStr(prefs?.timezone ?? undefined);
 
     // ── 1. DailyFeed hit (DB cache) ────────────────────────────────────────────
     const existingFeed = await this.prisma.dailyFeed.findUnique({
@@ -91,18 +94,20 @@ export class TodayService {
     return this.buildResponse(today, horoscope, supportPhrase, holiday);
   }
 
-  /** Called by patchMood to replace only the support phrase in today's feed. */
+  /** Called by patchMood and nextSupport to replace only the support phrase in today's feed. */
   async replaceSupportPhrase(userId: string, mood: string, text: string) {
-    const today = this.getTodayDateStr();
+    const prefs = await this.prisma.prefs.findUnique({ where: { userId } });
+    const today = this.getTodayDateStr(prefs?.timezone ?? undefined);
 
     const newPhrase = await this.prisma.supportPhrase.create({
       data: { mood, text },
     });
 
-    await this.prisma.dailyFeed.upsert({
-      where: { userId_date: { userId, date: today } },
-      update: { supportPhraseId: newPhrase.id },
-      create: { userId, date: today, supportPhraseId: newPhrase.id },
+    // updateMany silently skips if no DailyFeed exists yet for today.
+    // getTodayPack will create a complete record (horoscope + support) on first home load.
+    await this.prisma.dailyFeed.updateMany({
+      where: { userId, date: today },
+      data: { supportPhraseId: newPhrase.id },
     });
 
     return newPhrase;
@@ -130,10 +135,25 @@ export class TodayService {
     };
   }
 
-  private getTodayDateStr(): string {
+  /** Returns today's date as "DD.MM" in the user's timezone, or UTC if unknown/invalid. */
+  private getTodayDateStr(timezone?: string): string {
     const now = new Date();
-    const day   = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
+    if (timezone) {
+      try {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+          timeZone: timezone,
+          day: '2-digit',
+          month: '2-digit',
+        }).formatToParts(now);
+        const day   = parts.find(p => p.type === 'day')?.value   ?? '';
+        const month = parts.find(p => p.type === 'month')?.value ?? '';
+        if (day && month) return `${day}.${month}`;
+      } catch {
+        // Invalid IANA timezone — fall through to UTC
+      }
+    }
+    const day   = String(now.getUTCDate()).padStart(2, '0');
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
     return `${day}.${month}`;
   }
 }
