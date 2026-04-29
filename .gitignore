@@ -35,3 +35,4 @@ backend/.env.*
 
 # NotebookLM analytical snapshots (local only)
 NotebookLM_Export/
+CYBER_BRAIN.md
