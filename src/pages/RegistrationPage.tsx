@@ -53,7 +53,7 @@ export function RegistrationPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       style={{ willChange: 'opacity' }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] landscape:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
@@ -70,131 +70,89 @@ export function RegistrationPage() {
       </header>
 
       <main
-        className="flex-1 flex flex-col px-5 pt-4 min-h-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] landscape:pb-32"
+        className="flex-1 flex flex-col px-5 pt-4 min-h-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] landscape:pb-6 landscape:grid landscape:grid-cols-2 landscape:gap-8 landscape:px-10 landscape:items-start landscape:pt-6"
       >
 
-        {/* ── Headline ── shrinks its bottom margin on tiny screens */}
-        <section className="mb-4 shrink-0 landscape:mb-2">
-          <h2 className="font-headline font-extrabold text-4xl landscape:text-2xl text-on-surface mb-2 landscape:mb-1 tracking-tight leading-tight">
-            Давай начнём
-          </h2>
-          <p className="text-on-surface-variant text-base landscape:text-sm font-medium leading-relaxed">
-            Введите данные, чтобы создать аккаунт.
-          </p>
-        </section>
+        <form className="contents landscape:grid landscape:grid-cols-2 landscape:gap-8" onSubmit={handleSubmit}>
+          {/* ── LEFT: headline + fields ── */}
+          <div className="flex flex-col gap-4">
+            <section className="shrink-0">
+              <h2 className="font-headline font-extrabold text-4xl landscape:text-2xl text-on-surface mb-2 landscape:mb-1 tracking-tight leading-tight">
+                Давай начнём
+              </h2>
+              <p className="text-on-surface-variant text-base landscape:text-sm font-medium leading-relaxed">
+                Введите данные, чтобы создать аккаунт.
+              </p>
+            </section>
 
-        {/* ── Form ── */}
-        <form
-          className="flex flex-col flex-1 min-h-0"
-          onSubmit={handleSubmit}
-        >
-          {/* Fields — fixed size, always visible */}
-          <div className="space-y-4 shrink-0">
-            {/* Name */}
-            <div className="space-y-1.5">
-              <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="name">Имя</label>
-              <input
-                className="w-full h-14 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
-                id="name"
-                name="name"
-                placeholder="Как к тебе обращаться?"
-                type="text"
-                value={name}
-                onChange={(e) => updateDraft({ name: e.target.value })}
-              />
-            </div>
-
-            {/* Email */}
-            <div className="space-y-1.5">
-              <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="email">Электронная почта</label>
-              <input
-                className="w-full h-14 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
-                id="email"
-                name="email"
-                placeholder="example@mail.com"
-                type="email"
-                value={emailInput}
-                onChange={(e) => updateDraft({ email: e.target.value })}
-              />
-              <p className="text-xs text-on-surface-variant/60 ml-1">Мы пришлём код подтверждения на эту почту.</p>
+            <div className="space-y-4 shrink-0">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="name">Имя</label>
+                <input
+                  className="w-full h-14 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
+                  id="name" name="name" placeholder="Как к тебе обращаться?" type="text"
+                  value={name} onChange={(e) => updateDraft({ name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="email">Электронная почта</label>
+                <input
+                  className="w-full h-14 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
+                  id="email" name="email" placeholder="example@mail.com" type="email"
+                  value={emailInput} onChange={(e) => updateDraft({ email: e.target.value })}
+                />
+                <p className="text-xs text-on-surface-variant/60 ml-1">Мы пришлём код подтверждения на эту почту.</p>
+              </div>
             </div>
           </div>
 
-          {/*
-            Elastic spacer: fills space in idle state (big screen, no keyboard).
-            When keyboard opens and dvh shrinks, this gap collapses first —
-            protecting the bottom section from being squeezed or clipped.
-          */}
-          <div className="flex-1 min-h-[12px]" />
+          {/* ── RIGHT: checkboxes + CTA ── */}
+          <div className="flex flex-col justify-between gap-4 landscape:pt-0 mt-6 landscape:mt-0">
+            <div className="flex-1 min-h-[12px] landscape:hidden" />
 
-          {/* ── Bottom block: checkboxes + CTA ── always visible */}
-          <div className="shrink-0 space-y-4">
-            {/* Checkboxes */}
-            <div className="space-y-3">
-              <label className="flex gap-4 items-start cursor-pointer hover:bg-primary/5 p-3 -m-3 rounded-2xl transition-colors" htmlFor="consent">
-                <div className="mt-0.5 shrink-0">
-                  <input
-                    className="w-5 h-5 rounded-[6px] border-outline-variant text-primary focus:ring-primary/20 cursor-pointer"
-                    id="consent"
-                    required
-                    type="checkbox"
-                    checked={consent}
-                    onChange={(e) => updateDraft({ consent: e.target.checked })}
-                  />
-                </div>
-                <span className="text-[13px] font-medium text-on-surface-variant leading-snug">
-                  Я согласен(а) на обработку персональных данных (обязательно){' '}
-                  <Link
-                    to="/privacy-policy"
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-primary font-bold underline underline-offset-4 decoration-primary/50 hover:text-primary/80 transition-colors"
-                  >
-                    Политика
-                  </Link>
-                </span>
-              </label>
-
-              <label className="flex gap-4 items-start cursor-pointer hover:bg-primary/5 p-3 -m-3 rounded-2xl transition-colors" htmlFor="marketing">
-                <div className="mt-0.5 shrink-0">
-                  <input
-                    className="w-5 h-5 rounded-[6px] border-outline-variant text-primary focus:ring-primary/20 cursor-pointer"
-                    id="marketing"
-                    type="checkbox"
-                    checked={marketing}
-                    onChange={(e) => updateDraft({ marketing: e.target.checked })}
-                  />
-                </div>
-                <div>
-                  <span className="text-[13px] font-medium text-on-surface-variant leading-snug block">
-                    Я хочу получать рекламную рассылку на почту
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <label className="flex gap-4 items-start cursor-pointer hover:bg-primary/5 p-3 -m-3 rounded-2xl transition-colors" htmlFor="consent">
+                  <div className="mt-0.5 shrink-0">
+                    <input className="w-5 h-5 rounded-[6px] border-outline-variant text-primary focus:ring-primary/20 cursor-pointer"
+                      id="consent" required type="checkbox" checked={consent}
+                      onChange={(e) => updateDraft({ consent: e.target.checked })} />
+                  </div>
+                  <span className="text-[13px] font-medium text-on-surface-variant leading-snug">
+                    Я согласен(а) на обработку персональных данных (обязательно){' '}
+                    <Link to="/privacy-policy" onClick={(e) => e.stopPropagation()}
+                      className="text-primary font-bold underline underline-offset-4 decoration-primary/50 hover:text-primary/80 transition-colors">
+                      Политика
+                    </Link>
                   </span>
-                  <p className="text-[11px] text-on-surface-variant/60 mt-0.5">Можно отписаться в любой момент.</p>
-                </div>
-              </label>
+                </label>
+                <label className="flex gap-4 items-start cursor-pointer hover:bg-primary/5 p-3 -m-3 rounded-2xl transition-colors" htmlFor="marketing">
+                  <div className="mt-0.5 shrink-0">
+                    <input className="w-5 h-5 rounded-[6px] border-outline-variant text-primary focus:ring-primary/20 cursor-pointer"
+                      id="marketing" type="checkbox" checked={marketing}
+                      onChange={(e) => updateDraft({ marketing: e.target.checked })} />
+                  </div>
+                  <div>
+                    <span className="text-[13px] font-medium text-on-surface-variant leading-snug block">Я хочу получать рекламную рассылку на почту</span>
+                    <p className="text-[11px] text-on-surface-variant/60 mt-0.5">Можно отписаться в любой момент.</p>
+                  </div>
+                </label>
+              </div>
+
+              <button
+                disabled={!canSubmit || isSubmitting} type="submit"
+                className={`h-14 landscape:h-12 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
+                  canSubmit && !isSubmitting
+                    ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 cursor-pointer'
+                    : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
+                }`}
+              >
+                {isSubmitting ? 'Отправляем...' : 'Получить код'}
+              </button>
+
+              {submitError && <p className="text-center text-sm font-medium text-red-500">{submitError}</p>}
+              <p className="text-center text-sm font-medium text-on-surface-variant/70">Почта нужна, чтобы сохранить твои настройки.</p>
             </div>
-
-            {/* CTA */}
-            <button
-              disabled={!canSubmit || isSubmitting}
-              type="submit"
-              className={`h-14 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
-                canSubmit && !isSubmitting
-                  ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 cursor-pointer'
-                  : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
-              }`}
-            >
-              {isSubmitting ? 'Отправляем...' : 'Получить код'}
-            </button>
-
-            {submitError && (
-              <p className="text-center text-sm font-medium text-red-500">
-                {submitError}
-              </p>
-            )}
-
-            <p className="text-center text-sm font-medium text-on-surface-variant/70">
-              Почта нужна, чтобы сохранить твои настройки.
-            </p>
           </div>
         </form>
       </main>

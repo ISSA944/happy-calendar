@@ -228,10 +228,10 @@ export function OtpPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col px-5 pt-10 pb-10 landscape:pt-6 landscape:pb-6 landscape:grid landscape:grid-cols-2 landscape:gap-8 landscape:items-center landscape:px-10">
-        {/* ── LEFT col: Headline ── */}
-        <section className="mb-10 shrink-0 landscape:mb-0">
-          <h2 className="font-headline font-extrabold text-4xl landscape:text-3xl text-on-surface mb-3 landscape:mb-2 tracking-tight leading-tight">
+      <main className="flex-1 flex flex-col px-5 pt-10 pb-10 landscape:pt-4 landscape:pb-4 landscape:max-w-[540px] landscape:mx-auto landscape:justify-center">
+        {/* ── Headline ── */}
+        <section className="mb-10 shrink-0 landscape:mb-5">
+          <h2 className="font-headline font-extrabold text-4xl landscape:text-2xl text-on-surface mb-3 landscape:mb-1 tracking-tight leading-tight">
             Проверим почту
           </h2>
           <p className="text-on-surface-variant text-base landscape:text-sm font-medium leading-relaxed">
@@ -239,35 +239,34 @@ export function OtpPage() {
           </p>
         </section>
 
-        {/* ── RIGHT col: OTP + button ── */}
-        <div className="flex flex-col gap-6">
-          <section className="shrink-0">
-            <div className="flex justify-between gap-3">
-              {code.map((digit, index) => (
-                <OtpBox
-                  key={index}
-                  index={index}
-                  digit={digit}
-                  isActive={activeIndex === index}
-                  inputRef={refCallbacks[index]}
-                  onChange={handleChange}
-                  onKeyDown={handleKeyDown}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                />
-              ))}
-            </div>
-          </section>
+        {/* ── OTP Boxes ── */}
+        <section className="mb-10 shrink-0 landscape:mb-5">
+          <div className="flex justify-between gap-3">
+            {code.map((digit, index) => (
+              <OtpBox
+                key={index}
+                index={index}
+                digit={digit}
+                isActive={activeIndex === index}
+                inputRef={refCallbacks[index]}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+              />
+            ))}
+          </div>
+        </section>
 
         {/* ── Bottom actions ── */}
         <div
-          className="flex flex-col items-center gap-6 shrink-0"
+          className="mt-auto flex flex-col items-center gap-4 shrink-0 landscape:mt-0"
           style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
         >
           <button
             onClick={handleSubmit}
             disabled={!isValid || isSubmitting}
-            className={`h-14 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
+            className={`h-14 landscape:h-12 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
               isValid && !isSubmitting
                 ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 cursor-pointer'
                 : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
@@ -289,7 +288,6 @@ export function OtpPage() {
             onResend={handleResend}
           />
         </div>
-        </div>{/* end right col */}
       </main>
 
       {/* Glassmorphism blobs */}
