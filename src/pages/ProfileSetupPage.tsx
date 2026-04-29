@@ -235,7 +235,7 @@ export function ProfileSetupPage() {
           <button
             onClick={handleSubmit}
             disabled={!isValid || isSubmitting}
-            style={{ marginTop: 'auto', paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
+            style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
             className={`w-full h-14 rounded-full font-headline font-bold text-lg flex items-center justify-center transition-colors mt-4 ${
               isValid && !isSubmitting
                 ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 active:scale-[0.98] cursor-pointer'

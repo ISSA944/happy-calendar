@@ -69,11 +69,10 @@ export function RegistrationPage() {
         </div>
       </header>
 
-      <main
-        className="flex-1 flex flex-col px-5 pt-4 min-h-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] landscape:pb-6 landscape:grid landscape:grid-cols-2 landscape:gap-8 landscape:px-10 landscape:items-start landscape:pt-6"
-      >
+      <main className="flex-1 flex flex-col px-5 pt-4 min-h-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] landscape:pb-6 landscape:px-10 landscape:pt-6">
 
-        <form className="contents landscape:grid landscape:grid-cols-2 landscape:gap-8" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit}
+              className="flex flex-col flex-1 landscape:grid landscape:grid-cols-2 landscape:gap-8 landscape:items-start">
           {/* ── LEFT: headline + fields ── */}
           <div className="flex flex-col gap-4">
             <section className="shrink-0">

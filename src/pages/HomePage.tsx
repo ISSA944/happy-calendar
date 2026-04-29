@@ -83,9 +83,14 @@ export function HomePage() {
     [bookmarks, todayStr],
   )
 
-  const handleNewQuote = useCallback(() => {
-    void refreshSupportPhrase()
-  }, [refreshSupportPhrase])
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleNewQuote = useCallback(async () => {
+    if (isRefreshing) return
+    setIsRefreshing(true)
+    await refreshSupportPhrase()
+    setIsRefreshing(false)
+  }, [refreshSupportPhrase, isRefreshing])
 
   const handleSaveQuote = useCallback(() => {
     if (!supportPhrase || savedQuote) return
@@ -227,11 +232,14 @@ export function HomePage() {
 
             <div className="flex gap-3 pt-2">
               <motion.button
-                whileTap={{ scale: 0.97 }}
+                whileTap={{ scale: isRefreshing ? 1 : 0.97 }}
                 onClick={handleNewQuote}
-                className="flex-1 h-12 bg-primary-container text-white rounded-xl font-semibold text-sm"
+                disabled={isRefreshing}
+                className={`flex-1 h-12 rounded-xl font-semibold text-sm transition-opacity ${
+                  isRefreshing ? 'bg-primary-container/60 text-white opacity-70 cursor-not-allowed' : 'bg-primary-container text-white'
+                }`}
               >
-                Другая фраза
+                {isRefreshing ? '...' : 'Другая фраза'}
               </motion.button>
               <motion.button
                 whileTap={{ scale: 0.97 }}
