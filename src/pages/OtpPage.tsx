@@ -212,7 +212,7 @@ export function OtpPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       style={{ willChange: 'opacity' }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] landscape:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto"
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
@@ -228,10 +228,10 @@ export function OtpPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col px-5 pt-10 pb-10 landscape:pt-4 landscape:pb-32">
-        {/* ── Headline ── */}
-        <section className="mb-10 shrink-0 landscape:mb-4">
-          <h2 className="font-headline font-extrabold text-4xl landscape:text-2xl text-on-surface mb-3 landscape:mb-1 tracking-tight leading-tight">
+      <main className="flex-1 flex flex-col px-5 pt-10 pb-10 landscape:pt-6 landscape:pb-6 landscape:grid landscape:grid-cols-2 landscape:gap-8 landscape:items-center landscape:px-10">
+        {/* ── LEFT col: Headline ── */}
+        <section className="mb-10 shrink-0 landscape:mb-0">
+          <h2 className="font-headline font-extrabold text-4xl landscape:text-3xl text-on-surface mb-3 landscape:mb-2 tracking-tight leading-tight">
             Проверим почту
           </h2>
           <p className="text-on-surface-variant text-base landscape:text-sm font-medium leading-relaxed">
@@ -239,28 +239,29 @@ export function OtpPage() {
           </p>
         </section>
 
-        {/* ── OTP Boxes ── */}
-        <section className="mb-10 shrink-0 landscape:mb-4">
-          <div className="flex justify-between gap-3">
-            {code.map((digit, index) => (
-              <OtpBox
-                key={index}
-                index={index}
-                digit={digit}
-                isActive={activeIndex === index}
-                inputRef={refCallbacks[index]}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-              />
-            ))}
-          </div>
-        </section>
+        {/* ── RIGHT col: OTP + button ── */}
+        <div className="flex flex-col gap-6">
+          <section className="shrink-0">
+            <div className="flex justify-between gap-3">
+              {code.map((digit, index) => (
+                <OtpBox
+                  key={index}
+                  index={index}
+                  digit={digit}
+                  isActive={activeIndex === index}
+                  inputRef={refCallbacks[index]}
+                  onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                />
+              ))}
+            </div>
+          </section>
 
         {/* ── Bottom actions ── */}
         <div
-          className="mt-auto flex flex-col items-center gap-6 shrink-0"
+          className="flex flex-col items-center gap-6 shrink-0"
           style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
         >
           <button
@@ -288,6 +289,7 @@ export function OtpPage() {
             onResend={handleResend}
           />
         </div>
+        </div>{/* end right col */}
       </main>
 
       {/* Glassmorphism blobs */}

@@ -209,7 +209,7 @@ export function NotificationsPage() {
 
       {/* Bottom Action Area — unmounted while TimePicker is open so nothing peeks through the sheet */}
       {!isTimePickerOpen && (
-        <div className="w-full max-w-[430px] mx-auto px-5 pb-[env(safe-area-inset-bottom,24px)] pt-4 flex flex-col items-center space-y-4">
+        <div className="w-full max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pb-[env(safe-area-inset-bottom,24px)] pt-4 flex flex-col items-center space-y-4">
 
           {permission === 'denied' && !pushError ? (
             /* Permission already denied — show Settings instruction immediately */
