@@ -213,7 +213,7 @@ export function getTodayHoliday(): Holiday | null {
 }
 
 export function getMoodImage(mood: string): string {
-  return MOOD_IMAGES[mood] ?? MOOD_IMAGES['Нейтрально']
+  return MOOD_IMAGES[mood] ?? MOOD_IMAGES['Нормально']
 }
 
 export function getFullDateStr(): string {
