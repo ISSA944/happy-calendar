@@ -4,6 +4,7 @@ import { AiService, type AiDailyPack, type PromptContext } from '../ai';
 import { RedisService } from '../redis/redis.service';
 
 const CACHE_TTL_SECONDS = 86_400; // 24 hours
+const AI_LOCK_TTL       = 30;     // max seconds one AI call should take
 
 @Injectable()
 export class TodayService {
@@ -16,18 +17,18 @@ export class TodayService {
   ) {}
 
   async getTodayPack(userId: string) {
-    // ── 0. Fetch prefs + profile in parallel (both needed before cache check) ──
+    // ── 0. Prefs + Profile in parallel (both needed before cache check) ────────
     const [prefs, profile] = await Promise.all([
       this.prisma.prefs.findUnique({ where: { userId } }),
       this.prisma.profile.findUnique({ where: { userId } }),
     ]);
 
     const today      = this.getTodayDateStr(prefs?.timezone ?? undefined);
-    const zodiacSign = profile?.zodiacSign ?? '';
+    const zodiacSign = profile?.zodiacSign  ?? '';
     const mood       = profile?.currentMood ?? 'Нормально';
-    const gender     = profile?.gender ?? 'UNKNOWN';
+    const gender     = profile?.gender      ?? 'UNKNOWN';
 
-    // ── 1. DailyFeed hit (DB cache) — must match current zodiac sign ──────────
+    // ── 1. DailyFeed DB cache — must match current zodiac sign ────────────────
     const existingFeed = await this.prisma.dailyFeed.findUnique({
       where: { userId_date: { userId, date: today } },
       include: { horoscope: true, supportPhrase: true, holiday: true },
@@ -42,53 +43,80 @@ export class TodayService {
       return this.buildResponse(today, existingFeed.horoscope, existingFeed.supportPhrase, existingFeed.holiday);
     }
 
-    // Stale or mismatched zodiac — delete DailyFeed so it rebuilds correctly.
+    // Stale or mismatched zodiac — delete so it rebuilds correctly.
     if (existingFeed) {
       this.logger.log(
-        `getTodayPack invalidating stale DailyFeed userId=${userId} ` +
-        `(had zodiac=${existingFeed.horoscope?.zodiacSign ?? 'none'}, now=${zodiacSign})`,
+        `getTodayPack invalidating stale feed userId=${userId} ` +
+        `(zodiac was="${existingFeed.horoscope?.zodiacSign ?? 'none'}", now="${zodiacSign}")`,
       );
       await this.prisma.dailyFeed.delete({ where: { userId_date: { userId, date: today } } });
     }
 
-    // ── 2. Redis hit (shared by zodiacSign + mood + date) ──────────────────────
+    // ── 2. Redis shared cache (zodiacSign + mood + date) ───────────────────────
+    // Key is shared across ALL users with same sign+mood on same day.
+    // This means 1 AI call per sign+mood per day regardless of user count.
     const cacheKey = `pack:${zodiacSign}:${mood}:${today}`;
-    let pack: AiDailyPack | null = null;
+    const lockKey  = `lock:${cacheKey}`;
 
+    let pack: AiDailyPack | null = null;
     const cached = await this.redis.get(cacheKey);
+
     if (cached) {
       this.logger.log(`getTodayPack Redis HIT key=${cacheKey}`);
       pack = JSON.parse(cached) as AiDailyPack;
     }
 
-    // ── 3. AI call on full cache miss ──────────────────────────────────────────
+    // ── 3. AI call — protected by a distributed lock to prevent x2 calls ──────
     if (!pack) {
-      this.logger.log(`getTodayPack MISS — calling AI key=${cacheKey}`);
-      const context: PromptContext = { zodiacSign, mood, gender, date: today };
-      pack = await this.ai.generateDailyPack(userId, context);
-      await this.redis.set(cacheKey, JSON.stringify(pack), CACHE_TTL_SECONDS);
+      const lockAcquired = await this.redis.acquireLock(lockKey, AI_LOCK_TTL);
+
+      if (!lockAcquired) {
+        // Another request is generating — wait briefly then re-check Redis.
+        this.logger.log(`getTodayPack lock busy, waiting... key=${cacheKey}`);
+        await new Promise(r => setTimeout(r, 4000));
+        const retried = await this.redis.get(cacheKey);
+        if (retried) {
+          pack = JSON.parse(retried) as AiDailyPack;
+        }
+      }
+
+      // If we got the lock (or the wait still yielded nothing), call AI.
+      if (!pack) {
+        try {
+          this.logger.log(`getTodayPack calling AI key=${cacheKey}`);
+          const context: PromptContext = { zodiacSign, mood, gender, date: today };
+          pack = await this.ai.generateDailyPack(userId, context);
+          await this.redis.set(cacheKey, JSON.stringify(pack), CACHE_TTL_SECONDS);
+        } finally {
+          if (lockAcquired) await this.redis.releaseLock(lockKey);
+        }
+      } else {
+        // Re-check Redis hit after wait — release lock if we held it.
+        if (lockAcquired) await this.redis.releaseLock(lockKey);
+      }
     }
 
-    // ── 4. Persist to ref tables ───────────────────────────────────────────────
-    const [horoscope, supportPhrase] = await Promise.all([
-      this.prisma.horoscope.upsert({
-        where: { date_zodiacSign: { date: today, zodiacSign } },
-        update: {},
-        create: {
-          date: today,
-          zodiacSign,
-          main:     pack.horoscope,
-          detailed: pack.horoscopeDetailed,
-          advice:   pack.advice,
-          moon:     pack.moon,
-          aspect:   pack.aspect,
-        },
-      }),
-      this.prisma.supportPhrase.create({
-        data: { mood, text: pack.supportPhrase },
-      }),
-    ]);
+    // ── 4. Persist horoscope (shared ref — upsert is idempotent) ──────────────
+    const horoscope = await this.prisma.horoscope.upsert({
+      where: { date_zodiacSign: { date: today, zodiacSign } },
+      update: {},
+      create: {
+        date: today,
+        zodiacSign,
+        main:     pack.horoscope,
+        detailed: pack.horoscopeDetailed,
+        advice:   pack.advice,
+        moon:     pack.moon,
+        aspect:   pack.aspect,
+      },
+    });
 
+    // ── 5. Persist support phrase (per-user, always fresh) ─────────────────────
+    const supportPhrase = await this.prisma.supportPhrase.create({
+      data: { mood, text: pack.supportPhrase },
+    });
+
+    // ── 6. Persist holiday (shared ref — upsert is idempotent) ────────────────
     const holiday = pack.holiday
       ? await this.prisma.holiday.upsert({
           where: { date: today },
@@ -97,17 +125,30 @@ export class TodayService {
         })
       : null;
 
-    // ── 5. Create DailyFeed (user↔ref join for today) ──────────────────────────
+    // ── 7. Save DailyFeed (user ↔ content join for today) ─────────────────────
     await this.prisma.dailyFeed.upsert({
       where: { userId_date: { userId, date: today } },
-      update: { horoscopeId: horoscope.id, supportPhraseId: supportPhrase.id, holidayId: holiday?.id ?? null },
-      create: { userId, date: today, horoscopeId: horoscope.id, supportPhraseId: supportPhrase.id, holidayId: holiday?.id ?? null },
+      update: {
+        horoscopeId:     horoscope.id,
+        supportPhraseId: supportPhrase.id,
+        holidayId:       holiday?.id ?? null,
+      },
+      create: {
+        userId,
+        date:            today,
+        horoscopeId:     horoscope.id,
+        supportPhraseId: supportPhrase.id,
+        holidayId:       holiday?.id ?? null,
+      },
     });
 
     return this.buildResponse(today, horoscope, supportPhrase, holiday);
   }
 
-  /** Called by patchMood and nextSupport to replace only the support phrase in today's feed. */
+  /**
+   * Called by patchMood (mood change) and nextSupport ("Другая фраза").
+   * Replaces ONLY the support phrase in today's DailyFeed — horoscope is untouched.
+   */
   async replaceSupportPhrase(userId: string, mood: string, text: string) {
     const prefs = await this.prisma.prefs.findUnique({ where: { userId } });
     const today = this.getTodayDateStr(prefs?.timezone ?? undefined);
@@ -116,7 +157,8 @@ export class TodayService {
       data: { mood, text },
     });
 
-    // updateMany silently skips if no DailyFeed exists yet for today.
+    // updateMany silently skips if no DailyFeed exists yet.
+    // getTodayPack will create a complete record on first home load.
     await this.prisma.dailyFeed.updateMany({
       where: { userId, date: today },
       data: { supportPhraseId: newPhrase.id },

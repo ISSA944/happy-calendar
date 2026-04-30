@@ -39,4 +39,26 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       // Cache write failure is non-fatal
     }
   }
+
+  /**
+   * Tries to acquire a distributed lock (SET NX EX).
+   * Returns true if lock acquired, false if already held by another request.
+   * Fails open (returns true) if Redis is unavailable — AI call proceeds.
+   */
+  async acquireLock(key: string, ttlSeconds: number): Promise<boolean> {
+    try {
+      const result = await this.client?.set(key, '1', 'EX', ttlSeconds, 'NX');
+      return result === 'OK';
+    } catch {
+      return true; // Redis down — fail open, let the request proceed
+    }
+  }
+
+  async releaseLock(key: string): Promise<void> {
+    try {
+      await this.client?.del(key);
+    } catch {
+      // TTL will clean it up automatically
+    }
+  }
 }
