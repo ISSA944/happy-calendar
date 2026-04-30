@@ -119,10 +119,8 @@ export function HomePage() {
 
   return (
     <>
-      {/* Прелоадер — показывается пока dailyPack не загружен */}
-      <AnimatePresence>
-        {!dailyPack && <PageLoader />}
-      </AnimatePresence>
+      {/* Прелоадер через портал — перекрывает весь экран пока dailyPack не загружен */}
+      <PageLoader show={!dailyPack} />
 
       <div className="max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-2 pb-8">
 
