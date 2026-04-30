@@ -23,11 +23,12 @@ export class TodayController {
   @Post('support/next')
   @HttpCode(200)
   async nextSupport(@CurrentUser() user: AuthUser) {
-    // "Другая фраза" — must always produce a fresh phrase, never cached.
+    // "Другая фраза" — always produces a fresh phrase, never cached.
     const profile = await this.prisma.profile.findUnique({ where: { userId: user.sub } });
-    const mood = profile?.currentMood ?? 'Нормально';
+    const mood       = profile?.currentMood  ?? 'Нормально';
+    const zodiacSign = profile?.zodiacSign   ?? undefined;
 
-    const { supportPhrase } = await this.ai.updateMoodSupport(user.sub, mood);
+    const { supportPhrase } = await this.ai.updateMoodSupport(user.sub, mood, zodiacSign);
     await this.todayService.replaceSupportPhrase(user.sub, mood, supportPhrase);
 
     return { support: { text: supportPhrase } };

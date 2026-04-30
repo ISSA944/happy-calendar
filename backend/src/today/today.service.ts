@@ -16,29 +16,42 @@ export class TodayService {
   ) {}
 
   async getTodayPack(userId: string) {
-    // ── 0. Timezone-aware "today" ──────────────────────────────────────────────
-    // Prefs lookup is cheap (PK) and needed for timezone correctness.
-    const prefs = await this.prisma.prefs.findUnique({ where: { userId } });
-    const today = this.getTodayDateStr(prefs?.timezone ?? undefined);
+    // ── 0. Fetch prefs + profile in parallel (both needed before cache check) ──
+    const [prefs, profile] = await Promise.all([
+      this.prisma.prefs.findUnique({ where: { userId } }),
+      this.prisma.profile.findUnique({ where: { userId } }),
+    ]);
 
-    // ── 1. DailyFeed hit (DB cache) ────────────────────────────────────────────
+    const today      = this.getTodayDateStr(prefs?.timezone ?? undefined);
+    const zodiacSign = profile?.zodiacSign ?? '';
+    const mood       = profile?.currentMood ?? 'Нормально';
+    const gender     = profile?.gender ?? 'UNKNOWN';
+
+    // ── 1. DailyFeed hit (DB cache) — must match current zodiac sign ──────────
     const existingFeed = await this.prisma.dailyFeed.findUnique({
       where: { userId_date: { userId, date: today } },
       include: { horoscope: true, supportPhrase: true, holiday: true },
     });
 
-    if (existingFeed?.horoscope && existingFeed?.supportPhrase) {
+    if (
+      existingFeed?.horoscope &&
+      existingFeed?.supportPhrase &&
+      existingFeed.horoscope.zodiacSign === zodiacSign
+    ) {
       this.logger.log(`getTodayPack DB hit userId=${userId} date=${today}`);
       return this.buildResponse(today, existingFeed.horoscope, existingFeed.supportPhrase, existingFeed.holiday);
     }
 
-    // ── 2. Profile lookup ──────────────────────────────────────────────────────
-    const profile = await this.prisma.profile.findUnique({ where: { userId } });
-    const zodiacSign = profile?.zodiacSign ?? '';
-    const mood       = profile?.currentMood ?? 'Нормально';
-    const gender     = profile?.gender ?? 'UNKNOWN';
+    // Stale or mismatched zodiac — delete DailyFeed so it rebuilds correctly.
+    if (existingFeed) {
+      this.logger.log(
+        `getTodayPack invalidating stale DailyFeed userId=${userId} ` +
+        `(had zodiac=${existingFeed.horoscope?.zodiacSign ?? 'none'}, now=${zodiacSign})`,
+      );
+      await this.prisma.dailyFeed.delete({ where: { userId_date: { userId, date: today } } });
+    }
 
-    // ── 3. Redis hit (shared by zodiacSign + mood + date) ──────────────────────
+    // ── 2. Redis hit (shared by zodiacSign + mood + date) ──────────────────────
     const cacheKey = `pack:${zodiacSign}:${mood}:${today}`;
     let pack: AiDailyPack | null = null;
 
@@ -48,7 +61,7 @@ export class TodayService {
       pack = JSON.parse(cached) as AiDailyPack;
     }
 
-    // ── 4. AI call on full cache miss ──────────────────────────────────────────
+    // ── 3. AI call on full cache miss ──────────────────────────────────────────
     if (!pack) {
       this.logger.log(`getTodayPack MISS — calling AI key=${cacheKey}`);
       const context: PromptContext = { zodiacSign, mood, gender, date: today };
@@ -56,7 +69,7 @@ export class TodayService {
       await this.redis.set(cacheKey, JSON.stringify(pack), CACHE_TTL_SECONDS);
     }
 
-    // ── 5. Persist to ref tables ───────────────────────────────────────────────
+    // ── 4. Persist to ref tables ───────────────────────────────────────────────
     const [horoscope, supportPhrase] = await Promise.all([
       this.prisma.horoscope.upsert({
         where: { date_zodiacSign: { date: today, zodiacSign } },
@@ -84,7 +97,7 @@ export class TodayService {
         })
       : null;
 
-    // ── 6. Create DailyFeed (user↔ref join for today) ──────────────────────────
+    // ── 5. Create DailyFeed (user↔ref join for today) ──────────────────────────
     await this.prisma.dailyFeed.upsert({
       where: { userId_date: { userId, date: today } },
       update: { horoscopeId: horoscope.id, supportPhraseId: supportPhrase.id, holidayId: holiday?.id ?? null },
@@ -104,7 +117,6 @@ export class TodayService {
     });
 
     // updateMany silently skips if no DailyFeed exists yet for today.
-    // getTodayPack will create a complete record (horoscope + support) on first home load.
     await this.prisma.dailyFeed.updateMany({
       where: { userId, date: today },
       data: { supportPhraseId: newPhrase.id },
