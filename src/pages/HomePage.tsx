@@ -5,6 +5,7 @@ import type { Variants } from 'framer-motion'
 import { useAppStore } from '../store'
 import { MoodSheet } from '../features/mood/MoodSheet'
 import { BottomSheet } from '../components/ui/BottomSheet'
+import { PageLoader } from '../components/ui/PageLoader'
 import { usePWAInstall } from '../hooks'
 import {
   getGreeting,
@@ -118,6 +119,11 @@ export function HomePage() {
 
   return (
     <>
+      {/* Прелоадер — показывается пока dailyPack не загружен */}
+      <AnimatePresence>
+        {!dailyPack && <PageLoader />}
+      </AnimatePresence>
+
       <div className="max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-2 pb-8">
 
         {/* PWA Install Banner */}
