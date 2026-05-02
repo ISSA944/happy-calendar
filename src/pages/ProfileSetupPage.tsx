@@ -60,6 +60,7 @@ export function ProfileSetupPage() {
   const storeGender = useAppStore((s) => s.setGender)
   const storeZodiac = useAppStore((s) => s.setZodiacSign)
   const setHasCompletedOnboarding = useAppStore((s) => s.setHasCompletedOnboarding)
+  const setShowOnboardingLoader = useAppStore((s) => s.setShowOnboardingLoader)
   const horoscopeTime = useAppStore((s) => s.horoscopeTime)
   const showHoroscope = useAppStore((s) => s.showHoroscope)
   const showHolidays = useAppStore((s) => s.showHolidays)
@@ -112,6 +113,7 @@ export function ProfileSetupPage() {
       storeGender(gender)
       storeZodiac(zodiacSign ?? '')
       setHasCompletedOnboarding(true)
+      setShowOnboardingLoader(true)  // включить прелоадер перед переходом на Home
       navigate('/home')
     } catch {
       setSubmitError('Не удалось сохранить профиль. Проверь соединение и попробуй ещё раз.')
@@ -152,13 +154,13 @@ export function ProfileSetupPage() {
       />
 
       {/* Portrait: single column. Landscape: 2-column grid */}
-      <main className="flex-1 landscape:grid landscape:grid-cols-2 landscape:gap-6 landscape:items-start px-5 pb-8 landscape:pb-6 pt-6 landscape:pt-4">
+      <main className="flex-1 flex flex-col landscape:grid landscape:grid-cols-2 landscape:gap-6 landscape:items-stretch px-5 pb-8 landscape:pb-6 pt-6 landscape:pt-4">
 
-        {/* LEFT column (portrait: above form, landscape: avatar + zodiac) */}
-        <div className="flex flex-col items-center landscape:items-center landscape:justify-center landscape:pt-4 mb-8 landscape:mb-0">
+        {/* Portrait: above form. Landscape: right column with avatar + CTA */}
+        <div className="order-1 flex flex-col items-center mb-8 landscape:order-none landscape:col-start-2 landscape:row-start-1 landscape:mb-0 landscape:min-h-[320px] landscape:justify-center landscape:rounded-[28px] landscape:border landscape:border-outline-variant/30 landscape:bg-white/60 landscape:p-5 landscape:shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           <button
             onClick={handlePhotoClick}
-            className="relative w-28 h-28 landscape:w-24 landscape:h-24 active:scale-95 transition-transform"
+            className="relative w-28 h-28 landscape:w-24 landscape:h-24 active:scale-95 transition-transform outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
             aria-label="Сменить фото профиля"
           >
             <div className="w-full h-full rounded-full bg-surface shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-outline-variant/20 flex items-center justify-center overflow-hidden text-outline-variant">
@@ -171,17 +173,31 @@ export function ProfileSetupPage() {
               <span className="material-symbols-outlined text-[16px]">add_a_photo</span>
             </div>
           </button>
-          <button onClick={handlePhotoClick} className="mt-3 text-sm font-semibold text-primary">Добавить фото</button>
+          <button onClick={handlePhotoClick} className="mt-3 text-sm font-semibold text-primary outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-full">Добавить фото</button>
 
-          {/* Zodiac — shows in left col on landscape */}
-          <div className="hidden landscape:flex mt-6 w-full bg-white/50 border border-outline-variant/30 rounded-3xl p-4 items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+          {/* Zodiac — shows in right col on landscape */}
+          <div className="hidden landscape:flex mt-6 w-full bg-surface-container-lowest border border-outline-variant/30 rounded-[24px] p-4 items-center justify-between shadow-sm">
             <span className="text-[15px] font-medium text-on-surface-variant">Твой знак</span>
             <span className="text-lg font-bold text-on-surface">{zodiacSign || '—'}</span>
           </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={!isValid || isSubmitting}
+            className={`hidden landscape:flex w-full h-12 rounded-full font-headline font-bold text-lg items-center justify-center transition-colors mt-5 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none active:ring-0 ${
+              isValid && !isSubmitting
+                ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 active:scale-[0.98] cursor-pointer'
+                : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
+            }`}
+          >
+            {isSubmitting ? 'Сохраняем...' : 'Продолжить'}
+          </button>
+
+          {submitError && <p className="hidden landscape:block mt-3 text-center text-sm font-medium text-red-500">{submitError}</p>}
         </div>
 
-        {/* RIGHT column (portrait: full width, landscape: form + cta) */}
-        <div className="flex flex-col gap-5">
+        {/* Portrait: full width. Landscape: left column with date + gender */}
+        <div className="order-2 flex flex-col gap-5 landscape:order-none landscape:col-start-1 landscape:row-start-1 landscape:min-h-[320px] landscape:justify-center landscape:rounded-[28px] landscape:border landscape:border-outline-variant/30 landscape:bg-white/60 landscape:p-5 landscape:shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           {/* Date Field */}
           <div className="space-y-2">
             <label className="block text-[15px] font-semibold text-on-surface-variant ml-1">Когда вы родились?</label>
@@ -236,7 +252,7 @@ export function ProfileSetupPage() {
             onClick={handleSubmit}
             disabled={!isValid || isSubmitting}
             style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
-            className={`w-full h-14 rounded-full font-headline font-bold text-lg flex items-center justify-center transition-colors mt-4 ${
+            className={`w-full h-14 rounded-full font-headline font-bold text-lg flex items-center justify-center transition-colors mt-4 landscape:hidden outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none active:ring-0 ${
               isValid && !isSubmitting
                 ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 active:scale-[0.98] cursor-pointer'
                 : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
@@ -244,7 +260,7 @@ export function ProfileSetupPage() {
           >
             {isSubmitting ? 'Сохраняем...' : 'Продолжить'}
           </button>
-          {submitError && <p className="text-center text-sm font-medium text-red-500">{submitError}</p>}
+          {submitError && <p className="text-center text-sm font-medium text-red-500 landscape:hidden">{submitError}</p>}
         </div>
       </main>
 

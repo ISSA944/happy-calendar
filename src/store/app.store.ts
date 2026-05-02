@@ -54,7 +54,10 @@ type AppState = {
 
   // Daily Pack — основной контент страницы (приходит с бэка)
   dailyPack: DailyPack | null
-  isDailyPackLoading: boolean  // не персистируется — всегда true при старте
+  // Включается ProfileSetupPage перед navigate('/home') — показывает прелоадер один раз.
+  // Не персистируется: на обычных открытиях приложения всегда false.
+  showOnboardingLoader: boolean
+  setShowOnboardingLoader: (v: boolean) => void
   initDailyPack: () => Promise<void>
   // Меняет настроение И обновляет фразу поддержки через бэк
   setMood: (mood: string) => Promise<void>
@@ -111,14 +114,14 @@ export const useAppStore = create<AppState>()(
 
       // Daily Pack
       dailyPack: null,
-      isDailyPackLoading: true,
+      showOnboardingLoader: false,
+      setShowOnboardingLoader: (v) => set({ showOnboardingLoader: v }),
 
       initDailyPack: async () => {
         if (!getAccessToken()) {
-          set({ isDailyPackLoading: false })
+          set({ showOnboardingLoader: false })
           return
         }
-        set({ isDailyPackLoading: true })
         try {
           const { data } = await apiClient.get<TodayResponse>('today')
           set({
@@ -128,11 +131,11 @@ export const useAppStore = create<AppState>()(
               supportPhrase: data.support.text,
               holiday: data.holiday?.title ?? null,
             },
-            isDailyPackLoading: false,
+            showOnboardingLoader: false,
           })
         } catch (err) {
           console.warn('[store] Failed to fetch /today', err)
-          set({ isDailyPackLoading: false })
+          set({ showOnboardingLoader: false })
         }
       },
 
@@ -294,10 +297,10 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'yoyojoy-store',
-      // isDailyPackLoading исключён из persist — всегда стартует как true
+      // showOnboardingLoader исключён из persist — на повторных открытиях всегда false
       partialize: (state) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { isDailyPackLoading, ...rest } = state
+        const { showOnboardingLoader, setShowOnboardingLoader, ...rest } = state
         return rest
       },
     }

@@ -31,7 +31,7 @@ export function HomePage() {
   const gender             = useAppStore(s => s.gender)
   const zodiacSign         = useAppStore(s => s.zodiacSign)
   const dailyPack          = useAppStore(s => s.dailyPack)
-  const isDailyPackLoading = useAppStore(s => s.isDailyPackLoading)
+  const showOnboardingLoader = useAppStore(s => s.showOnboardingLoader)
   const initDailyPack      = useAppStore(s => s.initDailyPack)
   const refreshSupportPhrase = useAppStore(s => s.refreshSupportPhrase)
   const addBookmark        = useAppStore(s => s.addBookmark)
@@ -120,8 +120,8 @@ export function HomePage() {
 
   return (
     <>
-      {/* Прелоадер через портал — показывается при каждом старте пока /today не вернул данные */}
-      <PageLoader show={isDailyPackLoading} />
+      {/* Прелоадер — только один раз, при переходе с ProfileSetupPage на Home */}
+      <PageLoader show={showOnboardingLoader} />
 
       <div className="max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-2 pb-8">
 
