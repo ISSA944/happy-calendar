@@ -122,8 +122,16 @@ export const useAppStore = create<AppState>()(
           set({ showOnboardingLoader: false })
           return
         }
+        // Если показываем прелоадер — держим минимум 4.5 сек для плавного UX
+        const isLoaderShowing = get().showOnboardingLoader
+        const minWait = isLoaderShowing
+          ? new Promise<void>(r => setTimeout(r, 4500))
+          : Promise.resolve()
         try {
-          const { data } = await apiClient.get<TodayResponse>('today')
+          const [{ data }] = await Promise.all([
+            apiClient.get<TodayResponse>('today'),
+            minWait,
+          ])
           set({
             dailyPack: {
               date: data.date,
@@ -135,6 +143,7 @@ export const useAppStore = create<AppState>()(
           })
         } catch (err) {
           console.warn('[store] Failed to fetch /today', err)
+          await minWait
           set({ showOnboardingLoader: false })
         }
       },

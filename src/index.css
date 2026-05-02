@@ -80,6 +80,10 @@
 .loader-bar {
   animation: loader-slide 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
+@keyframes gentle-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
 
 @layer utilities {
   /* Hide scrollbar cross-browser — used on horizontally scrollable filter rows etc. */
