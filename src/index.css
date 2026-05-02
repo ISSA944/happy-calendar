@@ -72,17 +72,21 @@
 
 }
 
-@keyframes loader-slide {
-  0%   { transform: translateX(-100%); }
-  50%  { transform: translateX(100%); }
-  100% { transform: translateX(300%); }
-}
-.loader-bar {
-  animation: loader-slide 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
 @keyframes gentle-pulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.5; }
+}
+.pulse-soft {
+  animation: gentle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes progress-fill {
+  0%   { width: 5%;  }
+  60%  { width: 70%; }
+  85%  { width: 82%; }
+  100% { width: 86%; }
+}
+.loader-progress {
+  animation: progress-fill 4s cubic-bezier(0.1, 0, 0.2, 1) forwards;
 }
 
 @layer utilities {
