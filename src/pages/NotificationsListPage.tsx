@@ -1,59 +1,44 @@
 import { motion, type Variants } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-
-interface NotifItem {
-  icon: string
-  iconFill: boolean
-  title: string
-  time: string
-  description: string
-  faded?: boolean
-}
-
-const NOTIFICATIONS: NotifItem[] = [
-  {
-    icon: 'stars',
-    iconFill: true,
-    title: 'Гороскоп на сегодня',
-    time: '10:00',
-    description: 'Твой персональный прогноз уже ждёт тебя ✨',
-  },
-  {
-    icon: 'favorite',
-    iconFill: true,
-    title: 'Поддержка',
-    time: '2 ч. назад',
-    description: 'Новая фраза дня специально для твоего настроения.',
-  },
-  {
-    icon: 'notifications',
-    iconFill: true,
-    title: 'Напоминание',
-    time: 'Вчера',
-    description: 'Время для твоей ежедневной практики осознанности.',
-  },
-  {
-    icon: 'celebration',
-    iconFill: false,
-    title: 'С праздником!',
-    time: '2 дня назад',
-    description: 'Мы подготовили для тебя особенный подарок внутри приложения.',
-    faded: true,
-  },
-]
+import { useAppStore } from '../store'
+import { getMoodImage } from '../services/content.service'
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.05 } },
+  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
 }
-// Opacity-only — avoid translating shadowed notification cards.
 const itemVariants: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { duration: 0.25, ease: 'easeOut' } },
 }
 
 export function NotificationsListPage() {
-  const navigate = useNavigate()
+  const navigate   = useNavigate()
+  const dailyPack  = useAppStore(s => s.dailyPack)
+  const currentMood = useAppStore(s => s.currentMood)
+  const moodImage  = getMoodImage(currentMood)
+
+  // Собираем карточки из реального контента — только то, что есть
+  const cards = [
+    dailyPack?.horoscope && {
+      icon: 'stars',
+      fill: true,
+      title: 'Гороскоп на сегодня',
+      body: dailyPack.horoscope.main,
+    },
+    dailyPack?.supportPhrase && {
+      icon: 'favorite',
+      fill: true,
+      title: 'Поддержка',
+      body: dailyPack.supportPhrase,
+    },
+    dailyPack?.holiday && {
+      icon: 'celebration',
+      fill: false,
+      title: 'Праздник дня',
+      body: dailyPack.holiday,
+    },
+  ].filter(Boolean) as { icon: string; fill: boolean; title: string; body: string }[]
 
   return (
     <motion.div
@@ -75,56 +60,81 @@ export function NotificationsListPage() {
         </div>
       </header>
 
-      <main className="flex-1 px-5 pb-28 w-full max-w-[430px] landscape:max-w-[860px] mx-auto landscape:grid landscape:grid-cols-2 landscape:gap-5 landscape:items-start landscape:pt-4">
+      <main className="flex-1 px-5 pb-28 w-full max-w-[430px] landscape:max-w-[860px] mx-auto landscape:grid landscape:grid-cols-2 landscape:gap-6 landscape:items-start landscape:pt-4">
+
         {/* Hero */}
-        <motion.div variants={itemVariants} className="mb-8 mt-4">
-          <h2 className="font-headline text-2xl font-extrabold text-on-surface tracking-tight mb-2">Мягкие напоминания</h2>
+        <motion.div variants={itemVariants} className="mb-6 mt-4">
+          <h2 className="font-headline text-2xl font-extrabold text-on-surface tracking-tight mb-2">
+            Мягкие напоминания
+          </h2>
           <p className="text-on-surface-variant text-sm leading-relaxed">
             Все важные моменты твоего пути к осознанности собраны здесь.
           </p>
         </motion.div>
 
-        {/* Notification Cards */}
-        <div className="space-y-5">
-          {NOTIFICATIONS.map((n, i) => (
-            <motion.div
-              key={i}
-              variants={itemVariants}
-              className={`bg-white p-5 rounded-[20px] flex gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-white/50 ${n.faded ? 'opacity-60' : ''}`}
-            >
-              <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${n.faded ? 'bg-surface-container-highest' : 'bg-primary/10'}`}>
-                <span
-                  className={`material-symbols-outlined ${n.faded ? 'text-on-surface-variant' : 'text-primary'}`}
-                  style={n.iconFill ? { fontVariationSettings: "'FILL' 1" } : undefined}
-                >
-                  {n.icon}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start mb-1 gap-2">
-                  <h3 className="font-headline font-bold text-on-surface text-[15px] leading-snug">{n.title}</h3>
-                  <span className="text-[10px] uppercase tracking-widest text-on-surface-variant/60 font-semibold flex-shrink-0 pt-0.5">{n.time}</span>
+        {/* Карточки из реального контента */}
+        <div className="space-y-4">
+          {cards.length > 0 ? (
+            cards.map((card, i) => (
+              <motion.div
+                key={i}
+                variants={itemVariants}
+                className="bg-white p-5 rounded-[20px] flex gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-white/50"
+              >
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span
+                    className="material-symbols-outlined text-primary"
+                    style={card.fill ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                  >
+                    {card.icon}
+                  </span>
                 </div>
-                <p className="text-on-surface-variant text-[14px] leading-snug">{n.description}</p>
-              </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-headline font-bold text-on-surface text-[15px] leading-snug mb-1">
+                    {card.title}
+                  </h3>
+                  <p className="text-on-surface-variant text-[14px] leading-snug line-clamp-3">
+                    {card.body}
+                  </p>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            /* Пустое состояние — нет данных */
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-col items-center gap-3 py-12 text-center"
+            >
+              <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30">
+                notifications_off
+              </span>
+              <p className="text-on-surface-variant/60 text-sm font-medium">
+                Уведомлений пока нет
+              </p>
+              <p className="text-on-surface-variant/40 text-xs">
+                Они появятся после первого открытия главного экрана
+              </p>
             </motion.div>
-          ))}
+          )}
+
+          {/* Фото меняется по настроению */}
+          {cards.length > 0 && (
+            <motion.div
+              variants={itemVariants}
+              key={currentMood}
+              className="mt-2 overflow-hidden rounded-[20px] aspect-[16/10]"
+            >
+              <img
+                alt={currentMood}
+                className="w-full h-full object-cover"
+                src={moodImage}
+                loading="lazy"
+              />
+            </motion.div>
+          )}
         </div>
 
-        {/* Decorative image */}
-        <motion.div
-          variants={itemVariants}
-          className="mt-10 overflow-hidden rounded-[20px] aspect-[16/10] bg-gradient-to-tr from-primary/10 to-tertiary-container/10 flex items-center justify-center"
-        >
-          <img
-            alt="Спокойствие"
-            className="w-full h-full object-cover"
-            src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=500&fit=crop&q=80"
-            loading="lazy"
-          />
-        </motion.div>
       </main>
     </motion.div>
   )
 }
-
