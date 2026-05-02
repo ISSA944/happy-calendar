@@ -54,6 +54,7 @@ type AppState = {
 
   // Daily Pack — основной контент страницы (приходит с бэка)
   dailyPack: DailyPack | null
+  isDailyPackLoading: boolean  // не персистируется — всегда true при старте
   initDailyPack: () => Promise<void>
   // Меняет настроение И обновляет фразу поддержки через бэк
   setMood: (mood: string) => Promise<void>
@@ -110,9 +111,14 @@ export const useAppStore = create<AppState>()(
 
       // Daily Pack
       dailyPack: null,
+      isDailyPackLoading: true,
 
       initDailyPack: async () => {
-        if (!getAccessToken()) return
+        if (!getAccessToken()) {
+          set({ isDailyPackLoading: false })
+          return
+        }
+        set({ isDailyPackLoading: true })
         try {
           const { data } = await apiClient.get<TodayResponse>('today')
           set({
@@ -122,9 +128,11 @@ export const useAppStore = create<AppState>()(
               supportPhrase: data.support.text,
               holiday: data.holiday?.title ?? null,
             },
+            isDailyPackLoading: false,
           })
         } catch (err) {
           console.warn('[store] Failed to fetch /today', err)
+          set({ isDailyPackLoading: false })
         }
       },
 
@@ -284,6 +292,14 @@ export const useAppStore = create<AppState>()(
         })
       },
     }),
-    { name: 'yoyojoy-store' }
+    {
+      name: 'yoyojoy-store',
+      // isDailyPackLoading исключён из persist — всегда стартует как true
+      partialize: (state) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { isDailyPackLoading, ...rest } = state
+        return rest
+      },
+    }
   )
 )
