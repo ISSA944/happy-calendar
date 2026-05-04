@@ -19,8 +19,22 @@ async function bootstrap() {
     }),
   );
 
+  const allowedOrigins = [
+    'https://yoyojoy.online',
+    'https://www.yoyojoy.online',
+    /^https:\/\/[\w-]+\.vercel\.app$/,   // любые preview-деплои Vercel
+    'http://localhost:5173',
+    'http://192.168.100.17:5173',         // локальная сеть для тестов
+  ];
+
   app.enableCors({
-    origin: true,
+    origin: (origin: string | undefined, cb: (err: Error | null, allow: boolean) => void) => {
+      if (!origin) return cb(null, true);
+      const ok = allowedOrigins.some(o =>
+        typeof o === 'string' ? o === origin : o.test(origin),
+      );
+      cb(ok ? null : new Error(`CORS blocked: ${origin}`), ok);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
   });
