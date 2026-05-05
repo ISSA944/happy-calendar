@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
     return content
       .replace('%%FIREBASE_API_KEY%%', env.VITE_FIREBASE_API_KEY ?? '')
       .replace('%%FIREBASE_AUTH_DOMAIN%%', env.VITE_FIREBASE_AUTH_DOMAIN ?? '')
+      .replace('%%FIREBASE_PROJECT_ID%%', env.VITE_FIREBASE_PROJECT_ID ?? '')
       .replace('%%FIREBASE_STORAGE_BUCKET%%', env.VITE_FIREBASE_STORAGE_BUCKET ?? '')
       .replace('%%FIREBASE_MESSAGING_SENDER_ID%%', env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '')
       .replace('%%FIREBASE_APP_ID%%', env.VITE_FIREBASE_APP_ID ?? '')
