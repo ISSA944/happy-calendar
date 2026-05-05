@@ -1,10 +1,10 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { apiClient } from '../api'
 import { getAccessToken } from '../auth/token-storage'
 import {
   getFirebaseMessagingToken,
-  getStoredFcmToken,
   isFirebaseMessagingConfigured,
+  onFirebaseForegroundMessage,
   setStoredFcmToken,
 } from '../lib/firebase'
 
@@ -51,11 +51,8 @@ export function useFirebasePush() {
       return { subscribed: false, reason: 'token-unavailable' as const }
     }
 
-    const currentToken = getStoredFcmToken()
-    if (currentToken === token) {
-      return { subscribed: true, token, skipped: true as const }
-    }
-
+    // Always sync with the backend. The server is idempotent, while localStorage
+    // can survive logout/reset and otherwise make a real DB subscription get skipped.
     await apiClient.post('push/subscribe', { fcm_token: token })
     setStoredFcmToken(token)
 
@@ -70,4 +67,45 @@ export function useFirebasePush() {
       [syncPushSubscription],
     ),
   }
+}
+
+export function useFirebaseForegroundNotifications() {
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined
+    let cancelled = false
+
+    void onFirebaseForegroundMessage(async (payload) => {
+      if (
+        typeof Notification === 'undefined' ||
+        Notification.permission !== 'granted' ||
+        !('serviceWorker' in navigator)
+      ) {
+        return
+      }
+
+      const notification = payload.notification ?? {}
+      const data = payload.data ?? {}
+      const registration =
+        (await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js')) ??
+        (await navigator.serviceWorker.ready)
+
+      await registration.showNotification(notification.title ?? 'YoYoJoy Day', {
+        body: notification.body ?? 'У тебя есть обновление на сегодня.',
+        icon: '/pwa-192x192.png',
+        badge: '/pwa-192x192.png',
+        data: { url: data.url ?? '/home' },
+      })
+    }).then((nextUnsubscribe) => {
+      if (cancelled) {
+        nextUnsubscribe?.()
+        return
+      }
+      unsubscribe = nextUnsubscribe
+    })
+
+    return () => {
+      cancelled = true
+      unsubscribe?.()
+    }
+  }, [])
 }

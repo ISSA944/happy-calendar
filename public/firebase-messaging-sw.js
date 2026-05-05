@@ -5,6 +5,28 @@
 // Fill these values from Firebase Console → Project Settings → General → Your apps → Web SDK config.
 // These are PUBLIC client-side keys — same values that end up in your bundle — safe to commit.
 
+// Click handler — focuses existing window or opens a new one at the notification's target URL.
+// Register this before importing FCM scripts so Firebase does not override custom click behavior.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const targetUrl = event.notification.data?.url || '/home'
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ('focus' in client) {
+          client.navigate(targetUrl)
+          return client.focus()
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl)
+      }
+      return undefined
+    }),
+  )
+})
+
 importScripts('https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/10.14.0/firebase-messaging-compat.js')
 
@@ -69,24 +91,3 @@ if (isConfigComplete) {
     event.waitUntil(self.registration.showNotification(title, options))
   })
 }
-
-// Click handler — focuses existing window or opens a new one at the notification's target URL.
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close()
-  const targetUrl = event.notification.data?.url || '/home'
-
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if ('focus' in client) {
-          client.navigate(targetUrl)
-          return client.focus()
-        }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl)
-      }
-      return undefined
-    }),
-  )
-})

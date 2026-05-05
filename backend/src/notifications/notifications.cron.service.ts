@@ -54,6 +54,7 @@ export class NotificationCronService {
               userId: prefs.userId,
               date: pack.date,
               type: 'daily_horoscope',
+              url: 'https://yoyojoy.online/home',
             },
           );
 

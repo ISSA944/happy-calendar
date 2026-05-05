@@ -3,6 +3,8 @@ import {
   getMessaging,
   getToken,
   isSupported,
+  onMessage,
+  type MessagePayload,
   type Messaging,
 } from 'firebase/messaging'
 
@@ -140,4 +142,17 @@ export async function getFirebaseMessagingToken() {
 
 export function isFirebaseMessagingConfigured() {
   return Boolean(getFirebaseConfig())
+}
+
+export async function onFirebaseForegroundMessage(
+  callback: (payload: MessagePayload) => void | Promise<void>,
+) {
+  try {
+    const context = await getMessagingContext()
+    if (!context) return undefined
+    return onMessage(context.messaging, callback)
+  } catch (error) {
+    console.warn('[FCM] Unable to attach foreground message handler', error)
+    return undefined
+  }
 }

@@ -56,6 +56,18 @@ export class FirebaseService implements OnModuleInit {
         notification: { title, body },
         token,
         data: this.serializeData(data),
+        webpush: {
+          fcmOptions: {
+            link:
+              typeof data?.url === 'string'
+                ? data.url
+                : 'https://yoyojoy.online/home',
+          },
+          notification: {
+            icon: 'https://yoyojoy.online/pwa-192x192.png',
+            badge: 'https://yoyojoy.online/pwa-192x192.png',
+          },
+        },
       };
 
       const response = await admin.messaging().send(message);

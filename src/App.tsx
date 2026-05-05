@@ -9,6 +9,7 @@ import {
 import { AnimatePresence, motion } from 'framer-motion'
 import { BottomNav } from './components/BottomNav'
 import { useAppStore } from './store'
+import { useFirebaseForegroundNotifications } from './hooks/useFirebasePush'
 
 // App-shell tabs — static imports so Suspense never flashes a blank screen
 // when switching between Home / Bookmarks / Settings.
@@ -108,6 +109,8 @@ function AppRoutes() {
 }
 
 export default function App() {
+  useFirebaseForegroundNotifications()
+
   return (
     <BrowserRouter>
       <div

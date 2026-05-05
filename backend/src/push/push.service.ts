@@ -54,7 +54,7 @@ export class PushService {
         token,
         'YoYoJoy Day — тест 🌿',
         'Push-уведомления работают корректно!',
-        { type: 'test' },
+        { type: 'test', url: 'https://yoyojoy.online/home' },
       );
       if (result) sent++;
     }
