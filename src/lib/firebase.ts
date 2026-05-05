@@ -73,7 +73,25 @@ async function getMessagingContext(): Promise<FirebaseMessagingContext | null> {
   const app = getFirebaseApp()
   if (!app) return null
 
-  const serviceWorkerRegistration = await navigator.serviceWorker.register(FIREBASE_SW_PATH)
+  const swReg = await navigator.serviceWorker.register(FIREBASE_SW_PATH)
+
+  // Wait for the SW to become active — critical on iOS where getToken()
+  // fails silently if the SW is still in 'installing' state.
+  const serviceWorkerRegistration = await new Promise<ServiceWorkerRegistration>((resolve) => {
+    if (swReg.active) { resolve(swReg); return }
+    const sw = swReg.installing ?? swReg.waiting
+    if (sw) {
+      sw.addEventListener('statechange', function handler() {
+        if ((this as ServiceWorker).state === 'activated') {
+          sw.removeEventListener('statechange', handler)
+          resolve(swReg)
+        }
+      })
+    } else {
+      resolve(swReg)
+    }
+  })
+
   const messaging = getMessaging(app)
 
   return {
