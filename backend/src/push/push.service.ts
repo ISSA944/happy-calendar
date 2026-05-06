@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { FirebaseService } from '../firebase/firebase.service';
+import { WebPushService } from './web-push.service';
 
 @Injectable()
 export class PushService {
@@ -9,6 +10,7 @@ export class PushService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly firebase: FirebaseService,
+    private readonly webPush: WebPushService,
   ) {}
 
   async subscribe(userId: string, fcmToken: string) {
@@ -43,13 +45,20 @@ export class PushService {
   }
 
   async sendTestPush(userId: string) {
-    const prefs = await this.prisma.prefs.findUnique({ where: { userId } });
-    if (!prefs?.fcmTokens.length) {
-      return { sent: 0, total: 0, reason: 'No FCM tokens registered' };
+    const [prefs, webSubscriptions] = await Promise.all([
+      this.prisma.prefs.findUnique({ where: { userId } }),
+      this.prisma.webPushSubscription.findMany({ where: { userId } }),
+    ]);
+
+    const fcmTokens = prefs?.fcmTokens ?? [];
+    const total = fcmTokens.length + webSubscriptions.length;
+
+    if (!total) {
+      return { sent: 0, total: 0, reason: 'No push subscriptions registered' };
     }
 
     let sent = 0;
-    for (const token of prefs.fcmTokens) {
+    for (const token of fcmTokens) {
       const result = await this.firebase.sendPushNotification(
         token,
         'YoYoJoy Day — тест 🌿',
@@ -59,7 +68,22 @@ export class PushService {
       if (result) sent++;
     }
 
-    return { sent, total: prefs.fcmTokens.length };
+    for (const subscription of webSubscriptions) {
+      const result = await this.webPush.send(
+        {
+          endpoint: subscription.endpoint,
+          keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+        },
+        {
+          title: 'YoYoJoy Day — тест 🌿',
+          body: 'Push-уведомления работают корректно!',
+          data: { type: 'test', url: 'https://yoyojoy.online/home' },
+        },
+      );
+      if (result) sent++;
+    }
+
+    return { sent, total };
   }
 
   async unsubscribe(userId: string, fcmToken?: string) {

@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma';
 import { FirebaseService } from '../firebase/firebase.service';
 import { TodayService } from '../today/today.service';
+import { WebPushService } from '../push/web-push.service';
 
 type PushContent = {
   title: string;
@@ -17,6 +18,7 @@ export class NotificationCronService {
     private readonly prisma: PrismaService,
     private readonly firebaseService: FirebaseService,
     private readonly todayService: TodayService,
+    private readonly webPushService: WebPushService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -27,14 +29,21 @@ export class NotificationCronService {
     const prefsList = await this.prisma.prefs.findMany({
       where: {
         pushTime: currentTime,
-        OR: [
-          { holidaysEnabled: true },
-          { horoscopeEnabled: true },
-          { supportEnabled: true },
+        AND: [
+          {
+            OR: [
+              { holidaysEnabled: true },
+              { horoscopeEnabled: true },
+              { supportEnabled: true },
+            ],
+          },
+          {
+            OR: [
+              { fcmTokens: { isEmpty: false } },
+              { user: { webPushSubscriptions: { some: {} } } },
+            ],
+          },
         ],
-        fcmTokens: {
-          isEmpty: false,
-        },
       },
       select: {
         userId: true,
@@ -42,6 +51,11 @@ export class NotificationCronService {
         horoscopeEnabled: true,
         holidaysEnabled: true,
         supportEnabled: true,
+        user: {
+          select: {
+            webPushSubscriptions: true,
+          },
+        },
       },
     });
 
@@ -72,6 +86,29 @@ export class NotificationCronService {
               date: pack.date,
               type: content.type,
               url: 'https://yoyojoy.online/home',
+            },
+          );
+
+          if (response) {
+            hasSuccessfulSend = true;
+          }
+        }
+
+        for (const subscription of prefs.user.webPushSubscriptions) {
+          const response = await this.webPushService.send(
+            {
+              endpoint: subscription.endpoint,
+              keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+            },
+            {
+              title: content.title,
+              body: content.body,
+              data: {
+                userId: prefs.userId,
+                date: pack.date,
+                type: content.type,
+                url: 'https://yoyojoy.online/home',
+              },
             },
           );
 

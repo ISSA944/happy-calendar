@@ -21,12 +21,13 @@ model User {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
-  profile       Profile?
-  prefs         Prefs?
-  dailyFeeds    DailyFeed[]
-  bookmarks     Bookmark[]
-  moodLogs      MoodLog[]
-  notifications Notification[]
+  profile              Profile?
+  prefs                Prefs?
+  dailyFeeds           DailyFeed[]
+  bookmarks            Bookmark[]
+  moodLogs             MoodLog[]
+  notifications        Notification[]
+  webPushSubscriptions WebPushSubscription[]
 
   @@map("users")
 }
@@ -186,4 +187,19 @@ model Notification {
 
   @@index([userId])
   @@map("notifications")
+}
+
+model WebPushSubscription {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("web_push_subscriptions")
 }

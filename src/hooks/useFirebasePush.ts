@@ -3,7 +3,9 @@ import { apiClient } from '../api'
 import { getAccessToken } from '../auth/token-storage'
 import {
   getFirebaseMessagingToken,
+  getWebPushSubscription,
   isFirebaseMessagingConfigured,
+  isWebPushSupported,
   onFirebaseForegroundMessage,
   setStoredFcmToken,
 } from '../lib/firebase'
@@ -27,7 +29,7 @@ export function useFirebasePush() {
       return { subscribed: false, reason: 'unsupported' as const }
     }
 
-    if (!isFirebaseMessagingConfigured()) {
+    if (!isFirebaseMessagingConfigured() && !isWebPushSupported()) {
       return { subscribed: false, reason: 'missing-config' as const }
     }
 
@@ -46,17 +48,30 @@ export function useFirebasePush() {
       return { subscribed: false, reason: 'permission-denied' as const }
     }
 
-    const token = await getFirebaseMessagingToken()
-    if (!token) {
+    if (isFirebaseMessagingConfigured()) {
+      const token = await getFirebaseMessagingToken()
+
+      if (token) {
+        // Always sync with the backend. The server is idempotent, while localStorage
+        // can survive logout/reset and otherwise make a real DB subscription get skipped.
+        await apiClient.post('push/subscribe', { fcm_token: token })
+        setStoredFcmToken(token)
+
+        return { subscribed: true, token, provider: 'fcm' as const, skipped: false as const }
+      }
+    }
+
+    const webSubscription = await getWebPushSubscription()
+    if (!webSubscription) {
       return { subscribed: false, reason: 'token-unavailable' as const }
     }
 
-    // Always sync with the backend. The server is idempotent, while localStorage
-    // can survive logout/reset and otherwise make a real DB subscription get skipped.
-    await apiClient.post('push/subscribe', { fcm_token: token })
-    setStoredFcmToken(token)
+    await apiClient.post('push/web-subscribe', {
+      subscription: webSubscription.toJSON(),
+      user_agent: navigator.userAgent,
+    })
 
-    return { subscribed: true, token, skipped: false as const }
+    return { subscribed: true, provider: 'web-push' as const, skipped: false as const }
   }, [])
 
   return {

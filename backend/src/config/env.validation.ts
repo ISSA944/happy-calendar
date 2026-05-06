@@ -44,6 +44,12 @@ export const envSchema = z.object({
     .string()
     .email('FIREBASE_CLIENT_EMAIL must be a valid email'),
   FIREBASE_PRIVATE_KEY: z.string().min(1, 'FIREBASE_PRIVATE_KEY is required'),
+
+  // Standard Web Push fallback for browsers not supported by Firebase Web
+  // Messaging, especially iOS Home Screen PWAs.
+  WEB_PUSH_PUBLIC_KEY: z.string().optional(),
+  WEB_PUSH_PRIVATE_KEY: z.string().optional(),
+  WEB_PUSH_SUBJECT: z.string().default('mailto:support@yoyojoy.online'),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -97,6 +97,29 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
+self.addEventListener('push', (event: PushEvent) => {
+  let payload:
+    | { source?: string; title?: string; body?: string; data?: { url?: string } }
+    | undefined
+
+  try {
+    payload = event.data?.json()
+  } catch {
+    payload = undefined
+  }
+
+  if (payload?.source !== 'web-push') return
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title || 'YoYoJoy Day', {
+      body: payload.body || 'У тебя есть обновление на сегодня.',
+      icon: '/pwa-192x192.png',
+      badge: '/pwa-192x192.png',
+      data: { url: payload.data?.url || '/home' },
+    }),
+  )
+})
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,

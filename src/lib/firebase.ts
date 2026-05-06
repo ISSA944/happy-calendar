@@ -10,6 +10,9 @@ import {
 
 const FCM_TOKEN_KEY = 'yoyojoy-fcm-token'
 const APP_SW_PATH = '/sw.js'
+const WEB_PUSH_PUBLIC_KEY =
+  import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY ??
+  'BMdcIjRaVksw2VnkRnL8gKT_OFuqHQTuLkWZ-HjOjOImHXO4Y2gUBBEGFVkaG-fxmjXopoBp3EmjmnfWN7oy-J4'
 
 type FirebaseMessagingContext = {
   messaging: Messaging
@@ -126,6 +129,42 @@ export async function getFirebaseMessagingToken() {
 
 export function isFirebaseMessagingConfigured() {
   return Boolean(getFirebaseConfig())
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)))
+}
+
+export function isWebPushSupported() {
+  return (
+    typeof window !== 'undefined' &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window &&
+    Boolean(WEB_PUSH_PUBLIC_KEY)
+  )
+}
+
+export async function getWebPushSubscription() {
+  if (!isWebPushSupported()) return null
+
+  try {
+    await navigator.serviceWorker.register(APP_SW_PATH)
+    const registration = await navigator.serviceWorker.ready
+    const existing = await registration.pushManager.getSubscription()
+
+    if (existing) return existing
+
+    return registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(WEB_PUSH_PUBLIC_KEY),
+    })
+  } catch (error) {
+    console.warn('[WebPush] Unable to create browser push subscription', error)
+    return null
+  }
 }
 
 export async function onFirebaseForegroundMessage(
