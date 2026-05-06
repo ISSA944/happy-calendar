@@ -27,6 +27,11 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
+// Force this SW to become active immediately, even if Workbox SW is controlling the page.
+// Without this, the SW stays in 'waiting' state and getToken() never resolves on iOS.
+self.addEventListener('install', () => self.skipWaiting())
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))
+
 importScripts('https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/10.14.0/firebase-messaging-compat.js')
 
