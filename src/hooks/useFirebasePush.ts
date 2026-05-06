@@ -85,9 +85,7 @@ export function useFirebaseForegroundNotifications() {
 
       const notification = payload.notification ?? {}
       const data = payload.data ?? {}
-      const registration =
-        (await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js')) ??
-        (await navigator.serviceWorker.ready)
+      const registration = await navigator.serviceWorker.ready
 
       await registration.showNotification(notification.title ?? 'YoYoJoy Day', {
         body: notification.body ?? 'У тебя есть обновление на сегодня.',
