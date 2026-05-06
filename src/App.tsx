@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -10,16 +10,17 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { BottomNav } from './components/BottomNav'
 import { useAppStore } from './store'
 import { useFirebaseForegroundNotifications } from './hooks/useFirebasePush'
+import { getAccessToken } from './auth/token-storage'
 
-// App-shell tabs — static imports so Suspense never flashes a blank screen
-// when switching between Home / Bookmarks / Settings.
+// Home stays static because it is the primary post-onboarding screen.
 import { HomePage } from './pages/HomePage'
-import { BookmarksPage } from './pages/BookmarksPage'
-import { SettingsPage } from './pages/SettingsPage'
-import { NotificationsListPage } from './pages/NotificationsListPage'
 
 // WelcomePage is static — it's the first screen new users see, no lazy flash.
 import { WelcomePage } from './pages/WelcomePage'
+
+const BookmarksPage = lazy(() => import('./pages/BookmarksPage').then(m => ({ default: m.BookmarksPage })))
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
+const NotificationsListPage = lazy(() => import('./pages/NotificationsListPage').then(m => ({ default: m.NotificationsListPage })))
 
 // Remaining auth pages are lazy (loaded once per session).
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
@@ -36,7 +37,50 @@ function PageFallback() {
 
 function RootGuard() {
   const hasCompletedOnboarding = useAppStore(s => s.hasCompletedOnboarding)
-  return hasCompletedOnboarding ? <Navigate to="/home" replace /> : <WelcomePage />
+  const syncProfile = useAppStore(s => s.syncProfile)
+  const [hasCheckedProfile, setHasCheckedProfile] = useState(false)
+  const hasToken = !!getAccessToken()
+  const needsProfileCheck = hasToken && !hasCompletedOnboarding && !hasCheckedProfile
+
+  useEffect(() => {
+    if (!needsProfileCheck) return
+    let cancelled = false
+    void syncProfile().finally(() => {
+      if (!cancelled) setHasCheckedProfile(true)
+    })
+    return () => { cancelled = true }
+  }, [needsProfileCheck, syncProfile])
+
+  if (!hasToken) return <WelcomePage />
+  if (needsProfileCheck) return <PageFallback />
+  return hasCompletedOnboarding ? <Navigate to="/home" replace /> : <Navigate to="/profile-setup" replace />
+}
+
+function RequireAuth({ children }: { children: ReactNode }) {
+  if (!getAccessToken()) return <Navigate to="/" replace />
+  return children
+}
+
+function RequireAppReady({ children }: { children: ReactNode }) {
+  const hasCompletedOnboarding = useAppStore(s => s.hasCompletedOnboarding)
+  const syncProfile = useAppStore(s => s.syncProfile)
+  const [hasCheckedProfile, setHasCheckedProfile] = useState(false)
+  const hasToken = !!getAccessToken()
+  const needsProfileCheck = hasToken && !hasCompletedOnboarding && !hasCheckedProfile
+
+  useEffect(() => {
+    if (!needsProfileCheck) return
+    let cancelled = false
+    void syncProfile().finally(() => {
+      if (!cancelled) setHasCheckedProfile(true)
+    })
+    return () => { cancelled = true }
+  }, [needsProfileCheck, syncProfile])
+
+  if (!hasToken) return <Navigate to="/" replace />
+  if (needsProfileCheck) return <PageFallback />
+  if (!hasCompletedOnboarding) return <Navigate to="/profile-setup" replace />
+  return children
 }
 
 function TabOutlet() {
@@ -64,6 +108,12 @@ function TabOutlet() {
 }
 
 function AppLayout() {
+  const syncProfile = useAppStore(s => s.syncProfile)
+
+  useEffect(() => {
+    void syncProfile()
+  }, [syncProfile])
+
   return (
     <div
       className="bg-background text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden"
@@ -94,10 +144,10 @@ function AppRoutes() {
       <Route path="/" element={<RootGuard />} />
       <Route path="/register" element={<RegistrationPage />} />
       <Route path="/otp" element={<OtpPage />} />
-      <Route path="/notifications" element={<NotificationsPage />} />
-      <Route path="/profile-setup" element={<ProfileSetupPage />} />
+      <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
+      <Route path="/profile-setup" element={<RequireAuth><ProfileSetupPage /></RequireAuth>} />
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-      <Route element={<AppLayout />}>
+      <Route element={<RequireAppReady><AppLayout /></RequireAppReady>}>
         <Route path="/home" element={null} />
         <Route path="/bookmarks" element={null} />
         <Route path="/settings" element={null} />

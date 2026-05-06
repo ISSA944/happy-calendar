@@ -95,6 +95,7 @@ type AppState = {
   toggleHolidays: () => void
   showSupport: boolean
   toggleSupport: () => void
+  syncProfile: () => Promise<void>
 
   // Bookmarks (sync с бэком)
   bookmarks: Bookmark[]
@@ -196,7 +197,17 @@ export const useAppStore = create<AppState>()(
       setProfilePhoto: (profilePhoto) => set({ profilePhoto }),
 
       email: '',
-      setEmail: (email) => set({ email }),
+      setEmail: (email) => {
+        const next = email.trim()
+        const prev = get().email
+        set({ email: next })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { email: next }).catch((err) => {
+            console.warn('[store] Failed to sync email with backend', err)
+            set({ email: prev })
+          })
+        }
+      },
       birthDate: '',
       setBirthDate: (birthDate) => {
         set({ birthDate })
@@ -220,11 +231,78 @@ export const useAppStore = create<AppState>()(
       dismissInstallBanner: () => set({ installBannerDismissed: true }),
 
       showHoroscope: true,
-      toggleHoroscope: () => set((state) => ({ showHoroscope: !state.showHoroscope })),
+      toggleHoroscope: () => {
+        const next = !get().showHoroscope
+        set({ showHoroscope: next })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { horoscopeEnabled: next }).catch((err) => {
+            console.warn('[store] Failed to sync horoscopeEnabled with backend', err)
+            set({ showHoroscope: !next })
+          })
+        }
+      },
       showHolidays: false,
-      toggleHolidays: () => set((state) => ({ showHolidays: !state.showHolidays })),
+      toggleHolidays: () => {
+        const next = !get().showHolidays
+        set({ showHolidays: next })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { holidaysEnabled: next }).catch((err) => {
+            console.warn('[store] Failed to sync holidaysEnabled with backend', err)
+            set({ showHolidays: !next })
+          })
+        }
+      },
       showSupport: true,
-      toggleSupport: () => set((state) => ({ showSupport: !state.showSupport })),
+      toggleSupport: () => {
+        const next = !get().showSupport
+        set({ showSupport: next })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { supportEnabled: next }).catch((err) => {
+            console.warn('[store] Failed to sync supportEnabled with backend', err)
+            set({ showSupport: !next })
+          })
+        }
+      },
+
+      syncProfile: async () => {
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.get<{
+            user?: { email?: string; name?: string | null }
+            profile?: {
+              birthdate?: string | null
+              zodiacSign?: string | null
+              gender?: 'F' | 'M' | 'UNKNOWN' | string | null
+              avatarUrl?: string | null
+              currentMood?: string | null
+            } | null
+            prefs?: {
+              pushTime?: string | null
+              horoscopeEnabled?: boolean | null
+              holidaysEnabled?: boolean | null
+              supportEnabled?: boolean | null
+            } | null
+          }>('profile')
+
+          set({
+            email: data.user?.email ?? get().email,
+            userName: data.user?.name ?? get().userName,
+            birthDate: data.profile?.birthdate ?? get().birthDate,
+            zodiacSign: data.profile?.zodiacSign ?? get().zodiacSign,
+            hasCompletedOnboarding:
+              Boolean(data.profile?.birthdate && data.profile?.zodiacSign) || get().hasCompletedOnboarding,
+            gender: (data.profile?.gender as 'F' | 'M' | 'UNKNOWN' | undefined) ?? get().gender,
+            profilePhoto: data.profile?.avatarUrl ?? get().profilePhoto,
+            currentMood: data.profile?.currentMood ?? get().currentMood,
+            horoscopeTime: data.prefs?.pushTime ?? get().horoscopeTime,
+            showHoroscope: data.prefs?.horoscopeEnabled ?? get().showHoroscope,
+            showHolidays: data.prefs?.holidaysEnabled ?? get().showHolidays,
+            showSupport: data.prefs?.supportEnabled ?? get().showSupport,
+          })
+        } catch (err) {
+          console.warn('[store] Failed to fetch /profile', err)
+        }
+      },
 
       // Bookmarks
       bookmarks: [],

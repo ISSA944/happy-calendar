@@ -6,6 +6,7 @@ import { useFirebasePush } from '../hooks'
 import { CalendarSheet } from '../features/auth/CalendarSheet'
 import { TimePickerSheet } from '../features/auth/TimePickerSheet'
 import { isValidEmail } from '../utils/validation'
+import { prepareAvatarDataUrl } from '../utils/image'
 
 export function SettingsPage() {
   const navigate = useNavigate()
@@ -36,13 +37,14 @@ export function SettingsPage() {
 
   const handlePhotoClick = useCallback(() => fileInputRef.current?.click(), [])
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setProfilePhoto(reader.result as string)
-    reader.readAsDataURL(file)
-    e.target.value = ''
+    try {
+      setProfilePhoto(await prepareAvatarDataUrl(file))
+    } finally {
+      e.target.value = ''
+    }
   }, [setProfilePhoto])
 
   const handleSaveEmail = useCallback(() => {
@@ -268,4 +270,3 @@ const ToggleItem = memo(function ToggleItem({ label, isActive, onToggle }: { lab
     </div>
   )
 })
-

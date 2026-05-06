@@ -58,11 +58,9 @@ const WheelColumn = memo(function WheelColumn({
     // On iOS, scrollTop can carry sub-pixel values; re-assigning the same
     // integer triggers a new scroll event and restarts the jump cycle.
     if (Math.round(element.scrollTop / ITEM_HEIGHT) === selectedIndex) {
-      setDisplayIndex(selectedIndex)
       return
     }
     element.scrollTop = selectedIndex * ITEM_HEIGHT
-    setDisplayIndex(selectedIndex)
   }, [selectedIndex])
 
   useEffect(() => {

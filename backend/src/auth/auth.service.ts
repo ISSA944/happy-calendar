@@ -77,7 +77,7 @@ export class AuthService {
     this.logger.log(`Email provider: ${this.provider}`);
   }
 
-  async register(email: string, name?: string, _consents?: boolean) {
+  async register(email: string, name?: string, consents?: boolean) {
     const normalizedEmail = email.trim().toLowerCase();
 
     const user = await this.prisma.user.upsert({
@@ -85,6 +85,14 @@ export class AuthService {
       update: { name: name ?? undefined },
       create: { email: normalizedEmail, name: name ?? null },
     });
+
+    if (consents !== undefined) {
+      await this.prisma.prefs.upsert({
+        where: { userId: user.id },
+        update: { consentPd: consents },
+        create: { userId: user.id, consentPd: consents },
+      });
+    }
 
     const code = randomInt(1000, 10_000).toString();
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';

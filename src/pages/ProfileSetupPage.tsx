@@ -5,6 +5,7 @@ import { apiClient } from '../api'
 import { useFirebasePush } from '../hooks'
 import { useAppStore } from '../store'
 import { localTimeToUtc } from '../lib/time'
+import { prepareAvatarDataUrl } from '../utils/image'
 
 // Helper function to calculate Zodiac
 function getZodiac(dateStr: string): string | null {
@@ -64,6 +65,7 @@ export function ProfileSetupPage() {
   const horoscopeTime = useAppStore((s) => s.horoscopeTime)
   const showHoroscope = useAppStore((s) => s.showHoroscope)
   const showHolidays = useAppStore((s) => s.showHolidays)
+  const showSupport = useAppStore((s) => s.showSupport)
   const profilePhoto = useAppStore((s) => s.profilePhoto)
   const setProfilePhoto = useAppStore((s) => s.setProfilePhoto)
   const { syncPushSubscription } = useFirebasePush()
@@ -77,13 +79,14 @@ export function ProfileSetupPage() {
 
   const handlePhotoClick = () => fileInputRef.current?.click()
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setProfilePhoto(reader.result as string)
-    reader.readAsDataURL(file)
-    e.target.value = ''
+    try {
+      setProfilePhoto(await prepareAvatarDataUrl(file))
+    } finally {
+      e.target.value = ''
+    }
   }
 
   const zodiacSign = useMemo(() => getZodiac(birthDate), [birthDate])
@@ -104,6 +107,7 @@ export function ProfileSetupPage() {
         pushTime: localTimeToUtc(horoscopeTime),
         horoscopeEnabled: showHoroscope,
         holidaysEnabled: showHolidays,
+        supportEnabled: showSupport,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       })
 

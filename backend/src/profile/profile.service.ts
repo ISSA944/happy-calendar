@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
   IsBoolean,
+  IsEmail,
   IsOptional,
   IsString,
   MaxLength,
@@ -11,6 +12,11 @@ import { AiService } from '../ai';
 import { TodayService } from '../today/today.service';
 
 export class UpdateProfileDto {
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(120)
+  email?: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(32)
@@ -43,6 +49,10 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsBoolean()
   holidaysEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  supportEnabled?: boolean;
 
   @IsOptional()
   @IsString()
@@ -85,9 +95,17 @@ export class ProfileService {
       prefsData.horoscopeEnabled = dto.horoscopeEnabled;
     if (dto.holidaysEnabled !== undefined)
       prefsData.holidaysEnabled = dto.holidaysEnabled;
+    if (dto.supportEnabled !== undefined)
+      prefsData.supportEnabled = dto.supportEnabled;
     if (dto.timezone !== undefined) prefsData.timezone = dto.timezone;
 
-    const [profile, prefs] = await Promise.all([
+    const [user, profile, prefs] = await Promise.all([
+      dto.email !== undefined
+        ? this.prisma.user.update({
+            where: { id: userId },
+            data: { email: dto.email.trim().toLowerCase() },
+          })
+        : this.prisma.user.findUnique({ where: { id: userId } }),
       Object.keys(profileData).length
         ? this.prisma.profile.upsert({
             where: { userId },
@@ -104,7 +122,7 @@ export class ProfileService {
         : this.prisma.prefs.findUnique({ where: { userId } }),
     ]);
 
-    return { profile, prefs };
+    return { user, profile, prefs };
   }
 
   /**

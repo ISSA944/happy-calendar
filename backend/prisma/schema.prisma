@@ -60,6 +60,7 @@ model Prefs {
   fcmTokens        String[] @default([]) @map("fcm_tokens")
   horoscopeEnabled Boolean  @default(true) @map("horoscope_enabled")
   holidaysEnabled  Boolean  @default(false) @map("holidays_enabled")
+  supportEnabled   Boolean  @default(true) @map("support_enabled")
   consentPd        Boolean  @default(false) @map("consent_pd")
   timezone         String   @default("Europe/Moscow")
   createdAt        DateTime @default(now()) @map("created_at")
