@@ -163,6 +163,11 @@ export default function App() {
   useFirebaseForegroundNotifications()
   const showOnboardingLoader = useAppStore(s => s.showOnboardingLoader)
 
+  useEffect(() => {
+    const img = new Image()
+    img.src = '/loader-lotus.png'
+  }, [])
+
   return (
     <BrowserRouter>
       <div
