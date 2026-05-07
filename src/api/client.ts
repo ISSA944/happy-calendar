@@ -1,7 +1,21 @@
 import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios'
 import { clearAuthTokens, getAccessToken, getRefreshToken, setAuthTokens } from '../auth/token-storage'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? '/api'
+function resolveApiBaseUrl() {
+  const envBaseUrl = import.meta.env.VITE_API_BASE_URL
+  if (envBaseUrl) return envBaseUrl
+
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname
+    if (host === 'yoyojoy.online' || host.endsWith('.vercel.app')) {
+      return 'https://api.yoyojoy.online/api'
+    }
+  }
+
+  return '/api'
+}
+
+const baseURL = resolveApiBaseUrl()
 
 export const apiClient = axios.create({
   baseURL,
