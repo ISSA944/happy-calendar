@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, startTransition } from 'react'
+import { flushSync } from 'react-dom'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { apiClient } from '../api'
@@ -116,9 +117,11 @@ export function ProfileSetupPage() {
       storeBirthDate(birthDate)
       storeGender(gender)
       storeZodiac(zodiacSign ?? '')
-      setHasCompletedOnboarding(true)
-      setShowOnboardingLoader(true)  // включить прелоадер перед переходом на Home
-      navigate('/home')
+      flushSync(() => {
+        setShowOnboardingLoader(true)
+        setHasCompletedOnboarding(true)
+      })
+      requestAnimationFrame(() => navigate('/home'))
     } catch {
       setSubmitError('Не удалось сохранить профиль. Проверь соединение и попробуй ещё раз.')
     } finally {
