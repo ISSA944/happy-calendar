@@ -4,6 +4,7 @@ import { localTimeToUtc } from '../lib/time'
 import { apiClient } from '../api'
 import { getAccessToken, clearAuthTokens } from '../auth/token-storage'
 import { clearStoredFcmToken } from '../lib/firebase'
+import { getMoodImage } from '../services/content.service'
 
 export type BookmarkType = 'гороскоп' | 'поддержка'
 
@@ -107,6 +108,21 @@ type AppState = {
   resetApp: () => Promise<void>
 }
 
+function delay(ms: number) {
+  return new Promise<void>(resolve => setTimeout(resolve, ms))
+}
+
+function preloadImage(src: string) {
+  if (typeof window === 'undefined' || !src) return Promise.resolve()
+
+  return new Promise<void>(resolve => {
+    const img = new Image()
+    img.onload = () => resolve()
+    img.onerror = () => resolve()
+    img.src = src
+  })
+}
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -126,21 +142,26 @@ export const useAppStore = create<AppState>()(
         }
         // Если показываем прелоадер — держим минимум 4.5 сек для плавного UX
         const isLoaderShowing = get().showOnboardingLoader
-        const minWait = isLoaderShowing
-          ? new Promise<void>(r => setTimeout(r, 4500))
-          : Promise.resolve()
+        const minWait = isLoaderShowing ? delay(4500) : Promise.resolve()
         try {
-          const [{ data }] = await Promise.all([
-            apiClient.get<TodayResponse>('today'),
-            minWait,
-          ])
+          const { data } = await apiClient.get<TodayResponse>('today')
+          const nextPack = {
+            date: data.date,
+            horoscope: data.horoscope,
+            supportPhrase: data.support.text,
+            holiday: data.holiday?.title ?? null,
+          }
+
+          set({ dailyPack: nextPack })
+
+          if (isLoaderShowing) {
+            await Promise.all([
+              minWait,
+              preloadImage(getMoodImage(get().currentMood)),
+            ])
+          }
+
           set({
-            dailyPack: {
-              date: data.date,
-              horoscope: data.horoscope,
-              supportPhrase: data.support.text,
-              holiday: data.holiday?.title ?? null,
-            },
             showOnboardingLoader: false,
           })
         } catch (err) {

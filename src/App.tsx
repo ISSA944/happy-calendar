@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BottomNav } from './components/BottomNav'
+import { PageLoader } from './components/ui/PageLoader'
 import { useAppStore } from './store'
 import { useFirebaseForegroundNotifications } from './hooks/useFirebasePush'
 import { getAccessToken } from './auth/token-storage'
@@ -160,6 +161,7 @@ function AppRoutes() {
 
 export default function App() {
   useFirebaseForegroundNotifications()
+  const showOnboardingLoader = useAppStore(s => s.showOnboardingLoader)
 
   return (
     <BrowserRouter>
@@ -167,6 +169,7 @@ export default function App() {
         className="relative w-full h-[100dvh] overflow-hidden"
         style={{ background: '#fcf9f4' }}
       >
+        <PageLoader show={showOnboardingLoader} />
         <Suspense fallback={<PageFallback />}>
           <AppRoutes />
         </Suspense>

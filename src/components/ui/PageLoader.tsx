@@ -1,115 +1,111 @@
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 
+function LotusMark() {
+  return (
+    <svg
+      viewBox="0 0 120 120"
+      aria-hidden="true"
+      className="h-28 w-28 landscape:h-24 landscape:w-24"
+    >
+      <defs>
+        <linearGradient id="lotus-petal" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#87f5ec" />
+          <stop offset="100%" stopColor="#006a65" />
+        </linearGradient>
+      </defs>
+      <g fill="none" stroke="url(#lotus-petal)" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M60 75C45 58 48 35 60 20c12 15 15 38 0 55Z" strokeWidth="5" />
+        <path d="M50 78C30 69 23 48 28 32c17 7 30 24 22 46Z" strokeWidth="5" opacity="0.78" />
+        <path d="M70 78c20-9 27-30 22-46-17 7-30 24-22 46Z" strokeWidth="5" opacity="0.78" />
+        <path d="M43 83C26 82 14 70 11 55c15-1 30 7 32 28Z" strokeWidth="5" opacity="0.52" />
+        <path d="M77 83c17-1 29-13 32-28-15-1-30 7-32 28Z" strokeWidth="5" opacity="0.52" />
+        <path d="M31 90c17 10 41 10 58 0" strokeWidth="6" opacity="0.85" />
+      </g>
+    </svg>
+  )
+}
+
 export function PageLoader({ show }: { show: boolean }) {
   return createPortal(
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {show && (
         <motion.div
           key="page-loader"
-          initial={{ opacity: 0 }}
+          initial={{ opacity: 0, scale: 1.01 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
-          // fixed inset-0 + z-[9999] — поверх BottomNav и всех motion-контейнеров
-          className="fixed inset-0 z-[9999] flex items-center justify-center"
+          exit={{ opacity: 0, scale: 1.01 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden"
           style={{ background: '#fcf9f4' }}
         >
-          {/* Свечение — Framer Motion pulse (не зависит от CSS) */}
           <motion.div
-            className="absolute rounded-full pointer-events-none"
+            className="absolute pointer-events-none rounded-full"
             style={{
-              width: 384,
-              height: 384,
-              background: 'rgba(47,167,160,0.2)',
-              filter: 'blur(100px)',
+              width: 340,
+              height: 340,
+              background: 'rgba(106,216,208,0.22)',
+              filter: 'blur(84px)',
             }}
-            animate={{ opacity: [1, 0.45, 1] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+            animate={{ opacity: [0.55, 0.9, 0.55], scale: [0.96, 1.04, 0.96] }}
+            transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
           />
 
-          {/* Portrait: flex-col / Landscape: flex-row */}
-          <div className="relative z-10 flex flex-col landscape:flex-row items-center justify-center gap-12 landscape:gap-16 px-8 w-full max-w-md landscape:max-w-2xl">
-
-            {/* ── Иллюстрация с кольцами ── */}
-            <div className="relative w-64 h-64 landscape:w-48 landscape:h-48 flex items-center justify-center shrink-0">
-
-              {/* Внешнее кольцо — Framer Motion rotate (не зависит от @keyframes spin) */}
+          <div className="relative z-10 flex w-full max-w-[360px] flex-col items-center justify-center gap-10 px-8 landscape:max-w-[620px] landscape:flex-row landscape:gap-14">
+            <div className="relative flex h-44 w-44 shrink-0 items-center justify-center landscape:h-36 landscape:w-36">
               <motion.div
-                className="absolute inset-0 rounded-full"
-                style={{ border: '0.5px solid rgba(188,201,199,0.3)' }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+                className="absolute inset-0 rounded-full border"
+                style={{ borderColor: 'rgba(0,106,101,0.14)' }}
+                animate={{ scale: [0.96, 1, 0.96], opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
               />
-
-              {/* Внутреннее кольцо — крутится в обратную сторону */}
               <motion.div
-                className="absolute inset-4 rounded-full"
-                style={{ border: '0.5px solid rgba(188,201,199,0.2)' }}
-                animate={{ rotate: -360 }}
-                transition={{ duration: 45, repeat: Infinity, ease: 'linear' }}
+                className="absolute inset-5 rounded-full border"
+                style={{ borderColor: 'rgba(47,167,160,0.2)' }}
+                animate={{ scale: [1, 0.94, 1], opacity: [0.62, 0.95, 0.62] }}
+                transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.25 }}
               />
-
-              {/* Лотос */}
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-5hQlzsfN7kyr1jvMIFYfYkdH6R8KRtaqnmUcqq9ySPKt7gUUiNtm9F38muaNrKTl-n59RLmAPLj8GAWWotShAtbpoydMxcjBljIbmEtE0-nS0oE0MKt2KxOL-Wz8Lmxj5VMnhhDsz9AJdt-48egL-iCXPrEvaVpSbJakseVP5DlT2MZMi6casgFo6PiShnn69BjTDgYNW1qdE8qDSSNQTz26U2WmWQJu7FsQ43DNz30iY6tQkOP7FyDCoCFyikqcLYLTYTJogGHC"
-                alt=""
-                className="w-48 h-48 landscape:w-32 landscape:h-32 object-cover rounded-full"
-                style={{
-                  mixBlendMode: 'multiply',
-                  opacity: 0.9,
-                  boxShadow: '0 20px 40px -15px rgba(0,106,101,0.1)',
-                }}
-              />
+              <motion.div
+                initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <LotusMark />
+              </motion.div>
             </div>
 
-            {/* ── Текст + прогресс ── */}
-            <div className="flex flex-col items-center landscape:items-start gap-6 w-full">
+            <div className="flex w-full flex-col items-center gap-5 landscape:items-start">
+              <div className="space-y-2 text-center landscape:text-left">
+                <h1 className="font-headline text-[22px] font-bold leading-tight text-[#1c1c19] landscape:text-2xl">
+                  Создаём ваше личное пространство
+                </h1>
+                <p className="font-body text-sm font-medium text-[#3d4948]/70">
+                  Подбираем гороскоп и поддержку на сегодня
+                </p>
+              </div>
 
-              <h1
-                className="text-xl landscape:text-2xl font-medium text-[#1c1c19] text-center landscape:text-left tracking-tight"
-                style={{ fontFamily: 'Manrope, sans-serif' }}
-              >
-                Создаём ваше личное пространство...
-              </h1>
-
-              {/* Прогресс-бар: Framer Motion анимирует width 5% → 86% за 4.2с */}
               <div
-                className="w-48 landscape:w-64 rounded-full overflow-hidden"
-                style={{ height: 4, background: '#e5e2dd' }}
+                className="relative h-3 w-full max-w-[260px] overflow-hidden rounded-full landscape:max-w-[300px]"
+                style={{ background: '#e5e2dd' }}
               >
-                {/* Blur-слой пульсирует */}
                 <motion.div
-                  className="absolute h-1 rounded-full"
+                  className="absolute inset-y-0 left-0 rounded-full"
                   style={{
-                    width: '50%',
-                    background: 'linear-gradient(to right, #006a65, #2fa7a0)',
-                    filter: 'blur(2px)',
+                    background: 'linear-gradient(90deg, #006a65 0%, #2fa7a0 100%)',
+                    boxShadow: '0 0 18px rgba(47,167,160,0.28)',
                   }}
-                  animate={{ opacity: [0.6, 1, 0.6] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                {/* Основной прогресс */}
-                <motion.div
-                  className="h-full rounded-full"
-                  style={{ background: 'linear-gradient(to right, #006a65, #2fa7a0)' }}
-                  initial={{ width: '5%' }}
-                  animate={{ width: '86%' }}
-                  transition={{ duration: 4.2, ease: [0.1, 0, 0.25, 1] }}
+                  initial={{ width: '12%' }}
+                  animate={{ width: ['12%', '52%', '76%', '92%'] }}
+                  transition={{ duration: 4.4, times: [0, 0.42, 0.74, 1], ease: [0.22, 1, 0.36, 1] }}
                 />
               </div>
 
-              {/* "Дышите медленно" — Framer Motion opacity pulse */}
               <motion.p
-                className="text-sm text-center landscape:text-left"
-                style={{
-                  color: 'rgba(61,73,72,0.7)',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                }}
-                animate={{ opacity: [1, 0.45, 1] }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                className="font-body text-sm font-semibold text-[#006a65]/75"
+                animate={{ opacity: [0.65, 1, 0.65] }}
+                transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
               >
-                Дышите медленно
+                Почти готово
               </motion.p>
             </div>
           </div>
