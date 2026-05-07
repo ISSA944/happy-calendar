@@ -69,6 +69,7 @@ apiClient.interceptors.response.use(
       original.url?.includes('/auth/refresh') ||
       original.url?.includes('/auth/register') ||
       original.url?.includes('/auth/verify-otp') ||
+      original.url?.includes('/auth/email-change/verify') ||
       !getRefreshToken()
     ) {
       return Promise.reject(error)

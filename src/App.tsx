@@ -15,13 +15,12 @@ import { getAccessToken } from './auth/token-storage'
 
 // Home stays static because it is the primary post-onboarding screen.
 import { HomePage } from './pages/HomePage'
+import { BookmarksPage } from './pages/BookmarksPage'
+import { SettingsPage } from './pages/SettingsPage'
+import { NotificationsListPage } from './pages/NotificationsListPage'
 
 // WelcomePage is static — it's the first screen new users see, no lazy flash.
 import { WelcomePage } from './pages/WelcomePage'
-
-const BookmarksPage = lazy(() => import('./pages/BookmarksPage').then(m => ({ default: m.BookmarksPage })))
-const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
-const NotificationsListPage = lazy(() => import('./pages/NotificationsListPage').then(m => ({ default: m.NotificationsListPage })))
 
 // Remaining auth pages are lazy (loaded once per session).
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
@@ -29,6 +28,8 @@ const OtpPage = lazy(() => import('./pages/OtpPage').then(m => ({ default: m.Otp
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })))
 const ProfileSetupPage = lazy(() => import('./pages/ProfileSetupPage').then(m => ({ default: m.ProfileSetupPage })))
 const RegistrationPage = lazy(() => import('./pages/RegistrationPage').then(m => ({ default: m.RegistrationPage })))
+const ChangeEmailPage = lazy(() => import('./pages/ChangeEmailPage').then(m => ({ default: m.ChangeEmailPage })))
+const ChangeEmailOtpPage = lazy(() => import('./pages/ChangeEmailOtpPage').then(m => ({ default: m.ChangeEmailOtpPage })))
 
 const APP_SHELL_ROUTES: readonly string[] = ['/home', '/bookmarks', '/settings', '/notifications-list']
 
@@ -146,6 +147,8 @@ function AppRoutes() {
       <Route path="/register" element={<RegistrationPage />} />
       <Route path="/otp" element={<OtpPage />} />
       <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
+      <Route path="/change-email" element={<RequireAuth><ChangeEmailPage /></RequireAuth>} />
+      <Route path="/change-email-otp" element={<RequireAuth><ChangeEmailOtpPage /></RequireAuth>} />
       <Route path="/profile-setup" element={<RequireAuth><ProfileSetupPage /></RequireAuth>} />
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       <Route element={<RequireAppReady><AppLayout /></RequireAppReady>}>

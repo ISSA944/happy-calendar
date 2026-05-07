@@ -118,11 +118,20 @@ export class NotificationCronService {
         }
 
         if (hasSuccessfulSend) {
+          const profile = await this.prisma.profile.findUnique({
+            where: { userId: prefs.userId },
+            select: { currentMood: true },
+          });
+
           await this.prisma.notification.create({
             data: {
               userId: prefs.userId,
               type: content.type,
               status: 'sent',
+              title: content.title,
+              body: content.body,
+              date: pack.date,
+              mood: profile?.currentMood ?? null,
             },
           });
         }

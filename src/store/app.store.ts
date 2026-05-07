@@ -218,17 +218,7 @@ export const useAppStore = create<AppState>()(
       setProfilePhoto: (profilePhoto) => set({ profilePhoto }),
 
       email: '',
-      setEmail: (email) => {
-        const next = email.trim()
-        const prev = get().email
-        set({ email: next })
-        if (getAccessToken()) {
-          apiClient.patch('profile', { email: next }).catch((err) => {
-            console.warn('[store] Failed to sync email with backend', err)
-            set({ email: prev })
-          })
-        }
-      },
+      setEmail: (email) => set({ email: email.trim() }),
       birthDate: '',
       setBirthDate: (birthDate) => {
         set({ birthDate })

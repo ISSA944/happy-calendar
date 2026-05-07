@@ -1,7 +1,9 @@
+import { useEffect, useMemo, useState } from 'react'
 import { motion, type Variants } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
 import { getMoodImage } from '../services/content.service'
+import { apiClient } from '../api'
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -12,33 +14,49 @@ const itemVariants: Variants = {
   show: { opacity: 1, transition: { duration: 0.25, ease: 'easeOut' } },
 }
 
+type NotificationItem = {
+  id: string
+  sentAt: string
+  type: string
+  title: string | null
+  body: string | null
+  date: string | null
+  mood: string | null
+}
+
+function notificationIcon(type: string) {
+  if (type.includes('horoscope')) return { icon: 'stars', fill: true }
+  if (type.includes('support')) return { icon: 'favorite', fill: true }
+  if (type.includes('holiday')) return { icon: 'celebration', fill: false }
+  return { icon: 'notifications', fill: false }
+}
+
 export function NotificationsListPage() {
   const navigate   = useNavigate()
-  const dailyPack  = useAppStore(s => s.dailyPack)
   const currentMood = useAppStore(s => s.currentMood)
-  const moodImage  = getMoodImage(currentMood)
+  const [items, setItems] = useState<NotificationItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Собираем карточки из реального контента — только то, что есть
-  const cards = [
-    dailyPack?.horoscope && {
-      icon: 'stars',
-      fill: true,
-      title: 'Гороскоп на сегодня',
-      body: dailyPack.horoscope.main,
-    },
-    dailyPack?.supportPhrase && {
-      icon: 'favorite',
-      fill: true,
-      title: 'Поддержка',
-      body: dailyPack.supportPhrase,
-    },
-    dailyPack?.holiday && {
-      icon: 'celebration',
-      fill: false,
-      title: 'Праздник дня',
-      body: dailyPack.holiday,
-    },
-  ].filter(Boolean) as { icon: string; fill: boolean; title: string; body: string }[]
+  useEffect(() => {
+    let cancelled = false
+    apiClient.get<NotificationItem[]>('notifications')
+      .then(({ data }) => {
+        if (!cancelled) setItems(data)
+      })
+      .catch((err) => {
+        console.warn('[notifications] Failed to fetch notifications', err)
+        if (!cancelled) setItems([])
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  const heroMoodImage = useMemo(
+    () => getMoodImage(items[0]?.mood || currentMood),
+    [currentMood, items],
+  )
 
   return (
     <motion.div
@@ -72,35 +90,41 @@ export function NotificationsListPage() {
           </p>
         </motion.div>
 
-        {/* Карточки из реального контента */}
+        {/* Карточки из реально отправленных push-уведомлений */}
         <div className="space-y-4">
-          {cards.length > 0 ? (
-            cards.map((card, i) => (
+          {items.length > 0 ? (
+            items.map((item) => {
+              const icon = notificationIcon(item.type)
+              return (
               <motion.div
-                key={i}
+                key={item.id}
                 variants={itemVariants}
                 className="bg-white p-5 rounded-[20px] flex gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-white/50"
               >
                 <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <span
                     className="material-symbols-outlined text-primary"
-                    style={card.fill ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                    style={icon.fill ? { fontVariationSettings: "'FILL' 1" } : undefined}
                   >
-                    {card.icon}
+                    {icon.icon}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-headline font-bold text-on-surface text-[15px] leading-snug mb-1">
-                    {card.title}
+                    {item.title || 'Уведомление'}
                   </h3>
                   <p className="text-on-surface-variant text-[14px] leading-snug line-clamp-3">
-                    {card.body}
+                    {item.body || 'Текст уведомления недоступен'}
                   </p>
                 </div>
               </motion.div>
-            ))
+            )})
+          ) : isLoading ? (
+            <motion.div variants={itemVariants} className="flex flex-col items-center gap-3 py-12 text-center">
+              <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30">hourglass_empty</span>
+              <p className="text-on-surface-variant/60 text-sm font-medium">Загружаем уведомления...</p>
+            </motion.div>
           ) : (
-            /* Пустое состояние — нет данных */
             <motion.div
               variants={itemVariants}
               className="flex flex-col items-center gap-3 py-12 text-center"
@@ -118,16 +142,16 @@ export function NotificationsListPage() {
           )}
 
           {/* Фото меняется по настроению */}
-          {cards.length > 0 && (
+          {items.length > 0 && (
             <motion.div
               variants={itemVariants}
-              key={currentMood}
+              key={heroMoodImage}
               className="mt-2 overflow-hidden rounded-[20px] aspect-[16/10]"
             >
               <img
                 alt={currentMood}
                 className="w-full h-full object-cover"
-                src={moodImage}
+                src={heroMoodImage}
                 loading="lazy"
               />
             </motion.div>

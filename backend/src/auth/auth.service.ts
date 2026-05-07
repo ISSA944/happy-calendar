@@ -1,4 +1,6 @@
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -160,6 +162,106 @@ export class AuthService {
     });
 
     return this.issueTokens(user.id, user.email);
+  }
+
+  async requestEmailChange(
+    userId: string,
+    email: string,
+    consents?: boolean,
+  ) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const currentUser = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!currentUser) throw new UnauthorizedException('User not found');
+    if (currentUser.email === normalizedEmail) {
+      throw new BadRequestException('Email is unchanged');
+    }
+
+    const existing = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+    if (existing && existing.id !== userId) {
+      throw new ConflictException('Email already in use');
+    }
+
+    const code = randomInt(1000, 10_000).toString();
+    const isDev = this.config.get<string>('NODE_ENV') !== 'production';
+
+    try {
+      await this.sendOtpEmail(normalizedEmail, code);
+    } catch (err) {
+      if (!isDev) throw err;
+      this.logger.warn(
+        `\n⚠️  DEV MODE — email change send failed for <${normalizedEmail}>.\n` +
+        `   OTP code: [ ${code} ]  (enter this on the email-change OTP page)\n`,
+      );
+    }
+
+    const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
+    const otpExpiresAt = new Date(Date.now() + this.OTP_TTL_MIN * 60_000);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          pendingEmail: normalizedEmail,
+          emailChangeOtpHash: otpHash,
+          emailChangeOtpExpiresAt: otpExpiresAt,
+        },
+      }),
+      consents !== undefined
+        ? this.prisma.prefs.upsert({
+            where: { userId },
+            update: { consentPd: consents },
+            create: { userId, consentPd: consents },
+          })
+        : this.prisma.prefs.upsert({
+            where: { userId },
+            update: {},
+            create: { userId },
+          }),
+    ]);
+
+    return { ok: true, email: normalizedEmail };
+  }
+
+  async verifyEmailChange(userId: string, email: string, code: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (
+      !user ||
+      user.pendingEmail !== normalizedEmail ||
+      !user.emailChangeOtpHash ||
+      !user.emailChangeOtpExpiresAt
+    ) {
+      throw new UnauthorizedException('Email change OTP not requested');
+    }
+
+    if (user.emailChangeOtpExpiresAt.getTime() < Date.now()) {
+      throw new UnauthorizedException('OTP expired');
+    }
+
+    const ok = await bcrypt.compare(code, user.emailChangeOtpHash);
+    if (!ok) throw new UnauthorizedException('Invalid OTP');
+
+    const existing = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+    if (existing && existing.id !== userId) {
+      throw new ConflictException('Email already in use');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        email: normalizedEmail,
+        pendingEmail: null,
+        emailChangeOtpHash: null,
+        emailChangeOtpExpiresAt: null,
+      },
+    });
+
+    return this.issueTokens(updated.id, updated.email);
   }
 
   async refresh(refreshToken: string) {

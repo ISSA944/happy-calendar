@@ -1,20 +1,20 @@
-import { memo, useCallback, useRef, useState, startTransition } from 'react'
-import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { memo, useCallback, useEffect, useRef, useState, startTransition } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
 import { useFirebasePush } from '../hooks'
 import { CalendarSheet } from '../features/auth/CalendarSheet'
 import { TimePickerSheet } from '../features/auth/TimePickerSheet'
-import { isValidEmail } from '../utils/validation'
 import { prepareAvatarDataUrl } from '../utils/image'
 
 export function SettingsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { permission, requestPermissionAndSubscribe, syncPushSubscription } = useFirebasePush()
 
   const {
     userName,
-    email, setEmail,
+    email,
     birthDate, setBirthDate,
     horoscopeTime, setHoroscopeTime,
     profilePhoto, setProfilePhoto,
@@ -30,10 +30,17 @@ export function SettingsPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [editingEmail, setEditingEmail] = useState(false)
-  const [emailDraft, setEmailDraft] = useState(email)
+  const [isEmailConfirmOpen, setIsEmailConfirmOpen] = useState(false)
+  const [showEmailSuccess, setShowEmailSuccess] = useState(false)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
+
+  useEffect(() => {
+    if ((location.state as { emailChanged?: boolean } | null)?.emailChanged) {
+      setShowEmailSuccess(true)
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
 
   const handlePhotoClick = useCallback(() => fileInputRef.current?.click(), [])
 
@@ -46,15 +53,6 @@ export function SettingsPage() {
       e.target.value = ''
     }
   }, [setProfilePhoto])
-
-  const handleSaveEmail = useCallback(() => {
-    if (!isValidEmail(emailDraft)) return
-    setEmail(emailDraft.trim())
-    setEditingEmail(false)
-  }, [emailDraft, setEmail])
-
-  const isDraftValid = isValidEmail(emailDraft)
-  const showEmailError = emailDraft.length > 0 && !isDraftValid
 
   const handleBack = useCallback(() => navigate(-1), [navigate])
   const openCalendar = useCallback(() => setIsCalendarOpen(true), [])
@@ -71,7 +69,7 @@ export function SettingsPage() {
     setIsTimePickerOpen(false)
     startTransition(() => setHoroscopeTime(time))
     // If the user never granted notification permission during onboarding,
-    // ask now. Otherwise, refresh the FCM token just in case it rotated.
+    // ask now. Otherwise, refresh the FCM/Web Push subscription.
     if (permission === 'default') {
       void requestPermissionAndSubscribe()
     } else if (permission === 'granted') {
@@ -138,45 +136,19 @@ export function SettingsPage() {
         {/* Account Section */}
         <section className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-span-2 landscape:row-start-2">
           <div className="flex flex-col gap-5">
-
             {/* Email */}
             <div className="flex flex-col gap-2">
               <label className="text-xs font-semibold text-on-surface-variant px-1">Электронная почта</label>
-              {editingEmail ? (
-                <div className="flex flex-col gap-1">
-                  <div className="flex gap-2 items-center">
-                    <input
-                      autoFocus
-                      type="email"
-                      value={emailDraft}
-                      onChange={(e) => setEmailDraft(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEmail() }}
-                      style={{ fontSize: '16px' }}
-                      className={`flex-1 bg-surface-container-low rounded-xl px-5 py-3.5 text-on-surface border outline-none focus:ring-2 text-sm transition-colors ${showEmailError ? 'border-red-300 focus:ring-red-200' : 'border-primary/40 focus:ring-primary/20'}`}
-                    />
-                    <button
-                      onClick={handleSaveEmail}
-                      disabled={!isDraftValid}
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform ${isDraftValid ? 'bg-primary active:scale-95' : 'bg-primary/30 opacity-40 cursor-not-allowed'}`}
-                    >
-                      <span className="material-symbols-outlined text-white text-[18px]">check</span>
-                    </button>
-                  </div>
-                  {showEmailError && (
-                    <p className="text-xs text-red-500 mt-1 pl-1">Введите корректный email</p>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5">
-                  <span className="text-on-surface-variant text-sm">{email || '—'}</span>
-                  <button
-                    onClick={() => { setEmailDraft(email); setEditingEmail(true) }}
-                    className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors ml-3 flex-shrink-0"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">edit</span>
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5">
+                <span className="text-on-surface-variant text-sm">{email || '—'}</span>
+                <button
+                  onClick={() => setIsEmailConfirmOpen(true)}
+                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors ml-3 flex-shrink-0"
+                  aria-label="Поменять электронную почту"
+                >
+                  <span className="material-symbols-outlined text-[18px]">edit</span>
+                </button>
+              </div>
             </div>
 
             {/* Birth Date */}
@@ -210,9 +182,10 @@ export function SettingsPage() {
           </div>
         </section>
 
-        {/* Контент */}
+        {/* Контент уведомлений */}
         <section className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-start-2 landscape:row-start-1">
-          <h2 className="text-sm font-bold text-on-surface mb-5 px-1 uppercase tracking-wider opacity-60">Контент</h2>
+          <h2 className="text-sm font-bold text-on-surface mb-2 px-1 uppercase tracking-wider opacity-60">Контент уведомлений</h2>
+          <p className="text-xs text-on-surface-variant/70 mb-5 px-1">Что вы хотите получать от нас в своих уведомлениях.</p>
           <div className="flex flex-col gap-6">
             <ToggleItem label="Гороскоп" isActive={showHoroscope} onToggle={toggleHoroscope} />
             <ToggleItem label="Праздники" isActive={showHolidays} onToggle={toggleHolidays} />
@@ -248,6 +221,92 @@ export function SettingsPage() {
         onSave={handleSaveTime}
         onCancel={closeTimePicker}
       />
+
+      <AnimatePresence>
+        {isEmailConfirmOpen && (
+          <motion.div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-inverse-surface/40 backdrop-blur-sm p-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsEmailConfirmOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="bg-surface-container-lowest w-full max-w-sm rounded-[2rem] p-8 shadow-[0_20px_40px_rgba(0,0,0,0.08)] flex flex-col items-center text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-16 h-16 rounded-full bg-error-container/30 text-error flex items-center justify-center mb-6">
+                <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
+              </div>
+              <h2 className="font-headline text-xl font-bold text-on-surface mb-8 leading-snug">
+                Вы точно хотите поменять свою электронную почту?
+              </h2>
+              <div className="flex flex-col w-full gap-3">
+                <button
+                  onClick={() => {
+                    setIsEmailConfirmOpen(false)
+                    navigate('/change-email')
+                  }}
+                  className="w-full min-h-[44px] rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-body font-medium text-base hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(0,106,101,0.2)]"
+                >
+                  Да
+                </button>
+                <button
+                  onClick={() => setIsEmailConfirmOpen(false)}
+                  className="w-full min-h-[44px] rounded-full bg-transparent text-on-surface-variant font-body font-medium text-base hover:bg-surface-container-low transition-colors"
+                >
+                  Отмена
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showEmailSuccess && (
+          <motion.div
+            className="fixed inset-0 z-[9999] flex items-end justify-center bg-on-background/40 backdrop-blur-[20px] p-0 landscape:items-center landscape:p-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 28, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 24, scale: 0.98 }}
+              transition={{ duration: 0.24, ease: 'easeOut' }}
+              className="relative w-full max-w-md overflow-hidden rounded-t-[2.5rem] bg-surface-container-lowest px-8 pb-[max(3rem,env(safe-area-inset-bottom))] pt-8 text-center shadow-[0_32px_64px_-12px_rgba(28,28,25,0.15)] landscape:rounded-[2.5rem] landscape:pb-8"
+            >
+              <div className="mx-auto mb-8 h-1.5 w-12 rounded-full bg-surface-dim landscape:hidden" />
+              <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-48 -translate-x-1/2 rounded-full bg-primary-container opacity-30 blur-[80px]" />
+              <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary-container/20 text-primary">
+                <div className="absolute inset-0 rounded-full bg-primary-container/10 blur-md" />
+                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  check_circle
+                </span>
+              </div>
+              <h2 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
+                Почта успешно изменена
+              </h2>
+              <p className="mx-auto mb-10 mt-3 max-w-[280px] text-base leading-relaxed text-on-surface-variant">
+                Ваш профиль обновлён. Теперь используйте новый адрес для входа.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowEmailSuccess(false)}
+                className="h-14 w-full rounded-full bg-gradient-to-r from-primary to-primary-container px-6 font-headline text-[17px] font-semibold text-on-primary shadow-[0_8px_24px_-8px_rgba(0,106,101,0.4)] transition-all active:scale-[0.98]"
+              >
+                Готово
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
