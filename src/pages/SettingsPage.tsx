@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState, startTransition } from 
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
-import { useFirebasePush } from '../hooks'
+import { useWebPush } from '../hooks'
 import { CalendarSheet } from '../features/auth/CalendarSheet'
 import { TimePickerSheet } from '../features/auth/TimePickerSheet'
 import { prepareAvatarDataUrl } from '../utils/image'
@@ -10,7 +10,7 @@ import { prepareAvatarDataUrl } from '../utils/image'
 export function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { permission, requestPermissionAndSubscribe, syncPushSubscription } = useFirebasePush()
+  const { permission, subscribe } = useWebPush()
 
   const {
     userName,
@@ -70,10 +70,8 @@ export function SettingsPage() {
     startTransition(() => setHoroscopeTime(time))
     // If the user never granted notification permission during onboarding,
     // ask now. Otherwise, refresh the FCM/Web Push subscription.
-    if (permission === 'default') {
-      void requestPermissionAndSubscribe()
-    } else if (permission === 'granted') {
-      void syncPushSubscription()
+    if (permission === 'default' || permission === 'granted') {
+      void subscribe()
     }
   }, [setHoroscopeTime, permission, requestPermissionAndSubscribe, syncPushSubscription])
 

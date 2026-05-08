@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma';
-import { FirebaseService } from '../firebase/firebase.service';
 import { TodayService } from '../today/today.service';
 import { WebPushService } from '../push/web-push.service';
 
@@ -16,7 +15,6 @@ export class NotificationCronService {
   private readonly logger = new Logger(NotificationCronService.name);
   constructor(
     private readonly prisma: PrismaService,
-    private readonly firebaseService: FirebaseService,
     private readonly todayService: TodayService,
     private readonly webPushService: WebPushService,
   ) {}
@@ -38,16 +36,12 @@ export class NotificationCronService {
             ],
           },
           {
-            OR: [
-              { fcmTokens: { isEmpty: false } },
-              { user: { webPushSubscriptions: { some: {} } } },
-            ],
+            user: { webPushSubscriptions: { some: {} } },
           },
         ],
       },
       select: {
         userId: true,
-        fcmTokens: true,
         horoscopeEnabled: true,
         holidaysEnabled: true,
         supportEnabled: true,
@@ -75,24 +69,6 @@ export class NotificationCronService {
         }
 
         let hasSuccessfulSend = false;
-
-        for (const token of prefs.fcmTokens) {
-          const response = await this.firebaseService.sendPushNotification(
-            token,
-            content.title,
-            content.body,
-            {
-              userId: prefs.userId,
-              date: pack.date,
-              type: content.type,
-              url: 'https://yoyojoy.online/home',
-            },
-          );
-
-          if (response) {
-            hasSuccessfulSend = true;
-          }
-        }
 
         for (const subscription of prefs.user.webPushSubscriptions) {
           const response = await this.webPushService.send(

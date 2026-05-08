@@ -1,7 +1,7 @@
 import { useState, startTransition } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { useFirebasePush } from '../hooks'
+import { useWebPush } from '../hooks'
 import { useAppStore } from '../store'
 import { TimePickerSheet } from '../features/auth/TimePickerSheet'
 
@@ -53,7 +53,7 @@ function ToggleRow({
 
 export function NotificationsPage() {
   const navigate = useNavigate()
-  const { permission, requestPermissionAndSubscribe } = useFirebasePush()
+  const { permission, subscribe } = useWebPush()
   const setHoroscopeTime = useAppStore(s => s.setHoroscopeTime)
   const showHoroscope   = useAppStore(s => s.showHoroscope)
   const showHolidays    = useAppStore(s => s.showHolidays)
@@ -92,13 +92,17 @@ export function NotificationsPage() {
     setIsRequestingPush(true)
     setPushError('')
     try {
-      const result = await requestPermissionAndSubscribe()
-      if (result.subscribed) { navigate('/profile-setup'); return }
-      if (result.reason === 'permission-denied') {
-        setPushError('Уведомления заблокированы. Открой: Настройки → YoYoJoy Day → Уведомления → Включить.')
+      const success = await subscribe()
+      if (success) {
+        navigate('/profile-setup')
         return
       }
-      navigate('/profile-setup')
+      
+      if (Notification.permission === 'denied') {
+        setPushError('Уведомления заблокированы. Открой: Настройки → YoYoJoy Day → Уведомления → Включить.')
+      } else {
+        setPushError('Не удалось подключить push. Попробуй ещё раз или пропусти.')
+      }
     } catch {
       setPushError('Не удалось подключить push. Попробуй ещё раз или пропусти.')
     } finally {

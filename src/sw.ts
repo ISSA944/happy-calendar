@@ -1,7 +1,5 @@
 /// <reference lib="webworker" />
 
-import { initializeApp } from 'firebase/app'
-import { getMessaging, onBackgroundMessage } from 'firebase/messaging/sw'
 import { clientsClaim } from 'workbox-core'
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { registerRoute, NavigationRoute } from 'workbox-routing'
@@ -108,6 +106,8 @@ self.addEventListener('push', (event: PushEvent) => {
     payload = undefined
   }
 
+  // We only handle our own web-push source to avoid showing garbage
+  // from other potential sources if any.
   if (payload?.source !== 'web-push') return
 
   event.waitUntil(
@@ -119,35 +119,3 @@ self.addEventListener('push', (event: PushEvent) => {
     }),
   )
 })
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-}
-
-const isFirebaseConfigured = Object.values(firebaseConfig).every(
-  (value) => typeof value === 'string' && value.length > 0,
-)
-
-if (isFirebaseConfigured) {
-  const app = initializeApp(firebaseConfig)
-  const messaging = getMessaging(app)
-
-  onBackgroundMessage(messaging, (payload) => {
-    const notification = payload.notification || {}
-    const data = payload.data || {}
-
-    void self.registration.showNotification(notification.title || 'YoYoJoy Day', {
-      body: notification.body || 'У тебя есть обновление на сегодня.',
-      icon: '/pwa-192x192.png',
-      badge: '/pwa-192x192.png',
-      data: { url: data.url || '/home' },
-    })
-  })
-} else {
-  console.warn('[sw] Firebase config incomplete; background push disabled.')
-}

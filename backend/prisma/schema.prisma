@@ -61,7 +61,6 @@ model Prefs {
   userId           String   @unique @map("user_id")
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   pushTime         String   @default("09:00") @map("push_time")
-  fcmTokens        String[] @default([]) @map("fcm_tokens")
   horoscopeEnabled Boolean  @default(true) @map("horoscope_enabled")
   holidaysEnabled  Boolean  @default(false) @map("holidays_enabled")
   supportEnabled   Boolean  @default(true) @map("support_enabled")

@@ -24,7 +24,6 @@ export const envSchema = z.object({
   JWT_REFRESH_TTL: z.string().default('30d'),
 
   // Email — primary path is Gmail SMTP via nodemailer (delivers to any address).
-  // Resend remains as fallback only (kept for future domain-verified production).
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),
   SMTP_USER: z.string().optional(),
@@ -38,17 +37,9 @@ export const envSchema = z.object({
     .email()
     .default('onboarding@resend.dev'),
 
-  // Firebase
-  FIREBASE_PROJECT_ID: z.string().min(1, 'FIREBASE_PROJECT_ID is required'),
-  FIREBASE_CLIENT_EMAIL: z
-    .string()
-    .email('FIREBASE_CLIENT_EMAIL must be a valid email'),
-  FIREBASE_PRIVATE_KEY: z.string().min(1, 'FIREBASE_PRIVATE_KEY is required'),
-
-  // Standard Web Push fallback for browsers not supported by Firebase Web
-  // Messaging, especially iOS Home Screen PWAs.
-  WEB_PUSH_PUBLIC_KEY: z.string().optional(),
-  WEB_PUSH_PRIVATE_KEY: z.string().optional(),
+  // Web Push (VAPID)
+  WEB_PUSH_PUBLIC_KEY: z.string().min(1, 'WEB_PUSH_PUBLIC_KEY is required'),
+  WEB_PUSH_PRIVATE_KEY: z.string().min(1, 'WEB_PUSH_PRIVATE_KEY is required'),
   WEB_PUSH_SUBJECT: z.string().default('mailto:support@yoyojoy.online'),
 });
 

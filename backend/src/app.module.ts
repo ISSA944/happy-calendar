@@ -12,7 +12,6 @@ import { TodayModule } from './today';
 import { BookmarksModule } from './bookmarks';
 import { ProfileModule } from './profile';
 import { PushModule } from './push';
-import { FirebaseModule } from './firebase/firebase.module';
 import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
@@ -36,7 +35,6 @@ import { NotificationsModule } from './notifications/notifications.module';
     BookmarksModule,
     ProfileModule,
     PushModule,
-    FirebaseModule,
     NotificationsModule,
   ],
   providers: [

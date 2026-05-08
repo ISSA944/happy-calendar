@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { apiClient } from '../api'
-import { useFirebasePush } from '../hooks'
+import { useWebPush } from '../hooks'
 import { useAppStore } from '../store'
 import { localTimeToUtc } from '../lib/time'
 import { prepareAvatarDataUrl } from '../utils/image'
@@ -69,7 +69,7 @@ export function ProfileSetupPage() {
   const showSupport = useAppStore((s) => s.showSupport)
   const profilePhoto = useAppStore((s) => s.profilePhoto)
   const setProfilePhoto = useAppStore((s) => s.setProfilePhoto)
-  const { syncPushSubscription } = useFirebasePush()
+  const { subscribe } = useWebPush()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [birthDate, setBirthDate] = useState('')
@@ -112,7 +112,7 @@ export function ProfileSetupPage() {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       })
 
-      await syncPushSubscription()
+      await subscribe()
 
       storeBirthDate(birthDate)
       storeGender(gender)
