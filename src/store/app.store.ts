@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { localTimeToUtc } from '../lib/time'
+import { localTimeToUtc, utcToLocal } from '../lib/time'
 import { apiClient } from '../api'
 import { getAccessToken, clearAuthTokens } from '../auth/token-storage'
 import { clearStoredFcmToken } from '../lib/firebase'
@@ -305,7 +305,7 @@ export const useAppStore = create<AppState>()(
             gender: (data.profile?.gender as 'F' | 'M' | 'UNKNOWN' | undefined) ?? get().gender,
             profilePhoto: data.profile?.avatarUrl ?? get().profilePhoto,
             currentMood: data.profile?.currentMood ?? get().currentMood,
-            horoscopeTime: data.prefs?.pushTime ?? get().horoscopeTime,
+            horoscopeTime: data.prefs?.pushTime ? utcToLocal(data.prefs.pushTime) : get().horoscopeTime,
             showHoroscope: data.prefs?.horoscopeEnabled ?? get().showHoroscope,
             showHolidays: data.prefs?.holidaysEnabled ?? get().showHolidays,
             showSupport: data.prefs?.supportEnabled ?? get().showSupport,
