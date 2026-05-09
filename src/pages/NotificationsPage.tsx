@@ -123,30 +123,6 @@ export function NotificationsPage() {
 
   const handleSkip = () => navigate('/profile-setup')
 
-  // ── Action Buttons Block ──
-  const actionButtons = (
-    <div className="flex flex-col items-stretch gap-3 w-full">
-      <button
-        onClick={handleAllow}
-        disabled={isRequestingPush}
-        className="w-full h-14 bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold text-base rounded-full shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
-      >
-        {isRequestingPush ? 'Подключаем...' : 'Разрешить уведомления'}
-      </button>
-
-      <button
-        onClick={handleSkip}
-        className="text-on-surface-variant font-body font-medium text-sm hover:text-on-surface transition-colors text-center py-1"
-      >
-        Настрою позже
-      </button>
-
-      {pushError && (
-        <p className="text-center text-xs font-medium text-error leading-snug">{pushError}</p>
-      )}
-    </div>
-  )
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
