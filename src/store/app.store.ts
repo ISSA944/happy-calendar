@@ -90,7 +90,7 @@ type AppState = {
   setHoroscopeTime: (time: string) => void
 
   // Install banner
-  installBannerDismissed: boolean
+  installBannerDismissCount: number
   dismissInstallBanner: () => void
 
   // Content Preferences
@@ -278,8 +278,11 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      installBannerDismissed: false,
-      dismissInstallBanner: () => set({ installBannerDismissed: true }),
+      installBannerDismissCount: 0,
+      dismissInstallBanner: () => {
+        const current = get().installBannerDismissCount
+        set({ installBannerDismissCount: current + 1 })
+      },
 
       showHoroscope: true,
       toggleHoroscope: () => {
@@ -472,6 +475,8 @@ export const useAppStore = create<AppState>()(
           currentMood: 'Нормально',
           dailyPack: null,
           bookmarks: [],
+          offlineQueue: [],
+          installBannerDismissCount: 0,
         })
       },
     }),

@@ -36,8 +36,9 @@ export function HomePage() {
   const bookmarks          = useAppStore(s => s.bookmarks)
   const fetchBookmarks     = useAppStore(s => s.fetchBookmarks)
   const profilePhoto       = useAppStore(s => s.profilePhoto)
-  const installBannerDismissed = useAppStore(s => s.installBannerDismissed)
-  const dismissInstallBanner   = useAppStore(s => s.dismissInstallBanner)
+  const installBannerDismissCount = useAppStore(s => s.installBannerDismissCount)
+  const dismissInstallBanner      = useAppStore(s => s.dismissInstallBanner)
+  const [sessionDismissed, setSessionDismissed] = useState(false)
 
   const [horoscopeTab, setHoroscopeTab] = useState<'short' | 'detailed'>('short')
   const [tabDir, setTabDir]             = useState(1)
@@ -109,7 +110,13 @@ export function HomePage() {
   }, [])
 
   const { isInstallable, isInstalled, isIOS, triggerInstall } = usePWAInstall()
-  const showInstallBanner = isInstallable && !isInstalled && !installBannerDismissed
+  
+  // Показываем если:
+  // 1. Можно установить
+  // 2. Еще не установлено
+  // 3. Не закрыто навсегда (count < 2)
+  // 4. Не закрыто в этой текущей сессии
+  const showInstallBanner = isInstallable && !isInstalled && installBannerDismissCount < 2 && !sessionDismissed
 
   const handleInstallClick = useCallback(() => {
     if (isIOS) setShowIOSModal(true)
@@ -133,7 +140,10 @@ export function HomePage() {
               className="bg-surface-container-low rounded-[24px] p-4 border border-white/40 flex items-center gap-4 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8"
             >
               <button
-                onClick={dismissInstallBanner}
+                onClick={() => {
+                  setSessionDismissed(true)
+                  dismissInstallBanner()
+                }}
                 className="absolute top-3 right-3 text-on-surface-variant/30 hover:text-on-surface-variant transition-colors active:scale-90"
                 aria-label="Закрыть"
               >
@@ -363,7 +373,11 @@ export function HomePage() {
       {/* ── iOS Install Modal ── */}
       <BottomSheet
         isOpen={showIOSModal}
-        onClose={() => { setShowIOSModal(false); dismissInstallBanner() }}
+        onClose={() => { 
+          setShowIOSModal(false)
+          setSessionDismissed(true)
+          dismissInstallBanner()
+        }}
         hideDragIndicator={false}
       >
         <div className="px-6 pb-2 flex items-center gap-4 mb-6 mt-2">
@@ -392,7 +406,11 @@ export function HomePage() {
           </div>
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={() => { setShowIOSModal(false); dismissInstallBanner() }}
+            onClick={() => { 
+              setShowIOSModal(false)
+              setSessionDismissed(true)
+              dismissInstallBanner()
+            }}
             className="w-full py-4 bg-primary-container text-white rounded-full font-headline font-bold text-sm"
           >
             Понятно
