@@ -50,38 +50,26 @@ export function useWebPush() {
     setIsLoading(true);
     setError(null);
     try {
-      const currentPermission = Notification.permission;
-      
-      if (currentPermission === 'denied') {
-        setError('Уведомления заблокированы. Включите их в настройках браузера.');
-        setIsLoading(false);
-        return false;
-      }
-
-      if (currentPermission === 'default') {
+      if (Notification.permission === 'default') {
         const result = await Notification.requestPermission();
         setPermission(result);
-        if (result !== 'granted') {
-          setError('Уведомления заблокированы. Включите их в настройках браузера.');
-          setIsLoading(false);
-          return false;
-        }
       }
 
       const result = await subscribeToPush();
       if (result.success && result.subscription) {
         await syncSubscription(result.subscription);
         return true;
+      }
+      
+      if (Notification.permission === 'denied') {
+        setError('Уведомления заблокированы в настройках.');
       } else {
-        const msg = result.errorType === 'timeout' 
-          ? 'Превышено время ожидания соединения.'
-          : `Ошибка: ${result.error || 'неизвестный сбой'}`;
-        setError(msg);
+        setError(result.error || 'Ошибка подключения.');
       }
       return false;
     } catch (error: any) {
       console.error('[Push] Subscription fatal:', error);
-      setError(error?.message || 'Что-то пошло не так');
+      setError('Ошибка подключения.');
       return false;
     } finally {
       setIsLoading(false);
