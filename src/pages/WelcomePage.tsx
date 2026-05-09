@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import welcomeOrbImg from '../assets/images/welcome-orb.jpg'
 
 export function WelcomePage() {
   const navigate = useNavigate()
@@ -69,7 +70,7 @@ export function WelcomePage() {
                 alt="Декоративный фон"
                 loading="eager"
                 decoding="async"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDO7drcpWG-UfbzgVikkY0RF0tA0Hp4jOxsW5jaW6EUzOTh_i6Fex4cfxyXKVq5uouZMCi8x0z0jR4OoZugyMtws3TfKNb1vJzH93p-KzWKa541DyKv5-QF-FiKdh2_vvXyi3zM92sKg_6sAN9Iq8ACCHSgBnk9c9ranxkkolbm075kUlgBupIz0CP9BFd-9YfD42Q9w3rW9pC1Eav7mnGUHOmDNHr2YXW7wR1JvJM_XUmgDDzKJEC1pp9sVGJVJNOiYhaz22EyI4xY"
+                src={welcomeOrbImg}
               />
               <span
                 className="absolute material-symbols-outlined text-white text-5xl landscape:text-4xl opacity-90"

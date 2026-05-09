@@ -2,15 +2,22 @@
 // Static UI helpers: mood images, labels, date formatting, holiday lookup.
 // Horoscope text and support phrases come from the backend (GET /api/today).
 
-// ══════════ MOOD IMAGES (Unsplash) ══════════
+import calmImg from '../assets/images/calm.webp'
+import normalImg from '../assets/images/normal.webp'
+import tiredImg from '../assets/images/tired.webp'
+import anxiousImg from '../assets/images/anxious.webp'
+import sadImg from '../assets/images/sad.webp'
+import inspiredImg from '../assets/images/inspired.webp'
+
+// ══════════ MOOD IMAGES (Local Assets) ══════════
 // Ключи — женские формы (база в БД). Мужские формы преобразуются через MOOD_LABELS_M.
 export const MOOD_IMAGES: Record<string, string> = {
-  'Спокойна':     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=400&fit=crop&q=80',
-  'Нормально':    'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop&q=80',
-  'Устала':       'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=800&h=400&fit=crop&q=80',
-  'Тревожна':     'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=400&fit=crop&q=80',
-  'Грустна':      'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?w=800&h=400&fit=crop&q=80',
-  'Воодушевлена': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop&q=80',
+  'Спокойна':     calmImg,
+  'Нормально':    normalImg,
+  'Устала':       tiredImg,
+  'Тревожна':     anxiousImg,
+  'Грустна':      sadImg,
+  'Воодушевлена': inspiredImg,
 }
 
 // ══════════ HOLIDAY CALENDAR ══════════
