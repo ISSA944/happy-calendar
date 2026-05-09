@@ -267,8 +267,12 @@ export function SettingsPage() {
 
       <AnimatePresence>
         {showEmailSuccess && (
-          <motion.div
-            className="fixed inset-0 z-[9999] flex items-end justify-center bg-on-background/40 backdrop-blur-[24px] p-0 sm:items-center sm:p-6"
+          <>
+            <style>{`
+              nav { display: none !important; }
+            `}</style>
+            <motion.div
+              className="fixed inset-0 z-[10000] flex items-end justify-center bg-on-background/40 backdrop-blur-[24px] p-0 sm:items-center sm:p-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -278,7 +282,7 @@ export function SettingsPage() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 24, scale: 0.96 }}
               transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-              className="relative w-full max-w-md overflow-hidden rounded-t-[2.5rem] bg-surface-container-lowest px-8 pb-12 pt-8 text-center shadow-[0_32px_64px_-12px_rgba(28,28,25,0.15)] sm:rounded-[2.5rem] sm:pb-8"
+              className="relative w-full max-w-md overflow-hidden rounded-t-[2.5rem] bg-surface-container-lowest px-8 pt-8 text-center shadow-[0_32px_64px_-12px_rgba(28,28,25,0.15)] sm:rounded-[2.5rem] pb-[max(3rem,calc(env(safe-area-inset-bottom)+1.5rem))]"
             >
               {/* Handle for Bottom Sheet (Mobile Only) */}
               <div className="mx-auto mb-8 h-1.5 w-12 rounded-full bg-surface-dim sm:hidden" />
