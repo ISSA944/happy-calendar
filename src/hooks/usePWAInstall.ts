@@ -9,10 +9,12 @@ interface UsePWAInstall {
   isInstallable: boolean
   isInstalled: boolean
   isIOS: boolean
-  triggerInstall: () => Promise<void>
+  isAndroid: boolean
+  triggerInstall: () => Promise<boolean>
 }
 
 function getIsStandalone(): boolean {
+  if (typeof window === 'undefined') return false
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
     ('standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true)
@@ -20,22 +22,27 @@ function getIsStandalone(): boolean {
 }
 
 function detectIOS(): boolean {
-  return (
-    /iphone|ipad|ipod/i.test(navigator.userAgent) &&
-    !(window as { MSStream?: unknown }).MSStream &&
-    !getIsStandalone()
-  )
+  if (typeof navigator === 'undefined') return false
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as { MSStream?: unknown }).MSStream
+}
+
+function detectAndroid(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /android/i.test(navigator.userAgent)
 }
 
 export function usePWAInstall(): UsePWAInstall {
   const [isIOS] = useState(() => detectIOS())
+  const [isAndroid] = useState(() => detectAndroid())
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const [isInstallable, setIsInstallable] = useState(() => isIOS)
+  
   const [isInstalled, setIsInstalled] = useState(() => getIsStandalone())
+  // Always "installable" on mobile if not already installed, so we can show our own UI
+  const [isInstallable, setIsInstallable] = useState(() => (isIOS || isAndroid) && !getIsStandalone())
 
   useEffect(() => {
-    // iOS Safari never fires beforeinstallprompt — handle separately
-    if (isIOS) return
+    // If already installed, nothing to do
+    if (isInstalled) return
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
@@ -56,17 +63,24 @@ export function usePWAInstall(): UsePWAInstall {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
       window.removeEventListener('appinstalled', handleAppInstalled)
     }
-  }, [isIOS])
+  }, [isInstalled])
 
-  const triggerInstall = useCallback(async () => {
-    if (!deferredPrompt) return
+  const triggerInstall = useCallback(async (): Promise<boolean> => {
+    if (!deferredPrompt) {
+      // Return false to indicate native prompt is NOT available (show manual instructions)
+      return false
+    }
+    
     await deferredPrompt.prompt()
     const { outcome } = await deferredPrompt.userChoice
+    
     if (outcome === 'accepted') {
       setIsInstallable(false)
       setDeferredPrompt(null)
+      return true
     }
+    return false
   }, [deferredPrompt])
 
-  return { isInstallable, isInstalled, isIOS, triggerInstall }
+  return { isInstallable, isInstalled, isIOS, isAndroid, triggerInstall }
 }

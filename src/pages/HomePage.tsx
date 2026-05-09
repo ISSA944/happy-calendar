@@ -44,6 +44,7 @@ export function HomePage() {
   const [tabDir, setTabDir]             = useState(1)
   const [isMoodSheetOpen, setIsMoodSheetOpen] = useState(false)
   const [showIOSModal, setShowIOSModal]       = useState(false)
+  const [showAndroidModal, setShowAndroidModal] = useState(false)
 
   useEffect(() => {
     void initDailyPack()
@@ -52,7 +53,8 @@ export function HomePage() {
   }, [])
 
   useEffect(() => {
-    if (!showIOSModal) return
+    const isModalOpen = showIOSModal || showAndroidModal
+    if (!isModalOpen) return
     const b = document.body.style
     const h = document.documentElement.style
     const prevBodyOverflow = b.overflow
@@ -66,7 +68,7 @@ export function HomePage() {
       h.overflow = prevHtmlOverflow
       b.overscrollBehavior = prevBodyOverscroll
     }
-  }, [showIOSModal])
+  }, [showIOSModal, showAndroidModal])
 
   const supportPhrase  = dailyPack?.supportPhrase ?? ''
   const horoscope      = dailyPack?.horoscope ?? null
@@ -112,15 +114,20 @@ export function HomePage() {
   const { isInstallable, isInstalled, isIOS, triggerInstall } = usePWAInstall()
   
   // Показываем если:
-  // 1. Можно установить
-  // 2. Еще не установлено
-  // 3. Не закрыто навсегда (count < 2)
-  // 4. Не закрыто в этой текущей сессии
+  // 1. Можно установить (Mobile + Not installed)
+  // 2. Не закрыто навсегда (count < 2)
+  // 3. Не закрыто в этой текущей сессии
   const showInstallBanner = isInstallable && !isInstalled && installBannerDismissCount < 2 && !sessionDismissed
 
-  const handleInstallClick = useCallback(() => {
-    if (isIOS) setShowIOSModal(true)
-    else triggerInstall()
+  const handleInstallClick = useCallback(async () => {
+    if (isIOS) {
+      setShowIOSModal(true)
+    } else {
+      const success = await triggerInstall()
+      if (!success) {
+        setShowAndroidModal(true)
+      }
+    }
   }, [isIOS, triggerInstall])
 
   return (
@@ -408,6 +415,54 @@ export function HomePage() {
             whileTap={{ scale: 0.97 }}
             onClick={() => { 
               setShowIOSModal(false)
+              setSessionDismissed(true)
+              dismissInstallBanner()
+            }}
+            className="w-full py-4 bg-primary-container text-white rounded-full font-headline font-bold text-sm"
+          >
+            Понятно
+          </motion.button>
+        </div>
+      </BottomSheet>
+
+      {/* ── Android Install Modal ── */}
+      <BottomSheet
+        isOpen={showAndroidModal}
+        onClose={() => { 
+          setShowAndroidModal(false)
+          setSessionDismissed(true)
+          dismissInstallBanner()
+        }}
+        hideDragIndicator={false}
+      >
+        <div className="px-6 pb-2 flex items-center gap-4 mb-6 mt-2">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_today</span>
+          </div>
+          <div>
+            <p className="font-headline font-bold text-on-surface text-base">Установить на Android</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">Через меню Chrome</p>
+          </div>
+        </div>
+        <div className="px-6 pb-8">
+          <div className="space-y-4 mb-8">
+            {[
+              { icon: 'more_vert', text: 'Нажмите на три точки в углу браузера' },
+              { icon: 'install_mobile', text: 'Выберите пункт "Установить приложение"' },
+              { icon: 'check_circle', text: 'Подтвердите установку — и всё!' },
+            ].map((step, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-primary text-lg">{step.icon}</span>
+                </div>
+                <p className="text-sm text-on-surface font-medium">{step.text}</p>
+              </div>
+            ))}
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => { 
+              setShowAndroidModal(false)
               setSessionDismissed(true)
               dismissInstallBanner()
             }}
