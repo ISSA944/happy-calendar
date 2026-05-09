@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma';
 import { AiService, type AiDailyPack, type PromptContext } from '../ai';
 import { RedisService } from '../redis/redis.service';
 
-const CACHE_TTL_SECONDS = 86_400; // 24 hours
+const CACHE_TTL_SECONDS = 129_600; // 36 hours (covers all RU timezones)
 const AI_LOCK_TTL       = 30;     // max seconds one AI call should take
 
 @Injectable()
