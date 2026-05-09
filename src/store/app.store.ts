@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { localTimeToUtc, utcToLocal } from '../lib/time'
 import { apiClient } from '../api'
 import { getAccessToken, clearAuthTokens } from '../auth/token-storage'
+import { getZodiac } from '../utils/zodiac'
 import { getMoodImage } from '../services/content.service'
 
 export type BookmarkType = 'гороскоп' | 'поддержка'
@@ -214,22 +215,55 @@ export const useAppStore = create<AppState>()(
 
       // User Profile defaults
       userName: '',
-      setUserName: (userName) => set({ userName }),
+      setUserName: (userName) => {
+        set({ userName })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { name: userName }).catch((err) => {
+            console.warn('[store] Failed to sync name with backend', err)
+          })
+        }
+      },
       gender: 'UNKNOWN',
-      setGender: (gender) => set({ gender }),
+      setGender: (gender) => {
+        set({ gender })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { gender }).catch((err) => {
+            console.warn('[store] Failed to sync gender with backend', err)
+          })
+        }
+      },
       hasCompletedOnboarding: false,
       setHasCompletedOnboarding: (hasCompletedOnboarding) => set({ hasCompletedOnboarding }),
 
       profilePhoto: '',
-      setProfilePhoto: (profilePhoto) => set({ profilePhoto }),
+      setProfilePhoto: (profilePhoto) => {
+        set({ profilePhoto })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { avatarUrl: profilePhoto }).catch((err) => {
+            console.warn('[store] Failed to sync avatarUrl with backend', err)
+          })
+        }
+      },
 
       email: '',
       setEmail: (email) => set({ email: email.trim() }),
       birthDate: '',
       setBirthDate: (birthDate) => {
-        set({ birthDate })
+        const prevSign = get().zodiacSign
+        const newSign = getZodiac(birthDate)
+        
+        set({ birthDate, zodiacSign: newSign ?? prevSign })
+        
         if (getAccessToken()) {
-          apiClient.patch('profile', { birthdate: birthDate }).catch((err) => {
+          apiClient.patch('profile', { 
+            birthdate: birthDate,
+            zodiacSign: newSign ?? prevSign
+          }).then(() => {
+            // If sign changed, we MUST refresh the daily pack to get new horoscope
+            if (newSign && newSign !== prevSign) {
+              void get().initDailyPack()
+            }
+          }).catch((err) => {
             console.warn('[store] Failed to sync birthdate with backend', err)
           })
         }
