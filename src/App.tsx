@@ -10,7 +10,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { BottomNav } from './components/BottomNav'
 import { PageLoader } from './components/ui/PageLoader'
 import { useAppStore } from './store'
-import { useFirebaseForegroundNotifications } from './hooks/useFirebasePush'
 import { getAccessToken } from './auth/token-storage'
 
 // Home stays static because it is the primary post-onboarding screen.
@@ -163,7 +162,6 @@ function AppRoutes() {
 }
 
 export default function App() {
-  useFirebaseForegroundNotifications()
   const showOnboardingLoader = useAppStore(s => s.showOnboardingLoader)
 
   useEffect(() => {
