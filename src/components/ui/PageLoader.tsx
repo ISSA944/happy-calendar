@@ -91,26 +91,28 @@ export function PageLoader({ show }: { show: boolean }) {
 
               <div
                 className="relative h-1 w-48 overflow-hidden rounded-full landscape:w-64"
-                style={{ background: '#e5e2dd' }}
+                style={{ background: '#e5e2dd', transform: 'translateZ(0)' }}
               >
                 <motion.div
-                  className="absolute inset-y-0 left-0 rounded-full blur-[1px]"
-                  style={{ background: 'linear-gradient(90deg, #006a65 0%, #2fa7a0 100%)' }}
-                  initial={{ width: '0%', opacity: 0.7 }}
-                  animate={{ width: '100%', opacity: [0.55, 0.95, 0.55] }}
+                  className="absolute inset-y-0 left-0 w-full rounded-full blur-[1px]"
+                  style={{ background: 'linear-gradient(90deg, #006a65 0%, #2fa7a0 100%)', transformOrigin: 'left', willChange: 'transform, opacity' }}
+                  initial={{ scaleX: 0, opacity: 0.7 }}
+                  animate={{ scaleX: 1, opacity: [0.55, 0.95, 0.55] }}
                   transition={{
-                    width: { duration: 6.7, ease: 'linear' },
+                    scaleX: { duration: 6.7, ease: 'linear' },
                     opacity: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
                   }}
                 />
                 <motion.div
-                  className="absolute inset-y-0 left-0 rounded-full"
+                  className="absolute inset-y-0 left-0 w-full rounded-full"
                   style={{
                     background: '#2fa7a0',
                     boxShadow: '0 0 8px rgba(47,167,160,0.3)',
+                    transformOrigin: 'left',
+                    willChange: 'transform',
                   }}
-                  initial={{ width: '0%' }}
-                  animate={{ width: '100%' }}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
                   transition={{ duration: 6.7, ease: 'linear' }}
                 />
               </div>
