@@ -52,25 +52,32 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
     return null;
   }
 
-  const registration = await navigator.serviceWorker.ready;
-
-  // Use VAPID key from env or default
-  const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
-  const applicationServerKey = urlBase64ToUint8Array(publicKey);
+  // Add a timeout to prevent hanging indefinitely
+  const timeoutPromise = new Promise<null>((_, reject) => 
+    setTimeout(() => reject(new Error('Push subscription timeout')), 10000)
+  );
 
   try {
+    const registration = await navigator.serviceWorker.ready;
+
+    // Use VAPID key from env or default
+    const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
+    const applicationServerKey = urlBase64ToUint8Array(publicKey);
+
     // Unsubscribe existing first to avoid VAPID key mismatch
     const existing = await registration.pushManager.getSubscription();
     if (existing) {
       await existing.unsubscribe();
     }
 
-    return await registration.pushManager.subscribe({
+    const subscriptionPromise = registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: applicationServerKey as BufferSource,
     });
+
+    return await Promise.race([subscriptionPromise, timeoutPromise]);
   } catch (error) {
-    console.error('[Push] Failed to subscribe to push notifications:', error);
+    console.error('[Push] Failed to subscribe or timeout reached:', error);
     return null;
   }
 }

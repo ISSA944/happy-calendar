@@ -106,7 +106,7 @@ export function RegistrationPage() {
           </div>
 
           {/* ── RIGHT: checkboxes + CTA ── */}
-          <div className="flex flex-col justify-between gap-4 landscape:pt-0 mt-6 landscape:mt-0">
+          <div className="flex flex-col justify-between gap-4 mt-6 landscape:mt-0 landscape:pt-14">
             <div className="flex-1 min-h-[12px] landscape:hidden" />
 
             <div className="space-y-4">
