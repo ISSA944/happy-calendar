@@ -53,7 +53,7 @@ function ToggleRow({
 
 export function NotificationsPage() {
   const navigate = useNavigate()
-  const { subscribe } = useWebPush()
+  const { subscribe, error: hookError } = useWebPush()
   const setHoroscopeTime = useAppStore(s => s.setHoroscopeTime)
   const showHoroscope   = useAppStore(s => s.showHoroscope)
   const showHolidays    = useAppStore(s => s.showHolidays)
@@ -109,13 +109,9 @@ export function NotificationsPage() {
         return
       }
       
-      if (Notification.permission === 'denied') {
-        setPushError('Уведомления заблокированы. Включите их в настройках браузера.')
-      } else {
-        setPushError('Не удалось подключить push. Попробуйте ещё раз.')
-      }
+      setPushError(hookError || 'Не удалось подключить push. Попробуйте ещё раз.')
     } catch {
-      setPushError('Не удалось подключить push. Попробуйте ещё раз.')
+      setPushError('Критическая ошибка подключения.')
     } finally {
       setIsRequestingPush(false)
     }

@@ -10,6 +10,7 @@ export function useWebPush() {
   });
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const syncSubscription = useCallback(async (subscription: PushSubscription) => {
     const accessToken = getAccessToken();
@@ -47,11 +48,12 @@ export function useWebPush() {
     if (!isPushSupported()) return false;
 
     setIsLoading(true);
+    setError(null);
     try {
       const currentPermission = Notification.permission;
       
       if (currentPermission === 'denied') {
-        alert('Уведомления заблокированы в настройках браузера. Пожалуйста, разрешите их в настройках сайта.');
+        setError('Уведомления заблокированы в настройках браузера. Пожалуйста, разрешите их в настройках сайта.');
         setIsLoading(false);
         return false;
       }
@@ -60,6 +62,7 @@ export function useWebPush() {
         const result = await Notification.requestPermission();
         setPermission(result);
         if (result !== 'granted') {
+          setError('Доступ к уведомлениям отклонен пользователем.');
           setIsLoading(false);
           return false;
         }
@@ -73,12 +76,12 @@ export function useWebPush() {
         const msg = result.errorType === 'timeout' 
           ? 'Превышено время ожидания. Попробуйте еще раз или обновите страницу.'
           : `Ошибка подключения: ${result.error || 'неизвестная ошибка'}`;
-        alert(msg);
+        setError(msg);
       }
       return false;
     } catch (error: any) {
       console.error('[Push] Subscription fatal:', error);
-      alert('Ошибка: ' + (error?.message || 'Что-то пошло не так'));
+      setError(error?.message || 'Что-то пошло не так');
       return false;
     } finally {
       setIsLoading(false);
@@ -103,6 +106,7 @@ export function useWebPush() {
     permission,
     isSubscribed,
     isLoading,
+    error,
     subscribe,
     unsubscribe,
     isSupported: isPushSupported(),
