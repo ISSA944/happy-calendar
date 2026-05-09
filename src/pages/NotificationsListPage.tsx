@@ -36,6 +36,16 @@ export function NotificationsListPage() {
   const currentMood = useAppStore(s => s.currentMood)
   const [items, setItems] = useState<NotificationItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -96,28 +106,29 @@ export function NotificationsListPage() {
             items.map((item) => {
               const icon = notificationIcon(item.type)
               return (
-              <motion.div
-                key={item.id}
-                variants={itemVariants}
-                className="bg-white p-5 rounded-[20px] flex gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-white/50"
-              >
-                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span
-                    className="material-symbols-outlined text-primary"
-                    style={icon.fill ? { fontVariationSettings: "'FILL' 1" } : undefined}
-                  >
-                    {icon.icon}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-headline font-bold text-on-surface text-[15px] leading-snug mb-1">
-                    {item.title || 'Уведомление'}
-                  </h3>
-                  <p className="text-on-surface-variant text-[14px] leading-snug line-clamp-3">
-                    {item.body || 'Текст уведомления недоступен'}
-                  </p>
-                </div>
-              </motion.div>
+                <motion.div
+                  key={item.id}
+                  variants={itemVariants}
+                  onClick={() => toggleExpand(item.id)}
+                  className="bg-white p-5 rounded-[20px] flex gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-white/50 active:scale-[0.98] transition-transform cursor-pointer"
+                >
+                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span
+                      className="material-symbols-outlined text-primary"
+                      style={icon.fill ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                    >
+                      {icon.icon}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-headline font-bold text-on-surface text-[15px] leading-snug mb-1">
+                      {item.title || 'Уведомление'}
+                    </h3>
+                    <p className={`text-on-surface-variant text-[14px] leading-snug ${expandedIds.has(item.id) ? '' : 'line-clamp-3'}`}>
+                      {item.body || 'Текст уведомления недоступен'}
+                    </p>
+                  </div>
+                </motion.div>
             )})
           ) : isLoading ? (
             <motion.div variants={itemVariants} className="flex flex-col items-center gap-3 py-12 text-center">

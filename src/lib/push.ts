@@ -52,34 +52,56 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
     return null;
   }
 
-  // Add a timeout to prevent hanging indefinitely
-  const timeoutPromise = new Promise<null>((_, reject) => 
-    setTimeout(() => reject(new Error('Push subscription timeout')), 10000)
-  );
+  // 5 second timeout is enough for a good UX
+  const TIMEOUT_MS = 5000;
+  
+  return new Promise(async (resolve) => {
+    const timeoutId = setTimeout(() => {
+      console.error('[Push] Subscription timed out after 5s');
+      resolve(null);
+    }, TIMEOUT_MS);
 
-  try {
-    const registration = await navigator.serviceWorker.ready;
+    try {
+      console.info('[Push] Getting service worker registration...');
+      // Try to get existing registration first
+      let registration = await navigator.serviceWorker.getRegistration();
+      
+      if (!registration) {
+        console.info('[Push] No active registration, waiting for ready...');
+        registration = await navigator.serviceWorker.ready;
+      }
 
-    // Use VAPID key from env or default
-    const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
-    const applicationServerKey = urlBase64ToUint8Array(publicKey);
+      if (!registration) {
+        console.error('[Push] Failed to get SW registration');
+        clearTimeout(timeoutId);
+        return resolve(null);
+      }
 
-    // Unsubscribe existing first to avoid VAPID key mismatch
-    const existing = await registration.pushManager.getSubscription();
-    if (existing) {
-      await existing.unsubscribe();
+      const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
+      const applicationServerKey = urlBase64ToUint8Array(publicKey);
+
+      console.info('[Push] Checking for existing subscription...');
+      const existing = await registration.pushManager.getSubscription();
+      if (existing) {
+        console.info('[Push] Unsubscribing existing to refresh...');
+        await existing.unsubscribe();
+      }
+
+      console.info('[Push] Calling subscribe()...');
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey as BufferSource,
+      });
+
+      console.info('[Push] Successfully subscribed!');
+      clearTimeout(timeoutId);
+      resolve(subscription);
+    } catch (error) {
+      console.error('[Push] Subscription process error:', error);
+      clearTimeout(timeoutId);
+      resolve(null);
     }
-
-    const subscriptionPromise = registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: applicationServerKey as BufferSource,
-    });
-
-    return await Promise.race([subscriptionPromise, timeoutPromise]);
-  } catch (error) {
-    console.error('[Push] Failed to subscribe or timeout reached:', error);
-    return null;
-  }
+  });
 }
 
 /**

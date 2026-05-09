@@ -395,6 +395,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'yoyojoy-store',
+      version: 1,
       // showOnboardingLoader исключён из persist — на повторных открытиях всегда false
       partialize: (state) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

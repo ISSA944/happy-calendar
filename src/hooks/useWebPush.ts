@@ -11,16 +11,6 @@ export function useWebPush() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check initial subscription status
-  useEffect(() => {
-    let cancelled = false;
-    void getPushSubscription().then((sub) => {
-      if (cancelled) return;
-      setIsSubscribed(!!sub);
-    });
-    return () => { cancelled = true; };
-  }, []);
-
   const syncSubscription = useCallback(async (subscription: PushSubscription) => {
     const accessToken = getAccessToken();
     if (!accessToken) return;
@@ -37,31 +27,55 @@ export function useWebPush() {
     }
   }, []);
 
+  // Check initial subscription status & Auto-sync
+  useEffect(() => {
+    let cancelled = false;
+    void getPushSubscription().then((sub) => {
+      if (cancelled) return;
+      if (sub) {
+        setIsSubscribed(true);
+        // Auto-sync existing subscription with backend just in case
+        void syncSubscription(sub);
+      } else {
+        setIsSubscribed(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [syncSubscription]);
+
   const subscribe = useCallback(async () => {
     if (!isPushSupported()) return false;
 
     setIsLoading(true);
     try {
-      let currentPermission = Notification.permission;
-      if (currentPermission === 'default') {
-        currentPermission = await Notification.requestPermission();
-        setPermission(currentPermission);
-      }
-
-      if (currentPermission !== 'granted') {
-        console.warn('[Push] Permission not granted.');
+      const currentPermission = Notification.permission;
+      
+      if (currentPermission === 'denied') {
+        alert('Уведомления заблокированы в настройках браузера. Пожалуйста, разрешите их в настройках сайта.');
         setIsLoading(false);
         return false;
+      }
+
+      if (currentPermission === 'default') {
+        const result = await Notification.requestPermission();
+        setPermission(result);
+        if (result !== 'granted') {
+          setIsLoading(false);
+          return false;
+        }
       }
 
       const subscription = await subscribeToPush();
       if (subscription) {
         await syncSubscription(subscription);
         return true;
+      } else {
+        alert('Не удалось установить соединение для уведомлений. Попробуйте обновить страницу или проверьте интернет.');
       }
       return false;
     } catch (error) {
       console.error('[Push] Subscription failed:', error);
+      alert('Произошла ошибка при подключении уведомлений. Попробуйте ещё раз через минуту.');
       return false;
     } finally {
       setIsLoading(false);

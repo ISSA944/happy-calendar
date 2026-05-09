@@ -110,10 +110,22 @@ function TabOutlet() {
 
 function AppLayout() {
   const syncProfile = useAppStore(s => s.syncProfile)
+  const initDailyPack = useAppStore(s => s.initDailyPack)
 
   useEffect(() => {
     void syncProfile()
-  }, [syncProfile])
+    void initDailyPack()
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void syncProfile()
+        void initDailyPack()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [syncProfile, initDailyPack])
 
   return (
     <div
