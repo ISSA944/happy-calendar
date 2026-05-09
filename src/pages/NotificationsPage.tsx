@@ -1,5 +1,5 @@
 import { useState, startTransition } from 'react'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useWebPush } from '../hooks'
 import { useAppStore } from '../store'
@@ -9,10 +9,10 @@ function TimeCard({ time, selected, onClick }: { time: string; selected: boolean
   return (
     <button
       onClick={onClick}
-      className={`flex items-center justify-center h-12 landscape:h-10 rounded-2xl transition-colors duration-200 active:scale-95 text-sm font-bold ${
+      className={`flex items-center justify-center h-12 rounded-2xl transition-all active:scale-95 text-sm font-bold ${
         selected
-          ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-md shadow-[#2fa7a0]/25'
-          : 'bg-[#f0ede9] text-[#6D7A78] font-medium hover:bg-[#e5e2dd]'
+          ? 'bg-primary/10 border border-primary text-primary shadow-sm'
+          : 'bg-surface-container-low text-on-surface-variant font-medium hover:bg-surface-container-high'
       }`}
     >
       {time}
@@ -33,7 +33,7 @@ function ToggleRow({
 }) {
   return (
     <div className={`flex items-center justify-between ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-      <h3 className="font-semibold text-[15px] landscape:text-[14px] text-[#1B1B1F]">{label}</h3>
+      <h3 className="font-semibold text-[15px] text-[#1B1B1F]">{label}</h3>
       <div
         onClick={() => !disabled && onChange()}
         className={`relative inline-flex items-center w-12 h-6 shrink-0 ${disabled ? '' : 'cursor-pointer'}`}
@@ -53,7 +53,7 @@ function ToggleRow({
 
 export function NotificationsPage() {
   const navigate = useNavigate()
-  const { permission, subscribe } = useWebPush()
+  const { subscribe } = useWebPush()
   const setHoroscopeTime = useAppStore(s => s.setHoroscopeTime)
   const showHoroscope   = useAppStore(s => s.showHoroscope)
   const showHolidays    = useAppStore(s => s.showHolidays)
