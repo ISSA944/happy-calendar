@@ -31,8 +31,6 @@ export function BottomSheet({
       open={isOpen}
       onOpenChange={(open) => !open && onClose()}
       dismissible={draggable}
-      // Increased velocity tolerance to prevent accidental closes on small swipes
-      velocityTolerance={0.4}
     >
       <Drawer.Portal>
         <Drawer.Overlay 
