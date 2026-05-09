@@ -176,7 +176,7 @@ export function NotificationsPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-5 pb-40 pt-4">
+      <main className="flex-1 overflow-y-auto px-5 pb-10 landscape:pb-20 pt-4">
         <AnimatePresence mode="wait">
           {showIosInstruction ? (
             <motion.div
@@ -184,7 +184,7 @@ export function NotificationsPage() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="flex flex-col gap-8 text-center"
+              className="flex flex-col gap-8 text-center max-w-xl mx-auto"
             >
               <div className="space-y-4">
                 <h2 className="font-headline font-bold text-2xl leading-tight text-on-surface">
@@ -196,38 +196,51 @@ export function NotificationsPage() {
               </div>
 
               <div className="flex flex-col gap-4 text-left">
-                {/* Step 1 */}
-                <div className="flex items-center gap-4 bg-surface-container-lowest p-4 rounded-[20px] shadow-soft">
-                  <div className="w-12 h-12 shrink-0 rounded-xl bg-surface-container-high flex items-center justify-center text-primary">
-                    <span className="material-symbols-outlined">ios_share</span>
+                {/* Steps with grid for landscape */}
+                <div className="grid grid-cols-1 landscape:grid-cols-3 gap-4">
+                  {/* Step 1 */}
+                  <div className="flex items-center gap-4 bg-surface-container-lowest p-4 rounded-[20px] shadow-soft">
+                    <div className="w-12 h-12 shrink-0 rounded-xl bg-surface-container-high flex items-center justify-center text-primary">
+                      <span className="material-symbols-outlined">ios_share</span>
+                    </div>
+                    <div>
+                      <span className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant/60 mb-0.5">Шаг 1</span>
+                      <p className="font-body text-[14px] font-semibold text-on-surface">Нажмите «Поделиться»</p>
+                    </div>
                   </div>
-                  <div>
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant/60 mb-0.5">Шаг 1</span>
-                    <p className="font-body text-[15px] font-semibold text-on-surface">Нажмите «Поделиться» в браузере</p>
-                  </div>
-                </div>
 
-                {/* Step 2 */}
-                <div className="flex items-center gap-4 bg-surface-container-lowest p-4 rounded-[20px] shadow-soft">
-                  <div className="w-12 h-12 shrink-0 rounded-xl bg-surface-container-high flex items-center justify-center text-primary">
-                    <span className="material-symbols-outlined">add_to_home_screen</span>
+                  {/* Step 2 */}
+                  <div className="flex items-center gap-4 bg-surface-container-lowest p-4 rounded-[20px] shadow-soft">
+                    <div className="w-12 h-12 shrink-0 rounded-xl bg-surface-container-high flex items-center justify-center text-primary">
+                      <span className="material-symbols-outlined">add_to_home_screen</span>
+                    </div>
+                    <div>
+                      <span className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant/60 mb-0.5">Шаг 2</span>
+                      <p className="font-body text-[14px] font-semibold text-on-surface">«На экран Домой»</p>
+                    </div>
                   </div>
-                  <div>
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant/60 mb-0.5">Шаг 2</span>
-                    <p className="font-body text-[15px] font-semibold text-on-surface">Выберите «На экран Домой»</p>
-                  </div>
-                </div>
 
-                {/* Step 3 */}
-                <div className="flex items-center gap-4 bg-surface-container-lowest p-4 rounded-[20px] shadow-soft">
-                  <div className="w-12 h-12 shrink-0 rounded-xl bg-surface-container-high flex items-center justify-center text-primary">
-                    <span className="material-symbols-outlined">done</span>
-                  </div>
-                  <div>
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant/60 mb-0.5">Шаг 3</span>
-                    <p className="font-body text-[15px] font-semibold text-on-surface">Нажмите «Добавить» в углу</p>
+                  {/* Step 3 */}
+                  <div className="flex items-center gap-4 bg-surface-container-lowest p-4 rounded-[20px] shadow-soft">
+                    <div className="w-12 h-12 shrink-0 rounded-xl bg-surface-container-high flex items-center justify-center text-primary">
+                      <span className="material-symbols-outlined">done</span>
+                    </div>
+                    <div>
+                      <span className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant/60 mb-0.5">Шаг 3</span>
+                      <p className="font-body text-[14px] font-semibold text-on-surface">Нажмите «Добавить»</p>
+                    </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Landscape-only action button inside scroll */}
+              <div className="hidden landscape:block mt-4">
+                <button
+                  onClick={() => navigate('/profile-setup')}
+                  className="w-full h-14 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-2xl font-headline font-bold text-lg shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
+                >
+                  Понятно, спасибо
+                </button>
               </div>
             </motion.div>
           ) : (
@@ -273,14 +286,19 @@ export function NotificationsPage() {
                 <ToggleRow label="Праздники"               checked={showHolidays}  onChange={toggleHolidays} />
                 <ToggleRow label="Поддержка по настроению" checked={showSupport}   onChange={toggleSupport} />
               </section>
+
+              {/* Landscape-only action area */}
+              <div className="hidden landscape:grid landscape:grid-cols-2 landscape:gap-4 landscape:col-span-2 mt-4">
+                {actionButtons}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </main>
 
-      {/* Bottom Action Panel */}
-      <div className="fixed bottom-0 left-0 right-0 p-5 pb-10 bg-background/95 backdrop-blur-xl z-[60] flex flex-col items-center">
-        <div className="w-full max-w-[390px] landscape:max-w-none landscape:grid landscape:grid-cols-2 landscape:gap-4">
+      {/* Bottom Action Panel - PORTRAIT ONLY */}
+      <div className="landscape:hidden fixed bottom-0 left-0 right-0 p-5 pb-10 bg-background/95 backdrop-blur-xl z-[60] flex flex-col items-center">
+        <div className="w-full max-w-[390px]">
           {showIosInstruction ? (
             <button
               onClick={() => navigate('/profile-setup')}

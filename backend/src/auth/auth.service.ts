@@ -112,6 +112,9 @@ export class AuthService {
       );
     }
 
+    console.log('-----------------------------------------');
+    console.log(`!!! OTP FOR ${normalizedEmail}: ${code} !!!`);
+    console.log('-----------------------------------------');
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
     const otpExpiresAt = new Date(Date.now() + this.OTP_TTL_MIN * 60_000);
 
@@ -176,25 +179,34 @@ export class AuthService {
       throw new BadRequestException('Email is unchanged');
     }
 
+    this.logger.log(`Requesting email change: userId=${userId}, from ${currentUser.email} to ${normalizedEmail}`);
+
     const existing = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
     if (existing && existing.id !== userId) {
+      this.logger.warn(`Email change failed: ${normalizedEmail} is already in use by another user`);
       throw new ConflictException('Email already in use');
     }
 
     const code = randomInt(1000, 10_000).toString();
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';
 
+    this.logger.log(`Sending email change OTP to ${normalizedEmail}...`);
     try {
       await this.sendOtpEmail(normalizedEmail, code);
+      this.logger.log(`Email change OTP successfully sent to ${normalizedEmail}`);
     } catch (err) {
+      this.logger.error(`Failed to send email change OTP to ${normalizedEmail}: ${err instanceof Error ? err.message : String(err)}`);
       if (!isDev) throw err;
       this.logger.warn(
         `\n⚠️  DEV MODE — email change send failed for <${normalizedEmail}>.\n` +
         `   OTP code: [ ${code} ]  (enter this on the email-change OTP page)\n`,
       );
     }
+    console.log('-----------------------------------------');
+    console.log(`!!! EMAIL CHANGE OTP FOR ${normalizedEmail}: ${code} !!!`);
+    console.log('-----------------------------------------');
 
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
     const otpExpiresAt = new Date(Date.now() + this.OTP_TTL_MIN * 60_000);
