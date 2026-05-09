@@ -32,8 +32,8 @@ export function PageLoader({ show }: { show: boolean }) {
           key="page-loader"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          exit={{ opacity: 0, scale: 1.05 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="fixed inset-0 z-[9999] flex touch-none select-none items-center justify-center overflow-hidden"
           style={{ background: '#fcf9f4' }}
           onClick={(event) => event.stopPropagation()}
@@ -99,7 +99,7 @@ export function PageLoader({ show }: { show: boolean }) {
                   initial={{ scaleX: 0, opacity: 0.7 }}
                   animate={{ scaleX: 1, opacity: [0.55, 0.95, 0.55] }}
                   transition={{
-                    scaleX: { duration: 6.7, ease: 'linear' },
+                    scaleX: { duration: 6, ease: 'linear' },
                     opacity: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
                   }}
                 />
@@ -113,7 +113,7 @@ export function PageLoader({ show }: { show: boolean }) {
                   }}
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
-                  transition={{ duration: 6.7, ease: 'linear' }}
+                  transition={{ duration: 6, ease: 'linear' }}
                 />
               </div>
 

@@ -147,9 +147,9 @@ export const useAppStore = create<AppState>()(
           set({ showOnboardingLoader: false })
           return
         }
-        // Если показываем прелоадер — держим минимум 7 сек для плавного UX
+        // Если показываем прелоадер — держим минимум 6 сек для плавного UX
         const isLoaderShowing = get().showOnboardingLoader
-        const minWait = isLoaderShowing ? delay(4000) : Promise.resolve()
+        const minWait = isLoaderShowing ? delay(6000) : Promise.resolve()
         try {
           const { data } = await apiClient.get<TodayResponse>('today')
           const nextPack = {

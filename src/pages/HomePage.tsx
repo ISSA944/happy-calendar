@@ -448,8 +448,9 @@ export function HomePage() {
           <div className="space-y-4 mb-8">
             {[
               { icon: 'more_vert', text: 'Нажмите на три точки в углу браузера' },
+              { icon: 'add_to_home_screen', text: 'Выберите пункт "Добавить на главный экран"' },
               { icon: 'install_mobile', text: 'Выберите пункт "Установить приложение"' },
-              { icon: 'check_circle', text: 'Подтвердите установку — и всё!' },
+              { icon: 'check_circle', text: 'Подтвердите установку — готово!' },
             ].map((step, i) => (
               <div key={i} className="flex items-center gap-4">
                 <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">

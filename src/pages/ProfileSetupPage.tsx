@@ -92,7 +92,10 @@ export function ProfileSetupPage() {
         setShowOnboardingLoader(true)
         setHasCompletedOnboarding(true)
       })
-      requestAnimationFrame(() => navigate('/home'))
+      // Give a tiny moment for loader to show up before heavy navigation
+      setTimeout(() => {
+        navigate('/home')
+      }, 300)
     } catch {
       setSubmitError('Не удалось сохранить профиль. Проверь соединение и попробуй ещё раз.')
     } finally {
