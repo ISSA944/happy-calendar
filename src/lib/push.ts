@@ -53,12 +53,18 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
   }
 
   const registration = await navigator.serviceWorker.ready;
-  
+
   // Use VAPID key from env or default
   const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
   const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
   try {
+    // Unsubscribe existing first to avoid VAPID key mismatch
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) {
+      await existing.unsubscribe();
+    }
+
     return await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey,

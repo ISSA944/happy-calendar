@@ -71,7 +71,8 @@ export class AiService {
 
   constructor(private readonly config: ConfigService) {
     const apiKey = this.config.get<string>('AI_API_KEY');
-    this.openai = apiKey ? new OpenAI({ apiKey }) : null;
+    const baseURL = this.config.get<string>('OPENAI_BASE_URL');
+    this.openai = apiKey ? new OpenAI({ apiKey, ...(baseURL ? { baseURL } : {}) }) : null;
     if (!this.openai) {
       this.logger.warn('AI_API_KEY not set — running in mock fallback mode');
     }

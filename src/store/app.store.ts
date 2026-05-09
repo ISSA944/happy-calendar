@@ -3,7 +3,6 @@ import { persist } from 'zustand/middleware'
 import { localTimeToUtc, utcToLocal } from '../lib/time'
 import { apiClient } from '../api'
 import { getAccessToken, clearAuthTokens } from '../auth/token-storage'
-import { clearStoredFcmToken } from '../lib/firebase'
 import { getMoodImage } from '../services/content.service'
 
 export type BookmarkType = 'гороскоп' | 'поддержка'
@@ -380,7 +379,6 @@ export const useAppStore = create<AppState>()(
           }
         }
         clearAuthTokens()
-        clearStoredFcmToken()
         set({
           hasCompletedOnboarding: false,
           userName: '',

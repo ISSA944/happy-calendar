@@ -9,6 +9,7 @@ export const envSchema = z.object({
 
   // AI
   AI_API_KEY: z.string().optional(),
+  OPENAI_BASE_URL: z.string().url().optional(),
 
   // Redis — optional; if absent, AI pack caching is disabled
   REDIS_URL: z.string().optional(),
