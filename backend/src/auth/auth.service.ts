@@ -43,7 +43,13 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {
-    // SMTP setup (preferred — delivers to any address)
+    // 1. Resend Setup (Preferred for production stability)
+    const resendKey = this.config.get<string>('RESEND_API_KEY');
+    this.resend = resendKey ? new Resend(resendKey) : null;
+    this.resendFromEmail =
+      this.config.get<string>('RESEND_FROM_EMAIL') ?? 'onboarding@resend.dev';
+
+    // 2. SMTP Setup (Fallback)
     const smtpHost = this.config.get<string>('SMTP_HOST');
     const smtpUser = this.config.get<string>('SMTP_USER');
     const smtpPassword = this.config.get<string>('SMTP_PASSWORD');
@@ -64,16 +70,11 @@ export class AuthService {
     this.smtpFromName =
       this.config.get<string>('SMTP_FROM_NAME') ?? 'YoYoJoy Day';
 
-    // Resend fallback (kept for future domain-verified prod)
-    const resendKey = this.config.get<string>('RESEND_API_KEY');
-    this.resend = resendKey ? new Resend(resendKey) : null;
-    this.resendFromEmail =
-      this.config.get<string>('RESEND_FROM_EMAIL') ?? 'onboarding@resend.dev';
-
-    this.provider = this.smtpTransport
-      ? 'smtp'
-      : this.resend
-        ? 'resend'
+    // 3. Provider selection (Prioritize Resend if key is provided)
+    this.provider = this.resend
+      ? 'resend'
+      : this.smtpTransport
+        ? 'smtp'
         : 'none';
 
     this.logger.log(`Email provider: ${this.provider}`);
