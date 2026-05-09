@@ -1,6 +1,27 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import welcomeOrbImg from '../assets/images/welcome-orb.jpg'
+import { MagicIcon, HeartIcon, PartyIcon } from '../components/ui/WelcomeIcons'
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.3
+    }
+  }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: { 
+    opacity: 1, 
+    x: 0,
+    transition: { duration: 0.4, ease: 'easeOut' }
+  }
+}
 
 export function WelcomePage() {
   const navigate = useNavigate()
@@ -40,11 +61,16 @@ export function WelcomePage() {
           </div>
 
           {/* Features — hidden on portrait (shown below orb), visible in landscape */}
-          <div className="hidden landscape:flex flex-col space-y-4 mt-4">
-            <Feature icon="auto_awesome" label="Гороскоп по твоему знаку" />
-            <Feature icon="favorite" label="Поддержка в моменте" />
-            <Feature icon="celebration" label="Поздравления с праздниками" />
-          </div>
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="hidden landscape:flex flex-col space-y-4 mt-4"
+          >
+            <Feature icon={<MagicIcon className="text-primary w-5 h-5" />} label="Гороскоп по твоему знаку" />
+            <Feature icon={<HeartIcon className="text-primary w-5 h-5" />} label="Поддержка в моменте" />
+            <Feature icon={<PartyIcon className="text-primary w-5 h-5" />} label="Поздравления с праздниками" />
+          </motion.div>
         </div>
 
         {/* RIGHT column (portrait: center section, landscape: right) */}
@@ -82,11 +108,16 @@ export function WelcomePage() {
           </div>
 
           {/* Features — portrait only (landscape shows in left column) */}
-          <div className="flex landscape:hidden flex-col space-y-4 w-full px-2">
-            <Feature icon="auto_awesome" label="Гороскоп по твоему знаку" />
-            <Feature icon="favorite" label="Поддержка в моменте" />
-            <Feature icon="celebration" label="Поздравления с праздниками" />
-          </div>
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="flex landscape:hidden flex-col space-y-4 w-full px-2"
+          >
+            <Feature icon={<MagicIcon className="text-primary w-5 h-5" />} label="Гороскоп по твоему знаку" />
+            <Feature icon={<HeartIcon className="text-primary w-5 h-5" />} label="Поддержка в моменте" />
+            <Feature icon={<PartyIcon className="text-primary w-5 h-5" />} label="Поздравления с праздниками" />
+          </motion.div>
 
           {/* CTA */}
           <motion.button
@@ -102,13 +133,13 @@ export function WelcomePage() {
   )
 }
 
-function Feature({ icon, label }: { icon: string; label: string }) {
+function Feature({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <div className="flex items-center space-x-4">
+    <motion.div variants={itemVariants} className="flex items-center space-x-4">
       <div className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0">
-        <span className="material-symbols-outlined text-primary text-[20px]">{icon}</span>
+        {icon}
       </div>
       <span className="font-body text-on-surface font-medium">{label}</span>
-    </div>
+    </motion.div>
   )
 }
