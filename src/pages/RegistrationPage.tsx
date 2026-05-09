@@ -40,8 +40,10 @@ export function RegistrationPage() {
       setEmail(emailInput.trim())
       clearDraft()
       navigate('/otp')
-    } catch {
-      setSubmitError('Не удалось отправить код. Проверь соединение и попробуй ещё раз.')
+    } catch (err: any) {
+      console.error('Registration error:', err)
+      const msg = err.response?.data?.message || err.message || 'Не удалось отправить код. Проверь соединение.'
+      setSubmitError(msg === 'Network Error' ? 'Ошибка сети: сервер недоступен или проблема с SSL' : msg)
     } finally {
       setIsSubmitting(false)
     }
