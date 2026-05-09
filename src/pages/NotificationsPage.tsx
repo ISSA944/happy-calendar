@@ -287,9 +287,23 @@ export function NotificationsPage() {
                 <ToggleRow label="Поддержка по настроению" checked={showSupport}   onChange={toggleSupport} />
               </section>
 
-              {/* Landscape-only action area */}
-              <div className="hidden landscape:grid landscape:grid-cols-2 landscape:gap-4 landscape:col-span-2 mt-4">
-                {actionButtons}
+              {/* Landscape-only action area - Full width button + Centered skip */}
+              <div className="hidden landscape:flex landscape:flex-col landscape:items-center landscape:col-span-2 mt-4 gap-3 w-full">
+                <div className="w-full">
+                  <button
+                    onClick={handleAllow}
+                    disabled={isRequestingPush}
+                    className="w-full h-14 bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold text-base rounded-full shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+                  >
+                    {isRequestingPush ? 'Подключаем...' : 'Разрешить уведомления'}
+                  </button>
+                </div>
+                <button
+                  onClick={handleSkip}
+                  className="text-on-surface-variant font-body font-medium text-sm hover:text-on-surface transition-colors"
+                >
+                  Настрою позже
+                </button>
               </div>
             </motion.div>
           )}
@@ -307,7 +321,26 @@ export function NotificationsPage() {
               Понятно, спасибо
             </button>
           ) : (
-            actionButtons
+            <div className="flex flex-col items-stretch gap-3 w-full">
+              <button
+                onClick={handleAllow}
+                disabled={isRequestingPush}
+                className="w-full h-14 bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold text-base rounded-full shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+              >
+                {isRequestingPush ? 'Подключаем...' : 'Разрешить уведомления'}
+              </button>
+
+              <button
+                onClick={handleSkip}
+                className="text-on-surface-variant font-body font-medium text-sm hover:text-on-surface transition-colors text-center py-1"
+              >
+                Настрою позже
+              </button>
+
+              {pushError && (
+                <p className="text-center text-xs font-medium text-error leading-snug">{pushError}</p>
+              )}
+            </div>
           )}
         </div>
       </div>
