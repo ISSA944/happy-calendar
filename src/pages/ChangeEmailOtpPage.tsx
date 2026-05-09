@@ -90,6 +90,8 @@ export function ChangeEmailOtpPage() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [resendKey, setResendKey] = useState(0)
   const [submitError, setSubmitError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isResending, setIsResending] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
