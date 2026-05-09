@@ -1,4 +1,3 @@
-import { ReactNode } from 'react'
 
 export function MagicIcon({ className }: { className?: string }) {
   return (

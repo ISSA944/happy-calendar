@@ -1,9 +1,10 @@
-import { motion } from 'framer-motion'
+import React from 'react'
+import { motion, type Variants } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import welcomeOrbImg from '../assets/images/welcome-orb.jpg'
 import { MagicIcon, HeartIcon, PartyIcon } from '../components/ui/WelcomeIcons'
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -14,7 +15,7 @@ const containerVariants = {
   }
 }
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, x: -10 },
   visible: { 
     opacity: 1, 
