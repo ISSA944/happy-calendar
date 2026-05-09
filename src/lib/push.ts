@@ -67,7 +67,7 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
 
     return await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey,
+      applicationServerKey: applicationServerKey as BufferSource,
     });
   } catch (error) {
     console.error('[Push] Failed to subscribe to push notifications:', error);

@@ -73,7 +73,7 @@ export function SettingsPage() {
     if (permission === 'default' || permission === 'granted') {
       void subscribe()
     }
-  }, [setHoroscopeTime, permission, requestPermissionAndSubscribe, syncPushSubscription])
+  }, [setHoroscopeTime, permission, subscribe])
 
   return (
     <div className="flex flex-col min-h-full bg-background font-body">
