@@ -316,6 +316,7 @@ export function SettingsPage() {
               </button>
             </motion.div>
           </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
