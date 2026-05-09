@@ -53,7 +53,7 @@ export function useWebPush() {
       const currentPermission = Notification.permission;
       
       if (currentPermission === 'denied') {
-        setError('Уведомления заблокированы в настройках браузера. Пожалуйста, разрешите их в настройках сайта.');
+        setError('Уведомления заблокированы. Включите их в настройках браузера.');
         setIsLoading(false);
         return false;
       }
@@ -62,7 +62,7 @@ export function useWebPush() {
         const result = await Notification.requestPermission();
         setPermission(result);
         if (result !== 'granted') {
-          setError('Доступ к уведомлениям отклонен пользователем.');
+          setError('Уведомления заблокированы. Включите их в настройках браузера.');
           setIsLoading(false);
           return false;
         }
@@ -74,8 +74,8 @@ export function useWebPush() {
         return true;
       } else {
         const msg = result.errorType === 'timeout' 
-          ? 'Превышено время ожидания. Попробуйте еще раз или обновите страницу.'
-          : `Ошибка подключения: ${result.error || 'неизвестная ошибка'}`;
+          ? 'Превышено время ожидания соединения.'
+          : `Ошибка: ${result.error || 'неизвестный сбой'}`;
         setError(msg);
       }
       return false;
