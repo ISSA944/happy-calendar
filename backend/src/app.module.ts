@@ -23,7 +23,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
-        limit: 10,
+        limit: 30,
       },
     ]),
     ScheduleModule.forRoot(),
