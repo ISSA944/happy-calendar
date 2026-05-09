@@ -152,8 +152,14 @@ export function ChangeEmailOtpPage() {
       setEmail(email.trim())
       clearDraft()
       navigate('/settings', { replace: true, state: { emailChanged: true } })
-    } catch {
-      setSubmitError('Неверный код или он уже истёк. Попробуй ещё раз.')
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setSubmitError('Неверный код или срок его действия истек.')
+      } else if (err.response?.status === 409) {
+        setSubmitError('Данная почта уже занята другим пользователем.')
+      } else {
+        setSubmitError('Произошла ошибка. Попробуйте еще раз позже.')
+      }
     } finally {
       setIsSubmitting(false)
     }

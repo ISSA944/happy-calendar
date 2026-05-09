@@ -31,8 +31,14 @@ export function ChangeEmailPage() {
         marketing,
       })
       navigate('/change-email-otp')
-    } catch {
-      setSubmitError('Не удалось отправить код. Проверь почту и попробуй ещё раз.')
+    } catch (err: any) {
+      if (err.response?.status === 409) {
+        setSubmitError('Данная почта уже используется другим пользователем.')
+      } else if (err.response?.status === 400) {
+        setSubmitError('Вы ввели тот же адрес, который используете сейчас.')
+      } else {
+        setSubmitError('Не удалось отправить код. Проверьте почту и попробуйте ещё раз.')
+      }
     } finally {
       setIsSubmitting(false)
     }
