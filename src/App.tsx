@@ -21,14 +21,14 @@ import { NotificationsListPage } from './pages/NotificationsListPage'
 // WelcomePage is static — it's the first screen new users see, no lazy flash.
 import { WelcomePage } from './pages/WelcomePage'
 
-// Remaining auth pages are lazy (loaded once per session).
-const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
-const OtpPage = lazy(() => import('./pages/OtpPage').then(m => ({ default: m.OtpPage })))
-const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })))
-const ProfileSetupPage = lazy(() => import('./pages/ProfileSetupPage').then(m => ({ default: m.ProfileSetupPage })))
-const RegistrationPage = lazy(() => import('./pages/RegistrationPage').then(m => ({ default: m.RegistrationPage })))
-const ChangeEmailPage = lazy(() => import('./pages/ChangeEmailPage').then(m => ({ default: m.ChangeEmailPage })))
-const ChangeEmailOtpPage = lazy(() => import('./pages/ChangeEmailOtpPage').then(m => ({ default: m.ChangeEmailOtpPage })))
+// All core auth and onboarding pages are eagerly loaded to prevent white flashes (Suspense fallbacks)
+import { NotificationsPage } from './pages/NotificationsPage'
+import { OtpPage } from './pages/OtpPage'
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
+import { ProfileSetupPage } from './pages/ProfileSetupPage'
+import { RegistrationPage } from './pages/RegistrationPage'
+import { ChangeEmailPage } from './pages/ChangeEmailPage'
+import { ChangeEmailOtpPage } from './pages/ChangeEmailOtpPage'
 
 const APP_SHELL_ROUTES: readonly string[] = ['/home', '/bookmarks', '/settings', '/notifications-list']
 
@@ -146,6 +146,21 @@ function AppLayout() {
   )
 }
 
+function PageTransition({ children }: { children: ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
+      className="absolute inset-0 w-full h-full overflow-hidden"
+      style={{ background: '#fcf9f4' }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
 function AppRoutes() {
   const location = useLocation()
 
@@ -153,23 +168,25 @@ function AppRoutes() {
   const routeKey = APP_SHELL_ROUTES.includes(location.pathname) ? 'app-shell' : location.key
 
   return (
-    <Routes location={location} key={routeKey}>
-      <Route path="/" element={<RootGuard />} />
-      <Route path="/register" element={<RegistrationPage />} />
-      <Route path="/otp" element={<OtpPage />} />
-      <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
-      <Route path="/change-email" element={<RequireAuth><ChangeEmailPage /></RequireAuth>} />
-      <Route path="/change-email-otp" element={<RequireAuth><ChangeEmailOtpPage /></RequireAuth>} />
-      <Route path="/profile-setup" element={<RequireAuth><ProfileSetupPage /></RequireAuth>} />
-      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-      <Route element={<RequireAppReady><AppLayout /></RequireAppReady>}>
-        <Route path="/home" element={null} />
-        <Route path="/bookmarks" element={null} />
-        <Route path="/settings" element={null} />
-        <Route path="/notifications-list" element={null} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={routeKey}>
+        <Route path="/" element={<PageTransition><RootGuard /></PageTransition>} />
+        <Route path="/register" element={<PageTransition><RegistrationPage /></PageTransition>} />
+        <Route path="/otp" element={<PageTransition><OtpPage /></PageTransition>} />
+        <Route path="/notifications" element={<PageTransition><RequireAuth><NotificationsPage /></RequireAuth></PageTransition>} />
+        <Route path="/change-email" element={<PageTransition><RequireAuth><ChangeEmailPage /></RequireAuth></PageTransition>} />
+        <Route path="/change-email-otp" element={<PageTransition><RequireAuth><ChangeEmailOtpPage /></RequireAuth></PageTransition>} />
+        <Route path="/profile-setup" element={<PageTransition><RequireAuth><ProfileSetupPage /></RequireAuth></PageTransition>} />
+        <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
+        <Route element={<RequireAppReady><AppLayout /></RequireAppReady>}>
+          <Route path="/home" element={null} />
+          <Route path="/bookmarks" element={null} />
+          <Route path="/settings" element={null} />
+          <Route path="/notifications-list" element={null} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AnimatePresence>
   )
 }
 
