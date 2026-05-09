@@ -46,24 +46,28 @@ export async function getPushSubscription(): Promise<PushSubscription | null> {
 /**
  * Subscribes the user to push notifications.
  */
-export async function subscribeToPush(): Promise<PushSubscription | null> {
+export type PushResult = {
+  success: boolean;
+  subscription?: PushSubscription;
+  error?: string;
+  errorType?: 'timeout' | 'permission' | 'worker_missing' | 'subscribe_fail' | 'unsupported';
+};
+
+export async function subscribeToPush(): Promise<PushResult> {
   if (!isPushSupported()) {
-    console.warn('[Push] Browser does not support push notifications.');
-    return null;
+    return { success: false, errorType: 'unsupported', error: 'Push not supported' };
   }
 
-  // 5 second timeout is enough for a good UX
-  const TIMEOUT_MS = 5000;
+  const TIMEOUT_MS = 7000; // Increased slightly for slow mobile networks
   
   return new Promise(async (resolve) => {
     const timeoutId = setTimeout(() => {
-      console.error('[Push] Subscription timed out after 5s');
-      resolve(null);
+      console.error('[Push] Subscription timed out after 7s');
+      resolve({ success: false, errorType: 'timeout', error: 'Timeout reached' });
     }, TIMEOUT_MS);
 
     try {
-      console.info('[Push] Getting service worker registration...');
-      // Try to get existing registration first
+      console.info('[Push] Getting SW registration...');
       let registration = await navigator.serviceWorker.getRegistration();
       
       if (!registration) {
@@ -72,34 +76,44 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
       }
 
       if (!registration) {
-        console.error('[Push] Failed to get SW registration');
         clearTimeout(timeoutId);
-        return resolve(null);
+        return resolve({ success: false, errorType: 'worker_missing', error: 'SW registration failed' });
       }
 
       const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
-      const applicationServerKey = urlBase64ToUint8Array(publicKey);
+      console.info('[Push] Using Public Key:', publicKey.substring(0, 10) + '...');
+      
+      let applicationServerKey;
+      try {
+        applicationServerKey = urlBase64ToUint8Array(publicKey);
+      } catch (e) {
+        clearTimeout(timeoutId);
+        return resolve({ success: false, errorType: 'subscribe_fail', error: 'Invalid VAPID key format' });
+      }
 
-      console.info('[Push] Checking for existing subscription...');
       const existing = await registration.pushManager.getSubscription();
       if (existing) {
-        console.info('[Push] Unsubscribing existing to refresh...');
+        console.info('[Push] Cleaning up existing subscription...');
         await existing.unsubscribe();
       }
 
-      console.info('[Push] Calling subscribe()...');
+      console.info('[Push] Calling registration.pushManager.subscribe()...');
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey as BufferSource,
       });
 
-      console.info('[Push] Successfully subscribed!');
+      console.info('[Push] Subscription successful!');
       clearTimeout(timeoutId);
-      resolve(subscription);
-    } catch (error) {
-      console.error('[Push] Subscription process error:', error);
+      resolve({ success: true, subscription });
+    } catch (error: any) {
+      console.error('[Push] Fatal subscription error:', error);
       clearTimeout(timeoutId);
-      resolve(null);
+      resolve({ 
+        success: false, 
+        errorType: 'subscribe_fail', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
     }
   });
 }

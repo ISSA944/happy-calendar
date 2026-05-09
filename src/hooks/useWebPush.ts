@@ -65,17 +65,20 @@ export function useWebPush() {
         }
       }
 
-      const subscription = await subscribeToPush();
-      if (subscription) {
-        await syncSubscription(subscription);
+      const result = await subscribeToPush();
+      if (result.success && result.subscription) {
+        await syncSubscription(result.subscription);
         return true;
       } else {
-        alert('Не удалось установить соединение для уведомлений. Попробуйте обновить страницу или проверьте интернет.');
+        const msg = result.errorType === 'timeout' 
+          ? 'Превышено время ожидания. Попробуйте еще раз или обновите страницу.'
+          : `Ошибка подключения: ${result.error || 'неизвестная ошибка'}`;
+        alert(msg);
       }
       return false;
-    } catch (error) {
-      console.error('[Push] Subscription failed:', error);
-      alert('Произошла ошибка при подключении уведомлений. Попробуйте ещё раз через минуту.');
+    } catch (error: any) {
+      console.error('[Push] Subscription fatal:', error);
+      alert('Ошибка: ' + (error?.message || 'Что-то пошло не так'));
       return false;
     } finally {
       setIsLoading(false);
