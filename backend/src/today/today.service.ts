@@ -86,7 +86,11 @@ export class TodayService {
           this.logger.log(`getTodayPack calling AI key=${cacheKey}`);
           const context: PromptContext = { zodiacSign, mood, gender, date: today };
           pack = await this.ai.generateDailyPack(userId, context);
-          await this.redis.set(cacheKey, JSON.stringify(pack), CACHE_TTL_SECONDS);
+          const ttl = pack.isFallback ? 300 : CACHE_TTL_SECONDS;
+          if (pack.isFallback) {
+            this.logger.warn(`Caching fallback response for 5 minutes (key=${cacheKey})`);
+          }
+          await this.redis.set(cacheKey, JSON.stringify(pack), ttl);
         } finally {
           if (lockAcquired) await this.redis.releaseLock(lockKey);
         }

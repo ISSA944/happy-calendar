@@ -12,6 +12,7 @@ export interface AiDailyPack {
   aspect: string;
   holiday: string | null;
   supportPhrase: string;
+  isFallback?: boolean;
 }
 
 /** Контекст для генерации пакета */
@@ -309,6 +310,7 @@ export class AiService {
       aspect:            horoscope.aspect,
       holiday:           holiday.name,
       supportPhrase:     phrases[Math.floor(Math.random() * phrases.length)],
+      isFallback:        true,
     };
   }
 

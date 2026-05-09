@@ -15,6 +15,10 @@ export interface Bookmark {
   icon: string
 }
 
+export type OfflineTask = 
+  | { type: 'ADD_BOOKMARK'; payload: Bookmark }
+  | { type: 'REMOVE_BOOKMARK'; payload: { id: string } }
+
 export interface DailyPack {
   date: string
   horoscope: {
@@ -99,9 +103,11 @@ type AppState = {
 
   // Bookmarks (sync с бэком)
   bookmarks: Bookmark[]
+  offlineQueue: OfflineTask[]
   fetchBookmarks: () => Promise<void>
   addBookmark: (bookmark: Bookmark) => Promise<void>
   removeBookmark: (id: string) => Promise<void>
+  processOfflineQueue: () => Promise<void>
 
   // Logout / re-onboard
   resetApp: () => Promise<void>
@@ -132,6 +138,7 @@ export const useAppStore = create<AppState>()(
       // Daily Pack
       dailyPack: null,
       showOnboardingLoader: false,
+      offlineQueue: [],
       setShowOnboardingLoader: (v) => set({ showOnboardingLoader: v }),
 
       initDailyPack: async () => {
@@ -336,11 +343,14 @@ export const useAppStore = create<AppState>()(
       },
 
       addBookmark: async (bookmark: Bookmark) => {
+        // Optimistic add
+        set((state) => ({ bookmarks: [bookmark, ...state.bookmarks] }))
+
         if (!getAccessToken()) {
-          // Offline fallback — keep local-only id
-          set((state) => ({ bookmarks: [bookmark, ...state.bookmarks] }))
+          set((state) => ({ offlineQueue: [...state.offlineQueue, { type: 'ADD_BOOKMARK', payload: bookmark }] }))
           return
         }
+
         try {
           const { data } = await apiClient.post<BookmarkResponse>('bookmarks', {
             type: bookmark.type,
@@ -348,10 +358,11 @@ export const useAppStore = create<AppState>()(
           })
           // Use backend-generated id
           set((state) => ({
-            bookmarks: [{ ...bookmark, id: data.id }, ...state.bookmarks],
+            bookmarks: state.bookmarks.map(b => b.id === bookmark.id ? { ...b, id: data.id } : b),
           }))
         } catch (err) {
           console.warn('[store] Failed to POST /bookmarks', err)
+          set((state) => ({ offlineQueue: [...state.offlineQueue, { type: 'ADD_BOOKMARK', payload: bookmark }] }))
         }
       },
 
@@ -360,13 +371,50 @@ export const useAppStore = create<AppState>()(
         const prev = get().bookmarks
         set({ bookmarks: prev.filter((b) => b.id !== id) })
 
-        if (!getAccessToken()) return
+        if (!getAccessToken()) {
+          set((state) => ({ offlineQueue: [...state.offlineQueue, { type: 'REMOVE_BOOKMARK', payload: { id } }] }))
+          return
+        }
+
         try {
           await apiClient.delete(`bookmarks/${id}`)
         } catch (err) {
           console.warn('[store] Failed to DELETE /bookmarks/:id', err)
-          // Rollback on server failure
-          set({ bookmarks: prev })
+          set((state) => ({ offlineQueue: [...state.offlineQueue, { type: 'REMOVE_BOOKMARK', payload: { id } }] }))
+        }
+      },
+
+      processOfflineQueue: async () => {
+        const queue = [...get().offlineQueue]
+        if (queue.length === 0 || !getAccessToken()) return
+
+        console.log('[store] Processing offline queue...', queue.length, 'tasks')
+        // Clear queue optimistically
+        set({ offlineQueue: [] })
+
+        const failedTasks: OfflineTask[] = []
+
+        for (const task of queue) {
+          try {
+            if (task.type === 'ADD_BOOKMARK') {
+              const { data } = await apiClient.post<BookmarkResponse>('bookmarks', {
+                type: task.payload.type,
+                payload: { date: task.payload.date, text: task.payload.text, icon: task.payload.icon },
+              })
+              set((state) => ({
+                bookmarks: state.bookmarks.map(b => b.id === task.payload.id ? { ...b, id: data.id } : b)
+              }))
+            } else if (task.type === 'REMOVE_BOOKMARK') {
+              await apiClient.delete(`bookmarks/${task.payload.id}`)
+            }
+          } catch (err) {
+            console.error(`[store] Queue task failed:`, task, err)
+            failedTasks.push(task)
+          }
+        }
+
+        if (failedTasks.length > 0) {
+          set((state) => ({ offlineQueue: [...failedTasks, ...state.offlineQueue] }))
         }
       },
 

@@ -11,6 +11,7 @@ import { BottomNav } from './components/BottomNav'
 import { PageLoader } from './components/ui/PageLoader'
 import { useAppStore } from './store'
 import { getAccessToken } from './auth/token-storage'
+import { PWAUpdater } from './components/ui/PWAUpdater'
 
 // Home stays static because it is the primary post-onboarding screen.
 import { HomePage } from './pages/HomePage'
@@ -111,10 +112,12 @@ function TabOutlet() {
 function AppLayout() {
   const syncProfile = useAppStore(s => s.syncProfile)
   const initDailyPack = useAppStore(s => s.initDailyPack)
+  const processOfflineQueue = useAppStore(s => s.processOfflineQueue)
 
   useEffect(() => {
     void syncProfile()
     void initDailyPack()
+    void processOfflineQueue()
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -123,9 +126,18 @@ function AppLayout() {
       }
     }
 
+    const handleOnline = () => {
+      void processOfflineQueue()
+    }
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [syncProfile, initDailyPack])
+    window.addEventListener('online', handleOnline)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('online', handleOnline)
+    }
+  }, [syncProfile, initDailyPack, processOfflineQueue])
 
   return (
     <div
@@ -208,6 +220,7 @@ export default function App() {
         <Suspense fallback={<PageFallback />}>
           <AppRoutes />
         </Suspense>
+        <PWAUpdater />
       </div>
     </BrowserRouter>
   )
