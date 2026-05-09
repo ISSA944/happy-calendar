@@ -90,8 +90,7 @@ export function ChangeEmailOtpPage() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [resendKey, setResendKey] = useState(0)
   const [submitError, setSubmitError] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isResending, setIsResending] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const refCallbacks = useMemo(
@@ -104,8 +103,8 @@ export function ChangeEmailOtpPage() {
   const isValid = code.every(digit => digit !== '')
 
   useEffect(() => {
-    if (!email) navigate('/change-email', { replace: true })
-  }, [email, navigate])
+    if (!email && !isSuccess) navigate('/change-email', { replace: true })
+  }, [email, navigate, isSuccess])
 
   const handleChange = useCallback((index: number, value: string) => {
     if (value && !/^\d+$/.test(value)) return
@@ -148,6 +147,7 @@ export function ChangeEmailOtpPage() {
         email: email.trim(),
         code: code.join(''),
       })
+      setIsSuccess(true)
       setAuthTokens(data.accessToken, data.refreshToken)
       setEmail(email.trim())
       clearDraft()

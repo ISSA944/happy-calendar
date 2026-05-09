@@ -268,36 +268,45 @@ export function SettingsPage() {
       <AnimatePresence>
         {showEmailSuccess && (
           <motion.div
-            className="fixed inset-0 z-[9999] flex items-end justify-center bg-on-background/40 backdrop-blur-[20px] p-0 landscape:items-center landscape:p-6"
+            className="fixed inset-0 z-[9999] flex items-end justify-center bg-on-background/40 backdrop-blur-[24px] p-0 sm:items-center sm:p-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              initial={{ opacity: 0, y: 28, scale: 0.98 }}
+              initial={{ opacity: 0, y: 32, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 24, scale: 0.98 }}
-              transition={{ duration: 0.24, ease: 'easeOut' }}
-              className="relative w-full max-w-md overflow-hidden rounded-t-[2.5rem] bg-surface-container-lowest px-8 pb-[max(3rem,env(safe-area-inset-bottom))] pt-8 text-center shadow-[0_32px_64px_-12px_rgba(28,28,25,0.15)] landscape:rounded-[2.5rem] landscape:pb-8"
+              exit={{ opacity: 0, y: 24, scale: 0.96 }}
+              transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+              className="relative w-full max-w-md overflow-hidden rounded-t-[2.5rem] bg-surface-container-lowest px-8 pb-12 pt-8 text-center shadow-[0_32px_64px_-12px_rgba(28,28,25,0.15)] sm:rounded-[2.5rem] sm:pb-8"
             >
-              <div className="mx-auto mb-8 h-1.5 w-12 rounded-full bg-surface-dim landscape:hidden" />
+              {/* Handle for Bottom Sheet (Mobile Only) */}
+              <div className="mx-auto mb-8 h-1.5 w-12 rounded-full bg-surface-dim sm:hidden" />
+              
+              {/* Soft Glow Background Effect */}
               <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-48 -translate-x-1/2 rounded-full bg-primary-container opacity-30 blur-[80px]" />
+              
+              {/* Icon Container */}
               <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary-container/20 text-primary">
                 <div className="absolute inset-0 rounded-full bg-primary-container/10 blur-md" />
                 <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
                   check_circle
                 </span>
               </div>
-              <h2 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
+
+              {/* Content */}
+              <h2 className="font-headline text-2xl font-bold tracking-tight text-on-surface mb-3">
                 Почта успешно изменена
               </h2>
-              <p className="mx-auto mb-10 mt-3 max-w-[280px] text-base leading-relaxed text-on-surface-variant">
-                Ваш профиль обновлён. Теперь используйте новый адрес для входа.
+              <p className="mx-auto mb-10 max-w-[280px] font-body text-base leading-relaxed text-on-surface-variant">
+                Ваш профиль обновлен. Теперь вы можете использовать новый адрес для входа.
               </p>
+
+              {/* Action Button */}
               <button
                 type="button"
                 onClick={() => setShowEmailSuccess(false)}
-                className="h-14 w-full rounded-full bg-gradient-to-r from-primary to-primary-container px-6 font-headline text-[17px] font-semibold text-on-primary shadow-[0_8px_24px_-8px_rgba(0,106,101,0.4)] transition-all active:scale-[0.98]"
+                className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-semibold text-[17px] py-4 px-6 rounded-full shadow-[0_8px_24px_-8px_rgba(0,106,101,0.4)] hover:shadow-[0_12px_32px_-8px_rgba(0,106,101,0.5)] active:scale-[0.98] transition-all duration-200"
               >
                 Готово
               </button>
