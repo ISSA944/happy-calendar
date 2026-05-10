@@ -6,6 +6,7 @@ import {
   IsUrl,
   MaxLength,
   Matches,
+  ValidateIf,
 } from 'class-validator';
 import { PrismaService } from '../prisma';
 import { AiService } from '../ai';
@@ -14,7 +15,7 @@ import { TodayService } from '../today/today.service';
 export class UpdateProfileDto {
   @IsOptional()
   @IsString()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'birthdate must be YYYY-MM-DD' })
+  @Matches(/^\d{2}\.\d{2}\.\d{4}$/, { message: 'birthdate must be DD.MM.YYYY' })
   @MaxLength(32)
   birthdate?: string;
 
@@ -29,6 +30,7 @@ export class UpdateProfileDto {
   gender?: string;
 
   @IsOptional()
+  @ValidateIf(o => !!o.avatarUrl)
   @IsUrl({}, { message: 'avatarUrl must be a valid URL' })
   @MaxLength(500)
   avatarUrl?: string;
