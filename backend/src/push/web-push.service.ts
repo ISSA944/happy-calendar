@@ -90,8 +90,16 @@ export class WebPushService {
         }),
       );
       return true;
-    } catch (error) {
-      this.logger.error('Error sending Web Push notification', error);
+    } catch (error: any) {
+      const statusCode = error?.statusCode as number | undefined;
+      if (statusCode === 410 || statusCode === 404) {
+        this.logger.warn(`Dead push subscription (${statusCode}), removing: ${subscription.endpoint.slice(0, 60)}...`);
+        await this.prisma.webPushSubscription.deleteMany({
+          where: { endpoint: subscription.endpoint },
+        }).catch(() => {});
+      } else {
+        this.logger.error('Error sending Web Push notification', error);
+      }
       return false;
     }
   }
