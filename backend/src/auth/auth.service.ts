@@ -113,9 +113,9 @@ export class AuthService {
       );
     }
 
-    console.log('-----------------------------------------');
-    console.log(`!!! OTP FOR ${normalizedEmail}: ${code} !!!`);
-    console.log('-----------------------------------------');
+    if (isDev) {
+      this.logger.debug(`DEV OTP for ${normalizedEmail}: ${code}`);
+    }
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
     const otpExpiresAt = new Date(Date.now() + this.OTP_TTL_MIN * 60_000);
 

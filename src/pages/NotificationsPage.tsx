@@ -310,7 +310,16 @@ export function NotificationsPage() {
               </button>
 
               {pushError && (
-                <p className="text-center text-xs font-medium text-error leading-snug">{pushError}</p>
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-center text-xs font-medium text-error leading-snug">{pushError}</p>
+                  <button
+                    type="button"
+                    onClick={() => { setPushError(''); void handleAllow(); }}
+                    className="text-primary text-sm font-semibold underline underline-offset-2 active:opacity-70"
+                  >
+                    Попробовать снова
+                  </button>
+                </div>
               )}
             </div>
           )}

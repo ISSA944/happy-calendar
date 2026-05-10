@@ -79,11 +79,16 @@ export function useWebPush() {
   const unsubscribe = useCallback(async () => {
     setIsLoading(true);
     try {
+      const existing = await getPushSubscription();
+      const endpoint = existing?.endpoint;
       const success = await unsubscribeFromPush();
       if (success) {
         setIsSubscribed(false);
-        // We don't necessarily need to tell the backend right away, 
-        // as standard web-push is cleaned up on 410 Gone responses.
+        if (endpoint && getAccessToken()) {
+          await apiClient.delete('push/unsubscribe', { data: { endpoint } }).catch(() => {
+            // Non-fatal — backend cleans up on next 410 Gone anyway
+          });
+        }
       }
     } finally {
       setIsLoading(false);

@@ -426,12 +426,11 @@ export const useAppStore = create<AppState>()(
         if (queue.length === 0 || !getAccessToken()) return
 
         console.log('[store] Processing offline queue...', queue.length, 'tasks')
-        // Clear queue optimistically
-        set({ offlineQueue: [] })
 
-        const failedTasks: OfflineTask[] = []
+        const processedIndexes = new Set<number>()
 
-        for (const task of queue) {
+        for (let i = 0; i < queue.length; i++) {
+          const task = queue[i]
           try {
             if (task.type === 'ADD_BOOKMARK') {
               const { data } = await apiClient.post<BookmarkResponse>('bookmarks', {
@@ -444,15 +443,14 @@ export const useAppStore = create<AppState>()(
             } else if (task.type === 'REMOVE_BOOKMARK') {
               await apiClient.delete(`bookmarks/${task.payload.id}`)
             }
+            processedIndexes.add(i)
           } catch (err) {
             console.error(`[store] Queue task failed:`, task, err)
-            failedTasks.push(task)
           }
         }
 
-        if (failedTasks.length > 0) {
-          set((state) => ({ offlineQueue: [...failedTasks, ...state.offlineQueue] }))
-        }
+        // Remove only successfully processed tasks — failed ones stay for retry
+        set({ offlineQueue: queue.filter((_, i) => !processedIndexes.has(i)) })
       },
 
       resetApp: async () => {

@@ -71,7 +71,7 @@ export class TodayService {
       const lockAcquired = await this.redis.acquireLock(lockKey, AI_LOCK_TTL);
 
       if (!lockAcquired) {
-        // Another request is generating — wait briefly then re-check Redis.
+        // Another request has the lock — wait briefly then re-check Redis.
         this.logger.log(`getTodayPack lock busy, waiting... key=${cacheKey}`);
         await new Promise(r => setTimeout(r, 4000));
         const retried = await this.redis.get(cacheKey);
@@ -80,8 +80,9 @@ export class TodayService {
         }
       }
 
-      // If we got the lock (or the wait still yielded nothing), call AI.
       if (!pack) {
+        // Call AI and write to Redis whether we hold the lock or not.
+        // Edge case without lock: two concurrent writes are idempotent (same data).
         try {
           this.logger.log(`getTodayPack calling AI key=${cacheKey}`);
           const context: PromptContext = { zodiacSign, mood, gender, date: today };
@@ -94,9 +95,9 @@ export class TodayService {
         } finally {
           if (lockAcquired) await this.redis.releaseLock(lockKey);
         }
-      } else {
-        // Re-check Redis hit after wait — release lock if we held it.
-        if (lockAcquired) await this.redis.releaseLock(lockKey);
+      } else if (lockAcquired) {
+        // Cache was populated after our wait — release the lock we no longer need.
+        await this.redis.releaseLock(lockKey);
       }
     }
 
