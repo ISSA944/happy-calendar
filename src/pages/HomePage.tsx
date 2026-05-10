@@ -144,7 +144,7 @@ export function HomePage() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               style={{ willChange: 'opacity' }}
-              className="bg-surface-container-low rounded-[24px] p-4 border border-white/40 flex items-center gap-3 landscape:gap-4 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8 overflow-hidden"
+              className="bg-surface-container-low rounded-[24px] py-4 pl-4 pr-10 border border-white/40 flex items-center gap-3 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8 overflow-hidden"
             >
               <button
                 onClick={() => {
