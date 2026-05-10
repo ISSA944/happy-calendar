@@ -5,6 +5,8 @@ import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(require('express').json({ limit: '5mb' }));
+  app.use(require('express').urlencoded({ extended: true, limit: '5mb' }));
 
   app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
