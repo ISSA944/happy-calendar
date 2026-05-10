@@ -61,4 +61,30 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       // TTL will clean it up automatically
     }
   }
+
+  async lpush(key: string, values: string[], ttlSeconds: number): Promise<void> {
+    try {
+      if (!this.client || values.length === 0) return;
+      await this.client.lpush(key, ...values);
+      await this.client.expire(key, ttlSeconds);
+    } catch {
+      // Non-fatal
+    }
+  }
+
+  async rpop(key: string): Promise<string | null> {
+    try {
+      return await this.client?.rpop(key) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async llen(key: string): Promise<number> {
+    try {
+      return await this.client?.llen(key) ?? 0;
+    } catch {
+      return 0;
+    }
+  }
 }

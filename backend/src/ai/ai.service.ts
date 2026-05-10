@@ -67,6 +67,26 @@ const SUPPORT_PHRASE_SCHEMA = {
   },
 };
 
+const SUPPORT_PHRASES_BATCH_SCHEMA = {
+  type: 'json_schema' as const,
+  json_schema: {
+    name: 'support_phrases_batch',
+    strict: true,
+    schema: {
+      type: 'object',
+      properties: {
+        p1: { type: 'string' },
+        p2: { type: 'string' },
+        p3: { type: 'string' },
+        p4: { type: 'string' },
+        p5: { type: 'string' },
+      },
+      required: ['p1', 'p2', 'p3', 'p4', 'p5'],
+      additionalProperties: false,
+    },
+  },
+};
+
 const LLM_MODEL = 'gpt-5.4-mini-2026-03-17' as const;
 
 @Injectable()
@@ -381,5 +401,61 @@ export class AiService {
     return {
       supportPhrase: phrases[Math.floor(Math.random() * phrases.length)],
     };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // generateSupportPhrasesBatch — generates 5 phrases in one AI call.
+  // Used to pre-fill Redis pool so subsequent "другая фраза" taps are free.
+  // ─────────────────────────────────────────────────────────────────────────
+  async generateSupportPhrasesBatch(
+    mood: string,
+    zodiacSign?: string,
+    holiday?: string,
+  ): Promise<string[]> {
+    this.logger.log(`generateSupportPhrasesBatch mood=${mood}, sign=${zodiacSign ?? 'unknown'}`);
+
+    if (this.openai) {
+      try {
+        const signContext    = zodiacSign ? `Знак зодиака: ${zodiacSign}. ` : '';
+        const holidayContext = holiday    ? `Сегодня праздник: ${holiday}. ` : '';
+        const completion = await this.openai.chat.completions.create({
+          model: LLM_MODEL,
+          temperature: 0.9,
+          response_format: SUPPORT_PHRASES_BATCH_SCHEMA,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'Ты — мудрый астрологический наставник и психолог. Пишешь короткие, тёплые, персональные фразы поддержки на русском языке. ' +
+                'Каждая фраза уникальна, не повторяет другие. Учитываешь характер знака зодиака и настроение. ' +
+                'Отвечай строго по JSON-схеме.',
+            },
+            {
+              role: 'user',
+              content:
+                `${signContext}${holidayContext}Текущее настроение: ${mood}. ` +
+                'Напиши 5 разных персональных фраз поддержки (каждая 1–2 предложения). ' +
+                'Каждая должна звучать по-разному — разный тон, разный угол. ' +
+                'Без шаблонов, как слова близкого человека.',
+            },
+          ],
+        });
+
+        const raw = completion.choices[0]?.message?.content ?? '';
+        const parsed = JSON.parse(raw) as Record<string, string>;
+        const batch = [parsed.p1, parsed.p2, parsed.p3, parsed.p4, parsed.p5]
+          .map(p => stripHtml(p))
+          .filter(Boolean);
+        this.logger.log(`generateSupportPhrasesBatch OK, got ${batch.length} phrases`);
+        return batch;
+      } catch (err) {
+        this.logger.error('generateSupportPhrasesBatch failed — using fallback', (err as Error).message);
+      }
+    }
+
+    // Fallback: pick 5 random from mock dictionary
+    const phrases = this.supportPhrases[mood] ?? this.supportPhrases['Нормально'];
+    const shuffled = [...phrases].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 5);
   }
 }

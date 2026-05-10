@@ -1,18 +1,26 @@
-import { Controller, Get, Post, HttpCode, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, HttpCode, UseGuards, Logger } from '@nestjs/common';
 import { TodayService } from './today.service';
 import { AiService } from '../ai';
 import { PrismaService } from '../prisma';
+import { RedisService } from '../redis/redis.service';
+import { resolveHoliday } from '../ai/holidays.data';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/current-user.decorator';
 
+const POOL_MIN = 2;     // refill pool when fewer than this many phrases left
+const POOL_TTL = 86400; // 24h TTL for pool keys
+
 @Controller('api/today')
 @UseGuards(JwtAuthGuard)
 export class TodayController {
+  private readonly logger = new Logger(TodayController.name);
+
   constructor(
     private readonly todayService: TodayService,
     private readonly ai: AiService,
     private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
   ) {}
 
   @Get()
@@ -23,14 +31,75 @@ export class TodayController {
   @Post('support/next')
   @HttpCode(200)
   async nextSupport(@CurrentUser() user: AuthUser) {
-    // "Другая фраза" — always produces a fresh phrase, never cached.
-    const profile = await this.prisma.profile.findUnique({ where: { userId: user.sub } });
-    const mood       = profile?.currentMood  ?? 'Нормально';
-    const zodiacSign = profile?.zodiacSign   ?? undefined;
+    const [profile, prefs] = await Promise.all([
+      this.prisma.profile.findUnique({ where: { userId: user.sub } }),
+      this.prisma.prefs.findUnique({ where: { userId: user.sub } }),
+    ]);
 
-    const { supportPhrase } = await this.ai.updateMoodSupport(user.sub, mood, zodiacSign);
+    const mood       = profile?.currentMood ?? 'Нормально';
+    const zodiacSign = profile?.zodiacSign  ?? undefined;
+    const today      = this.getTodayStr(prefs?.timezone);
+    const holiday    = resolveHoliday(today).name ?? undefined;
+
+    const poolKey = `support-pool:${mood}:${zodiacSign ?? 'unknown'}:${today}`;
+
+    // Try to pop a phrase from the shared pool first (no AI call)
+    let supportPhrase = await this.redis.rpop(poolKey);
+
+    if (supportPhrase) {
+      this.logger.log(`nextSupport pool HIT key=${poolKey}`);
+      // Refill pool in background if running low
+      const remaining = await this.redis.llen(poolKey);
+      if (remaining < POOL_MIN) {
+        void this.refillPool(poolKey, mood, zodiacSign, holiday);
+      }
+    } else {
+      // Pool empty — generate batch and fill it
+      this.logger.log(`nextSupport pool MISS key=${poolKey}, generating batch`);
+      const batch = await this.ai.generateSupportPhrasesBatch(mood, zodiacSign, holiday);
+      if (batch.length > 1) {
+        await this.redis.lpush(poolKey, batch.slice(1), POOL_TTL);
+      }
+      supportPhrase = batch[0] ?? 'Ты справляешься. Продолжай.';
+    }
+
     await this.todayService.replaceSupportPhrase(user.sub, mood, supportPhrase);
-
     return { support: { text: supportPhrase } };
+  }
+
+  private async refillPool(
+    poolKey: string,
+    mood: string,
+    zodiacSign?: string,
+    holiday?: string,
+  ): Promise<void> {
+    try {
+      const batch = await this.ai.generateSupportPhrasesBatch(mood, zodiacSign, holiday);
+      if (batch.length > 0) {
+        await this.redis.lpush(poolKey, batch, POOL_TTL);
+        this.logger.log(`nextSupport pool refilled key=${poolKey}, ${batch.length} phrases`);
+      }
+    } catch (err) {
+      this.logger.error('Pool refill failed', err);
+    }
+  }
+
+  private getTodayStr(timezone?: string | null): string {
+    const now = new Date();
+    if (timezone) {
+      try {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+          timeZone: timezone,
+          day: '2-digit',
+          month: '2-digit',
+        }).formatToParts(now);
+        const day   = parts.find(p => p.type === 'day')?.value   ?? '';
+        const month = parts.find(p => p.type === 'month')?.value ?? '';
+        if (day && month) return `${day}.${month}`;
+      } catch { /* fall through */ }
+    }
+    const d = String(now.getUTCDate()).padStart(2, '0');
+    const m = String(now.getUTCMonth() + 1).padStart(2, '0');
+    return `${d}.${m}`;
   }
 }
