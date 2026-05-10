@@ -205,9 +205,9 @@ export class AuthService {
         `   OTP code: [ ${code} ]  (enter this on the email-change OTP page)\n`,
       );
     }
-    console.log('-----------------------------------------');
-    console.log(`!!! EMAIL CHANGE OTP FOR ${normalizedEmail}: ${code} !!!`);
-    console.log('-----------------------------------------');
+    if (isDev) {
+      this.logger.debug(`DEV email-change OTP for ${normalizedEmail}: ${code}`);
+    }
 
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
     const otpExpiresAt = new Date(Date.now() + this.OTP_TTL_MIN * 60_000);
