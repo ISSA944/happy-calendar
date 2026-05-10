@@ -144,7 +144,7 @@ export function HomePage() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               style={{ willChange: 'opacity' }}
-              className="bg-surface-container-low rounded-[24px] p-4 border border-white/40 flex items-center gap-4 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8"
+              className="bg-surface-container-low rounded-[24px] p-4 border border-white/40 flex items-center gap-3 landscape:gap-4 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8 overflow-hidden"
             >
               <button
                 onClick={() => {
@@ -156,7 +156,7 @@ export function HomePage() {
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
-              <div className="w-12 h-12 flex-shrink-0 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+              <div className="w-12 h-12 landscape:w-10 landscape:h-10 flex-shrink-0 bg-white rounded-2xl flex items-center justify-center shadow-sm">
                 <span className="material-symbols-outlined text-primary-container text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_today</span>
               </div>
               <div className="flex-1 min-w-0 pr-2">
