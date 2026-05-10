@@ -55,7 +55,7 @@ export class AuthController {
 
   @Post('verify-otp')
   @HttpCode(200)
-  @Throttle({ default: { limit: 10, ttl: 900_000 } })
+  @Throttle({ default: { limit: 5, ttl: 3_600_000 } })
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     this.logger.log(`POST /api/auth/verify-otp email=${dto.email}`);
     return this.authService.verifyOtp(dto.email, dto.code);
@@ -80,7 +80,7 @@ export class AuthController {
   @Post('email-change/verify')
   @HttpCode(200)
   @UseGuards(JwtAuthGuard)
-  @Throttle({ default: { limit: 10, ttl: 900_000 } })
+  @Throttle({ default: { limit: 5, ttl: 3_600_000 } })
   async verifyEmailChange(
     @CurrentUser() user: AuthUser,
     @Body() dto: VerifyEmailChangeDto,

@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsOptional,
   IsString,
+  IsUrl,
   MaxLength,
   Matches,
 } from 'class-validator';
@@ -13,6 +14,7 @@ import { TodayService } from '../today/today.service';
 export class UpdateProfileDto {
   @IsOptional()
   @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'birthdate must be YYYY-MM-DD' })
   @MaxLength(32)
   birthdate?: string;
 
@@ -27,7 +29,7 @@ export class UpdateProfileDto {
   gender?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl({}, { message: 'avatarUrl must be a valid URL' })
   @MaxLength(500)
   avatarUrl?: string;
 

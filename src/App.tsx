@@ -33,6 +33,8 @@ import { ChangeEmailOtpPage } from './pages/ChangeEmailOtpPage'
 
 const APP_SHELL_ROUTES: readonly string[] = ['/home', '/bookmarks', '/settings', '/notifications-list']
 
+let lastSyncAt = 0
+
 function PageFallback() {
   return <div className="h-[100dvh] w-full" style={{ background: '#fcf9f4' }} />
 }
@@ -115,14 +117,19 @@ function AppLayout() {
   const processOfflineQueue = useAppStore(s => s.processOfflineQueue)
 
   useEffect(() => {
+    lastSyncAt = Date.now()
     void syncProfile()
     void initDailyPack()
     void processOfflineQueue()
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        void syncProfile()
-        void initDailyPack()
+        const now = Date.now()
+        if (now - lastSyncAt > 5 * 60 * 1000) {
+          lastSyncAt = now
+          void syncProfile()
+          void initDailyPack()
+        }
       }
     }
 

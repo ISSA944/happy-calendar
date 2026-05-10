@@ -15,7 +15,7 @@
 *   **Frontend (PWA):** React 19 + TypeScript + Vite + Tailwind CSS + Zustand + Framer Motion + Vite PWA Plugin.
 *   **Backend (API Gateway):** Node.js + NestJS 11 + Prisma ORM 6.
 *   **Databases:** PostgreSQL 15 (Primary DB) + Redis (AI Cache, TTL 24h).
-*   **Integrations:** Firebase Cloud Messaging (FCM) для Push, Gmail SMTP для OTP.
+*   **Integrations:** Feb Push для Push, Gmail SMTP для OTP.
 *   **AI Provider:** OpenAI (модель `gpt-5.4-mini-2026-03-17` со строгими Structured Outputs).
 *   **Deployment:** Vercel (Front) + Timeweb Cloud VPS (Ubuntu 22.04 LTS, 2vCPU, 2GB RAM) для бэкенда (Docker, Nginx, Let's Encrypt).
 *   **SMTP:** `SMTP_FROM_NAME="YoYoJoy Day"`.

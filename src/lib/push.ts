@@ -2,9 +2,6 @@
  * Utilities for Web Push notifications using standard browser APIs.
  */
 
-// Default VAPID public key (should be overridden by VITE_WEB_PUSH_PUBLIC_KEY)
-const DEFAULT_VAPID_PUBLIC_KEY = 'BEtV1AcnWgeAjXLfOP-5yxBB40pxq8RCNXzbJzi1zSisAWmbiZbWsY__BRFaRngpcxgF9e7raeiuanaf_br4OBk';
-
 /**
  * Converts a base64 string to a Uint8Array.
  * Required for subscribing to push notifications with a VAPID key.
@@ -68,7 +65,11 @@ export async function subscribeToPush(): Promise<PushResult> {
     try {
       const registration = await navigator.serviceWorker.ready;
       
-      const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
+      const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY;
+      if (!publicKey) {
+        clearTimeout(timeoutId);
+        return resolve({ success: false, errorType: 'subscribe_fail', error: 'VAPID key not configured' });
+      }
       const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
       const existing = await registration.pushManager.getSubscription();

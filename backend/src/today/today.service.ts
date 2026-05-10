@@ -73,7 +73,7 @@ export class TodayService {
       if (!lockAcquired) {
         // Another request has the lock — wait briefly then re-check Redis.
         this.logger.log(`getTodayPack lock busy, waiting... key=${cacheKey}`);
-        await new Promise(r => setTimeout(r, 4000));
+        await new Promise(r => setTimeout(r, 1000));
         const retried = await this.redis.get(cacheKey);
         if (retried) {
           pack = JSON.parse(retried) as AiDailyPack;

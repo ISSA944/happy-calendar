@@ -3,6 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { resolveHoliday } from './holidays.data';
 
+function stripHtml(s: string): string {
+  return s.replace(/<[^>]*>/g, '').trim();
+}
+
 /** Структура дневного пакета, возвращаемого AI */
 export interface AiDailyPack {
   horoscope: string;
@@ -286,7 +290,15 @@ export class AiService {
           `generateDailyPack LLM OK, tokens=${completion.usage?.total_tokens ?? '?'}`,
         );
 
-        return { ...parsed, holiday: holiday.name };
+        return {
+          horoscope:         stripHtml(parsed.horoscope),
+          horoscopeDetailed: stripHtml(parsed.horoscopeDetailed),
+          advice:            stripHtml(parsed.advice),
+          moon:              stripHtml(parsed.moon),
+          aspect:            stripHtml(parsed.aspect),
+          supportPhrase:     stripHtml(parsed.supportPhrase),
+          holiday:           holiday.name,
+        };
       } catch (err) {
         this.logger.error(
           'generateDailyPack LLM failed — using fallback',
@@ -303,13 +315,13 @@ export class AiService {
     const holiday = resolveHoliday(context.date);
 
     return {
-      horoscope:         horoscope.main,
-      horoscopeDetailed: horoscope.detailed,
-      advice:            horoscope.advice,
-      moon:              horoscope.moon,
-      aspect:            horoscope.aspect,
+      horoscope:         stripHtml(horoscope.main),
+      horoscopeDetailed: stripHtml(horoscope.detailed),
+      advice:            stripHtml(horoscope.advice),
+      moon:              stripHtml(horoscope.moon),
+      aspect:            stripHtml(horoscope.aspect),
       holiday:           holiday.name,
-      supportPhrase:     phrases[Math.floor(Math.random() * phrases.length)],
+      supportPhrase:     stripHtml(phrases[Math.floor(Math.random() * phrases.length)]),
       isFallback:        true,
     };
   }

@@ -271,6 +271,7 @@ export class AuthService {
         pendingEmail: null,
         emailChangeOtpHash: null,
         emailChangeOtpExpiresAt: null,
+        refreshTokenHash: null,
       },
     });
 
