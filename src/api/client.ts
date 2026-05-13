@@ -7,7 +7,7 @@ function resolveApiBaseUrl() {
 
   if (typeof window !== 'undefined') {
     const host = window.location.hostname
-    if (host === 'yoyojoy.online' || host.endsWith('.vercel.app')) {
+    if (host === 'yoyojoy.online' || host === 'www.yoyojoy.online' || host.endsWith('.vercel.app')) {
       return 'https://api.yoyojoy.online/api'
     }
   }
