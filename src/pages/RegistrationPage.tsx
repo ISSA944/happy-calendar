@@ -163,6 +163,16 @@ export function RegistrationPage() {
                 <p className="text-center text-sm font-medium text-red-500">{submitError}</p>
               ) : null}
               <p className="text-center text-sm font-medium text-on-surface-variant/70">Почта нужна, чтобы сохранить твои настройки.</p>
+
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <span className="text-sm text-on-surface-variant/60">Уже есть аккаунт?</span>
+                <Link
+                  to="/login"
+                  className="text-sm font-bold text-primary underline underline-offset-2 active:opacity-70"
+                >
+                  Войти
+                </Link>
+              </div>
             </div>
           </div>
         </form>
