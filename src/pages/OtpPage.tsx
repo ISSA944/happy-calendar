@@ -184,7 +184,7 @@ export function OtpPage() {
       })
 
       setAuthTokens(data.accessToken, data.refreshToken)
-      navigate('/notifications')
+      navigate(isLoginFlow ? '/' : '/notifications')
     } catch (err: any) {
       const status = err?.response?.status
       if (status === 429) {
