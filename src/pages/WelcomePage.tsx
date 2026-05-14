@@ -2,7 +2,6 @@ import React from 'react'
 import { motion, type Variants } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import welcomeOrbImg from '../assets/images/welcome-orb.jpg'
-import { MagicIcon, HeartIcon, PartyIcon } from '../components/ui/WelcomeIcons'
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -68,9 +67,9 @@ export function WelcomePage() {
             animate="visible"
             className="hidden landscape:flex flex-col space-y-4 mt-4"
           >
-            <Feature icon={<MagicIcon className="text-primary w-5 h-5" />} label="Гороскоп по твоему знаку" />
-            <Feature icon={<HeartIcon className="text-primary w-5 h-5" />} label="Поддержка в моменте" />
-            <Feature icon={<PartyIcon className="text-primary w-5 h-5" />} label="Поздравления с праздниками" />
+            <Feature icon={<span className="material-symbols-outlined text-primary text-[20px]">auto_awesome</span>} label="Гороскоп по твоему знаку" />
+            <Feature icon={<span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>} label="Поддержка в моменте" />
+            <Feature icon={<span className="material-symbols-outlined text-primary text-[20px]">celebration</span>} label="Поздравления с праздниками" />
           </motion.div>
         </div>
 
@@ -115,9 +114,9 @@ export function WelcomePage() {
             animate="visible"
             className="flex landscape:hidden flex-col space-y-4 w-full px-2"
           >
-            <Feature icon={<MagicIcon className="text-primary w-5 h-5" />} label="Гороскоп по твоему знаку" />
-            <Feature icon={<HeartIcon className="text-primary w-5 h-5" />} label="Поддержка в моменте" />
-            <Feature icon={<PartyIcon className="text-primary w-5 h-5" />} label="Поздравления с праздниками" />
+            <Feature icon={<span className="material-symbols-outlined text-primary text-[20px]">auto_awesome</span>} label="Гороскоп по твоему знаку" />
+            <Feature icon={<span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>} label="Поддержка в моменте" />
+            <Feature icon={<span className="material-symbols-outlined text-primary text-[20px]">celebration</span>} label="Поздравления с праздниками" />
           </motion.div>
 
           {/* CTA */}
