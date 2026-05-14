@@ -28,6 +28,7 @@ import { OtpPage } from './pages/OtpPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { ProfileSetupPage } from './pages/ProfileSetupPage'
 import { RegistrationPage } from './pages/RegistrationPage'
+import { LoginPage } from './pages/LoginPage'
 import { ChangeEmailPage } from './pages/ChangeEmailPage'
 import { ChangeEmailOtpPage } from './pages/ChangeEmailOtpPage'
 
@@ -191,6 +192,7 @@ function AppRoutes() {
       <Routes location={location} key={routeKey}>
         <Route path="/" element={<PageTransition><RootGuard /></PageTransition>} />
         <Route path="/register" element={<PageTransition><RegistrationPage /></PageTransition>} />
+        <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
         <Route path="/otp" element={<PageTransition><OtpPage /></PageTransition>} />
         <Route path="/notifications" element={<PageTransition><RequireAuth><NotificationsPage /></RequireAuth></PageTransition>} />
         <Route path="/change-email" element={<PageTransition><RequireAuth><ChangeEmailPage /></RequireAuth></PageTransition>} />

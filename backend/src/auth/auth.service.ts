@@ -4,6 +4,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException, // used in login()
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -83,10 +84,13 @@ export class AuthService {
   async register(email: string, name?: string, consents?: boolean) {
     const normalizedEmail = email.trim().toLowerCase();
 
-    const user = await this.prisma.user.upsert({
-      where: { email: normalizedEmail },
-      update: { name: name ?? undefined },
-      create: { email: normalizedEmail, name: name ?? null },
+    const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (existing) {
+      throw new ConflictException('Email already registered');
+    }
+
+    const user = await this.prisma.user.create({
+      data: { email: normalizedEmail, name: name ?? null },
     });
 
     if (consents !== undefined) {
@@ -126,6 +130,40 @@ export class AuthService {
 
     this.logger.log(`OTP отправлен на ${normalizedEmail} (TTL ${this.OTP_TTL_MIN} мин)`);
 
+    return { ok: true, email: normalizedEmail };
+  }
+
+  async login(email: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (!user) {
+      throw new NotFoundException('Email not found');
+    }
+
+    const code = randomInt(1000, 10_000).toString();
+    const isDev = this.config.get<string>('NODE_ENV') !== 'production';
+
+    try {
+      await this.sendOtpEmail(normalizedEmail, code);
+    } catch (err) {
+      if (!isDev) throw err;
+      this.logger.warn(`\n⚠️  DEV MODE — email send failed for <${normalizedEmail}>.\n   OTP code: [ ${code} ]\n`);
+    }
+
+    if (isDev) {
+      this.logger.debug(`DEV login OTP for ${normalizedEmail}: ${code}`);
+    }
+
+    const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
+    const otpExpiresAt = new Date(Date.now() + this.OTP_TTL_MIN * 60_000);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { otpHash, otpExpiresAt },
+    });
+
+    this.logger.log(`Login OTP отправлен на ${normalizedEmail} (TTL ${this.OTP_TTL_MIN} мин)`);
     return { ok: true, email: normalizedEmail };
   }
 

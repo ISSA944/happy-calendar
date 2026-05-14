@@ -41,9 +41,12 @@ export function RegistrationPage() {
       clearDraft()
       navigate('/otp')
     } catch (err: any) {
-      console.error('Registration error:', err)
-      const msg = err.response?.data?.message || err.message || 'Не удалось отправить код. Проверь соединение.'
-      setSubmitError(msg === 'Network Error' ? 'Ошибка сети: сервер недоступен или проблема с SSL' : msg)
+      const status = err?.response?.status
+      if (status === 409) {
+        setSubmitError('__email_exists__')
+      } else {
+        setSubmitError('Не удалось отправить код. Проверь соединение.')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -151,7 +154,14 @@ export function RegistrationPage() {
                 {isSubmitting ? 'Отправляем...' : 'Получить код'}
               </button>
 
-              {submitError && <p className="text-center text-sm font-medium text-red-500">{submitError}</p>}
+              {submitError === '__email_exists__' ? (
+                <div className="text-center">
+                  <p className="text-sm font-medium text-on-surface-variant mb-2">Этот email уже зарегистрирован.</p>
+                  <Link to="/login" className="text-sm font-bold text-primary underline underline-offset-2">Войти в аккаунт →</Link>
+                </div>
+              ) : submitError ? (
+                <p className="text-center text-sm font-medium text-red-500">{submitError}</p>
+              ) : null}
               <p className="text-center text-sm font-medium text-on-surface-variant/70">Почта нужна, чтобы сохранить твои настройки.</p>
             </div>
           </div>

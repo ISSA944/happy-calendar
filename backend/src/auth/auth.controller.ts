@@ -16,6 +16,11 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import type { AuthUser } from './current-user.decorator';
 
+class LoginDto {
+  @IsEmail()
+  email!: string;
+}
+
 class RequestEmailChangeDto {
   @IsEmail()
   email!: string;
@@ -51,6 +56,14 @@ export class AuthController {
   async register(@Body() dto: RegisterDto) {
     this.logger.log(`POST /api/auth/register email=${dto.email}`);
     return this.authService.register(dto.email, dto.name, dto.consents);
+  }
+
+  @Post('login')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 900_000 } })
+  async login(@Body() dto: LoginDto) {
+    this.logger.log(`POST /api/auth/login email=${dto.email}`);
+    return this.authService.login(dto.email);
   }
 
   @Post('verify-otp')
