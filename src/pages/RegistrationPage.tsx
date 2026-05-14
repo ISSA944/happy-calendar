@@ -155,10 +155,7 @@ export function RegistrationPage() {
               </button>
 
               {submitError === '__email_exists__' ? (
-                <div className="text-center">
-                  <p className="text-sm font-medium text-on-surface-variant mb-2">Этот email уже зарегистрирован.</p>
-                  <Link to="/login" className="text-sm font-bold text-primary underline underline-offset-2">Войти в аккаунт →</Link>
-                </div>
+                <p className="text-center text-sm font-medium text-red-500">Этот email уже зарегистрирован.</p>
               ) : submitError ? (
                 <p className="text-center text-sm font-medium text-red-500">{submitError}</p>
               ) : null}
