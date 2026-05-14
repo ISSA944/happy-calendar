@@ -163,7 +163,11 @@ export function OtpPage() {
   const handleBlur = useCallback(() => setActiveIndex(null), [])
 
   const handleSubmit = useCallback(async () => {
-    if (!isValid || !email || isSubmitting) return
+    if (!isValid || isSubmitting) return
+    if (!email) {
+      setSubmitError('Сессия истекла. Вернись назад и введи email заново.')
+      return
+    }
 
     setIsSubmitting(true)
     setSubmitError('')
@@ -179,8 +183,17 @@ export function OtpPage() {
 
       setAuthTokens(data.accessToken, data.refreshToken)
       navigate('/notifications')
-    } catch {
-      setSubmitError('Неверный код или он уже истёк. Попробуй ещё раз.')
+    } catch (err: any) {
+      const status = err?.response?.status
+      if (status === 429) {
+        setSubmitError('Слишком много попыток. Подожди 1 час и попробуй снова.')
+      } else if (status === 401) {
+        setSubmitError('Неверный код или он уже истёк. Запроси новый.')
+      } else if (status >= 400 && status < 500) {
+        setSubmitError('Ошибка запроса. Вернись назад и попробуй снова.')
+      } else {
+        setSubmitError('Нет связи с сервером. Проверь интернет и попробуй снова.')
+      }
     } finally {
       setIsSubmitting(false)
     }
