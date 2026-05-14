@@ -89,26 +89,21 @@ export function LoginPage() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
 
             {/* Email */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-on-surface-variant px-1" htmlFor="login-email">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="login-email">
                 Электронная почта
               </label>
-              <div className="relative group">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant group-focus-within:text-primary transition-colors text-[20px]">
-                  mail
-                </span>
-                <input
-                  id="login-email"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  placeholder="example@mail.com"
-                  value={emailInput}
-                  onChange={(e) => { setEmailInput(e.target.value); setSubmitError('') }}
-                  className="w-full pl-11 pr-4 py-4 bg-surface-container-low border-none rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 text-on-surface placeholder:text-outline-variant transition-all text-base"
-                />
-              </div>
-              <p className="text-xs text-on-surface-variant/70 px-1 leading-relaxed">
+              <input
+                id="login-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="example@mail.com"
+                value={emailInput}
+                onChange={(e) => { setEmailInput(e.target.value); setSubmitError('') }}
+                className="w-full h-14 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
+              />
+              <p className="text-xs text-on-surface-variant/70 ml-1">
                 Мы пришлём код подтверждения на эту почту.
               </p>
             </div>
