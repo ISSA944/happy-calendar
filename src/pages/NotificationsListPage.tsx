@@ -102,12 +102,12 @@ export function NotificationsListPage() {
       <main className="flex-1 px-5 pb-28 w-full max-w-[430px] landscape:max-w-[860px] mx-auto landscape:grid landscape:grid-cols-2 landscape:gap-6 landscape:items-start landscape:pt-4">
 
         {/* Hero */}
-        <motion.div variants={itemVariants} className="mb-6 mt-4">
-          <div className="landscape:hidden">
+        <motion.div variants={itemVariants} className="mb-6 mt-4 flex flex-col gap-4">
+          <div>
             <h2 className="font-headline text-2xl font-extrabold text-on-surface tracking-tight mb-2">
               Мягкие напоминания
             </h2>
-            <p className="text-on-surface-variant text-sm leading-relaxed">
+            <p className="text-on-surface-variant text-sm leading-relaxed landscape:hidden">
               Все важные моменты твоего пути к осознанности собраны здесь.
             </p>
           </div>
