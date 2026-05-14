@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { apiClient } from '../api'
 import { setAuthTokens } from '../auth/token-storage'
 import { useAppStore } from '../store'
@@ -106,6 +106,8 @@ const OtpBox = memo(function OtpBox({
 
 export function OtpPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const isLoginFlow = (location.state as any)?.flow === 'login'
   const email = useAppStore((s) => s.email)
 
   const [code, setCode] = useState(['', '', '', ''])
@@ -237,7 +239,9 @@ export function OtpPage() {
           >
             <span className="material-symbols-outlined text-[24px]">arrow_back</span>
           </button>
-          <h1 className="absolute left-1/2 -translate-x-1/2 font-headline font-bold text-lg text-primary tracking-tight">Ввод кода</h1>
+          <h1 className="absolute left-1/2 -translate-x-1/2 font-headline font-bold text-lg text-primary tracking-tight">
+            {isLoginFlow ? 'Вход в аккаунт' : 'Ввод кода'}
+          </h1>
         </div>
       </header>
 

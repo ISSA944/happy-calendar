@@ -25,7 +25,7 @@ export function LoginPage() {
     try {
       await apiClient.post('auth/login', { email: emailInput.trim() })
       setEmail(emailInput.trim())
-      navigate('/otp')
+      navigate('/otp', { state: { flow: 'login' } })
     } catch (err: any) {
       const status = err?.response?.status
       if (status === 404) {
