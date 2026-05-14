@@ -31,7 +31,7 @@ export function LoginPage() {
       if (status === 404) {
         setSubmitError('__not_found__')
       } else if (status === 429) {
-        setSubmitError('Слишком много попыток. Подожди немного.')
+        setSubmitError('Слишком много попыток. Подожди немного и попробуй снова.')
       } else {
         setSubmitError('Не удалось отправить код. Проверь соединение.')
       }
@@ -46,9 +46,18 @@ export function LoginPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       style={{ willChange: 'opacity' }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] landscape:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary min-h-[100dvh] w-full max-w-[430px] landscape:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
     >
-      <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
+      {/* Декоративные блобы */}
+      <div className="fixed top-[10%] right-[5%] w-[30%] aspect-square pointer-events-none -z-10">
+        <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/5 to-transparent blur-3xl" />
+      </div>
+      <div className="fixed bottom-[10%] left-[5%] w-[40%] aspect-square pointer-events-none -z-10">
+        <div className="w-full h-full rounded-full bg-gradient-to-tr from-secondary/5 to-transparent blur-3xl" />
+      </div>
+
+      {/* Header */}
+      <header className="sticky top-0 w-full z-50 bg-background/80 backdrop-blur-md px-4 pt-[env(safe-area-inset-top,0px)]">
         <div className="flex items-center h-16 relative">
           <button
             onClick={() => navigate(-1)}
@@ -57,39 +66,56 @@ export function LoginPage() {
           >
             <span className="material-symbols-outlined text-[24px]">arrow_back</span>
           </button>
-          <h1 className="absolute left-1/2 -translate-x-1/2 font-headline font-bold text-lg text-primary tracking-tight">Вход</h1>
+          <h2 className="absolute left-1/2 -translate-x-1/2 font-headline font-bold text-lg text-primary tracking-tight">Вход в аккаунт</h2>
         </div>
       </header>
 
-      <main className="flex flex-col px-5 pt-10 pb-[max(1.5rem,env(safe-area-inset-bottom))] landscape:px-10 landscape:pt-6 landscape:max-w-[540px] landscape:mx-auto">
-        <section className="mb-8">
-          <h2 className="font-headline font-extrabold text-4xl landscape:text-2xl text-on-surface mb-3 tracking-tight leading-tight">
+      <main className="flex flex-col px-6 pt-8 pb-[max(2rem,env(safe-area-inset-bottom))] landscape:grid landscape:grid-cols-2 landscape:gap-8 landscape:px-10 landscape:pt-6 landscape:items-start w-full max-w-[480px] landscape:max-w-[860px] mx-auto">
+
+        {/* Hero */}
+        <div className="flex flex-col gap-3 text-center landscape:text-left mb-8 landscape:mb-0 landscape:pt-4">
+          <h1 className="font-headline text-4xl landscape:text-3xl font-extrabold text-on-surface tracking-tight leading-tight">
             С возвращением
-          </h2>
-          <p className="text-on-surface-variant text-base font-medium leading-relaxed">
-            Введи свой email — мы пришлём одноразовый код для входа.
+          </h1>
+          <p className="font-body text-on-surface-variant text-base landscape:text-sm leading-relaxed">
+            Введите почту, чтобы войти в свой аккаунт.
           </p>
-        </section>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-on-surface-variant">Email</label>
-            <input
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder="your@email.com"
-              value={emailInput}
-              onChange={(e) => { setEmailInput(e.target.value); setSubmitError('') }}
-              className="h-14 rounded-2xl border border-outline-variant bg-surface-container-lowest px-4 text-base text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors"
-            />
-          </div>
+        {/* Card */}
+        <div className="bg-surface-container-lowest rounded-[24px] p-6 landscape:p-8 shadow-sm">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
 
-          <div className="flex flex-col items-center gap-3">
+            {/* Email input */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-on-surface-variant px-1" htmlFor="login-email">
+                Электронная почта
+              </label>
+              <div className="relative group">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant group-focus-within:text-primary transition-colors text-[20px]">
+                  mail
+                </span>
+                <input
+                  id="login-email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="example@mail.com"
+                  value={emailInput}
+                  onChange={(e) => { setEmailInput(e.target.value); setSubmitError('') }}
+                  className="w-full pl-11 pr-4 py-4 bg-surface-container-low border border-outline-variant rounded-2xl focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 text-on-surface placeholder:text-outline-variant transition-all text-base"
+                />
+              </div>
+              <p className="text-xs text-on-surface-variant/70 px-1 leading-relaxed">
+                Мы пришлём код подтверждения на эту почту.
+              </p>
+            </div>
+
+            {/* Кнопка */}
             <button
               type="submit"
               disabled={!canSubmit || isSubmitting}
-              className={`h-14 landscape:h-12 w-full font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center active:scale-[0.98] ${
+              className={`h-14 landscape:h-12 w-full font-headline font-bold text-lg rounded-full transition-all flex items-center justify-center active:scale-[0.98] ${
                 canSubmit && !isSubmitting
                   ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 cursor-pointer'
                   : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
@@ -98,21 +124,29 @@ export function LoginPage() {
               {isSubmitting ? 'Отправляем...' : 'Получить код'}
             </button>
 
+            {/* Ошибки */}
             {submitError === '__not_found__' ? (
               <div className="text-center">
-                <p className="text-sm font-medium text-on-surface-variant mb-2">Этот email не найден.</p>
-                <Link to="/register" className="text-sm font-bold text-primary underline underline-offset-2">Зарегистрироваться →</Link>
+                <p className="text-sm font-medium text-on-surface-variant mb-1">Этот email не найден.</p>
+                <Link to="/register" className="text-sm font-bold text-primary underline underline-offset-2">
+                  Зарегистрироваться →
+                </Link>
               </div>
             ) : submitError ? (
               <p className="text-center text-sm font-medium text-red-500">{submitError}</p>
             ) : null}
 
-            <p className="text-center text-sm text-on-surface-variant/60">
-              Нет аккаунта?{' '}
-              <Link to="/register" className="font-bold text-primary">Зарегистрироваться</Link>
+            {/* Ссылка на регистрацию */}
+            <p className="text-center text-sm text-on-surface-variant/70">
+              Ещё нет аккаунта?{' '}
+              <Link to="/register" className="font-bold text-primary underline-offset-2 hover:underline">
+                Зарегистрироваться
+              </Link>
             </p>
-          </div>
-        </form>
+
+          </form>
+        </div>
+
       </main>
     </motion.div>
   )
