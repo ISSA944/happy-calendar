@@ -5,7 +5,7 @@ set -euo pipefail
 SERVER_USER="root"
 SERVER_HOST="157.22.198.107"
 BACKEND_DIR="/root/yoyojoy-backend"
-FRONTEND_DIR="/root/yoyojoy-frontend"
+FRONTEND_DIR="/var/www/yoyojoy-frontend"
 LOCAL_BACKEND_DIR="backend/"
 
 if ! command -v rsync >/dev/null 2>&1; then
@@ -45,7 +45,7 @@ if [[ "$DEPLOY_FRONTEND" == true ]]; then
   echo "Uploading nginx config..."
   scp nginx-frontend.conf "${SERVER_USER}@${SERVER_HOST}:/etc/nginx/sites-available/yoyojoy-frontend"
   ssh "${SERVER_USER}@${SERVER_HOST}" \
-    "ln -sf /etc/nginx/sites-available/yoyojoy-frontend /etc/nginx/sites-enabled/yoyojoy-frontend && nginx -t && systemctl reload nginx"
+    "chmod -R 755 ${FRONTEND_DIR}/dist && ln -sf /etc/nginx/sites-available/yoyojoy-frontend /etc/nginx/sites-enabled/yoyojoy-frontend && nginx -t && systemctl reload nginx"
 
   echo "Frontend deployed."
 fi

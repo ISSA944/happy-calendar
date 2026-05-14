@@ -15,8 +15,17 @@ const sizes = [
 ]
 
 for (const { file, size } of sizes) {
-  await sharp(svgRaw)
-    .resize(size, size, { fit: 'contain', background: '#fcf9f4' })
+  const padding = Math.round(size * 0.15)
+  const inner = size - padding * 2
+  const resized = await sharp(svgRaw)
+    .resize(inner, inner, { fit: 'contain', background: '#fcf9f4' })
+    .png()
+    .toBuffer()
+
+  await sharp({
+    create: { width: size, height: size, channels: 4, background: '#fcf9f4' }
+  })
+    .composite([{ input: resized, top: padding, left: padding }])
     .png()
     .toFile(join(root, 'public', file))
   console.log(`✓ ${file} (${size}x${size})`)
