@@ -85,8 +85,10 @@ apiClient.interceptors.response.use(
         })
       }
       const newAccessToken = await refreshPromise
-      original.headers.Authorization = `Bearer ${newAccessToken}`
-      return apiClient(original as AxiosRequestConfig)
+      return apiClient({
+        ...original,
+        headers: { ...original.headers, Authorization: `Bearer ${newAccessToken}` },
+      } as AxiosRequestConfig)
     } catch (refreshError) {
       // Refresh failed — session is dead, kick the user back to start
       clearAuthTokens()

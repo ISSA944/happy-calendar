@@ -5,6 +5,8 @@ import { apiClient } from '../api'
 import { getAccessToken, clearAuthTokens } from '../auth/token-storage'
 import { getZodiac } from '../utils/zodiac'
 import { getMoodImage } from '../services/content.service'
+import { useRegistrationDraft } from './registrationDraft.store'
+import { useEmailChangeDraft } from './emailChangeDraft.store'
 
 export type BookmarkType = 'гороскоп' | 'поддержка'
 
@@ -462,6 +464,8 @@ export const useAppStore = create<AppState>()(
           }
         }
         clearAuthTokens()
+        useRegistrationDraft.getState().clear()
+        useEmailChangeDraft.getState().clear()
         set({
           hasCompletedOnboarding: false,
           userName: '',
@@ -484,7 +488,7 @@ export const useAppStore = create<AppState>()(
       // showOnboardingLoader исключён из persist — на повторных открытиях всегда false
       partialize: (state) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { showOnboardingLoader, setShowOnboardingLoader, ...rest } = state
+        const { showOnboardingLoader, setShowOnboardingLoader, email, setEmail, ...rest } = state
         return rest
       },
     }

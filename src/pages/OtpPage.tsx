@@ -109,6 +109,7 @@ export function OtpPage() {
   const location = useLocation()
   const isLoginFlow = (location.state as any)?.flow === 'login'
   const email = useAppStore((s) => s.email)
+  const setShowOnboardingLoader = useAppStore((s) => s.setShowOnboardingLoader)
 
   const [code, setCode] = useState(['', '', '', ''])
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
@@ -184,7 +185,12 @@ export function OtpPage() {
       })
 
       setAuthTokens(data.accessToken, data.refreshToken)
-      navigate(isLoginFlow ? '/' : '/notifications')
+      if (isLoginFlow) {
+        setShowOnboardingLoader(true)
+        navigate('/')
+      } else {
+        navigate('/notifications')
+      }
     } catch (err: any) {
       const status = err?.response?.status
       if (status === 429) {
