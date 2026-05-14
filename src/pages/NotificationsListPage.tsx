@@ -107,7 +107,7 @@ export function NotificationsListPage() {
             <h2 className="font-headline text-2xl font-extrabold text-on-surface tracking-tight mb-2">
               Мягкие напоминания
             </h2>
-            <p className="text-on-surface-variant text-sm leading-relaxed landscape:hidden">
+            <p className="text-on-surface-variant text-sm leading-relaxed">
               Все важные моменты твоего пути к осознанности собраны здесь.
             </p>
           </div>
