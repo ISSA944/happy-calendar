@@ -103,12 +103,24 @@ export function NotificationsListPage() {
 
         {/* Hero */}
         <motion.div variants={itemVariants} className="mb-6 mt-4">
-          <h2 className="font-headline text-2xl font-extrabold text-on-surface tracking-tight mb-2">
-            Мягкие напоминания
-          </h2>
-          <p className="text-on-surface-variant text-sm leading-relaxed">
-            Все важные моменты твоего пути к осознанности собраны здесь.
-          </p>
+          <div className="landscape:hidden">
+            <h2 className="font-headline text-2xl font-extrabold text-on-surface tracking-tight mb-2">
+              Мягкие напоминания
+            </h2>
+            <p className="text-on-surface-variant text-sm leading-relaxed">
+              Все важные моменты твоего пути к осознанности собраны здесь.
+            </p>
+          </div>
+          {items.length > 0 && (
+            <div className="hidden landscape:block overflow-hidden rounded-[20px] aspect-[4/3] w-full">
+              <img
+                alt={currentMood}
+                className="w-full h-full object-cover"
+                src={heroMoodImage}
+                loading="lazy"
+              />
+            </div>
+          )}
         </motion.div>
 
         {/* Карточки из реально отправленных push-уведомлений */}
