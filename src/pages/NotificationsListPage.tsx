@@ -24,6 +24,17 @@ type NotificationItem = {
   mood: string | null
 }
 
+function formatDate(sentAt: string): string {
+  const date = new Date(sentAt)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today.getTime() - 86400000)
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  if (d.getTime() === today.getTime()) return 'Сегодня'
+  if (d.getTime() === yesterday.getTime()) return 'Вчера'
+  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+}
+
 function notificationIcon(type: string) {
   if (type.includes('horoscope')) return { icon: 'stars', fill: true }
   if (type.includes('support')) return { icon: 'favorite', fill: true }
@@ -121,9 +132,14 @@ export function NotificationsListPage() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-headline font-bold text-on-surface text-[15px] leading-snug mb-1">
-                      {item.title || 'Уведомление'}
-                    </h3>
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h3 className="font-headline font-bold text-on-surface text-[15px] leading-snug">
+                        {item.title || 'Уведомление'}
+                      </h3>
+                      <span className="text-on-surface-variant/50 text-[11px] shrink-0 mt-0.5">
+                        {formatDate(item.sentAt)}
+                      </span>
+                    </div>
                     <p className={`text-on-surface-variant text-[14px] leading-snug ${expandedIds.has(item.id) ? '' : 'line-clamp-3'}`}>
                       {item.body || 'Текст уведомления недоступен'}
                     </p>
@@ -157,7 +173,7 @@ export function NotificationsListPage() {
             <motion.div
               variants={itemVariants}
               key={heroMoodImage}
-              className="mt-2 overflow-hidden rounded-[20px] aspect-[16/10]"
+              className="mt-2 overflow-hidden rounded-[20px] aspect-[16/10] landscape:hidden"
             >
               <img
                 alt={currentMood}
