@@ -58,7 +58,7 @@ export function RegistrationPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       style={{ willChange: 'opacity' }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] landscape:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary min-h-[100dvh] w-full max-w-[430px] [@media(orientation:landscape)_and_(min-height:450px)]:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
@@ -77,7 +77,7 @@ export function RegistrationPage() {
       <main className="flex-1 flex flex-col px-5 pt-4 min-h-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] landscape:pb-6 landscape:px-10 landscape:pt-6">
 
         <form onSubmit={handleSubmit}
-              className="flex flex-col flex-1 landscape:grid landscape:grid-cols-2 landscape:gap-8 landscape:items-start">
+              className="flex flex-col flex-1 [@media(orientation:landscape)_and_(min-height:450px)]:grid [@media(orientation:landscape)_and_(min-height:450px)]:grid-cols-2 [@media(orientation:landscape)_and_(min-height:450px)]:gap-8 [@media(orientation:landscape)_and_(min-height:450px)]:items-start">
           {/* ── LEFT: headline + fields ── */}
           <div className="flex flex-col gap-4">
             <section className="shrink-0">
