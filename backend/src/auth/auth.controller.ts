@@ -52,7 +52,7 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(200)
-  @Throttle({ default: { limit: 5, ttl: 900_000 } })
+  @Throttle({ default: { limit: 10, ttl: 900_000 } })
   async register(@Body() dto: RegisterDto) {
     this.logger.log(`POST /api/auth/register email=${dto.email}`);
     return this.authService.register(dto.email, dto.name, dto.consents);
@@ -60,7 +60,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  @Throttle({ default: { limit: 5, ttl: 900_000 } })
+  @Throttle({ default: { limit: 10, ttl: 900_000 } })
   async login(@Body() dto: LoginDto) {
     this.logger.log(`POST /api/auth/login email=${dto.email}`);
     return this.authService.login(dto.email);
@@ -68,7 +68,7 @@ export class AuthController {
 
   @Post('verify-otp')
   @HttpCode(200)
-  @Throttle({ default: { limit: 5, ttl: 3_600_000 } })
+  @Throttle({ default: { limit: 10, ttl: 3_600_000 } })
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     this.logger.log(`POST /api/auth/verify-otp email=${dto.email}`);
     return this.authService.verifyOtp(dto.email, dto.code);
