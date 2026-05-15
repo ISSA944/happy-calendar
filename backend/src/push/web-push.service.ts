@@ -44,11 +44,6 @@ export class WebPushService {
       return { subscribed: false, reason: 'invalid-subscription' };
     }
 
-    // Удаляем все старые подписки этого пользователя кроме текущего endpoint
-    await this.prisma.webPushSubscription.deleteMany({
-      where: { userId, endpoint: { not: subscription.endpoint } },
-    });
-
     const saved = await this.prisma.webPushSubscription.upsert({
       where: { endpoint: subscription.endpoint },
       update: {
