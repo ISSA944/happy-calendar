@@ -3,10 +3,8 @@ import {
   IsBoolean,
   IsOptional,
   IsString,
-  IsUrl,
   MaxLength,
   Matches,
-  ValidateIf,
 } from 'class-validator';
 import { PrismaService } from '../prisma';
 import { AiService } from '../ai';
@@ -30,9 +28,9 @@ export class UpdateProfileDto {
   gender?: string;
 
   @IsOptional()
-  @ValidateIf(o => !!o.avatarUrl)
-  @IsUrl({}, { message: 'avatarUrl must be a valid URL' })
-  @MaxLength(500)
+  @IsString()
+  @Matches(/^(https?:\/\/|data:image\/(jpeg|png|webp|gif);base64,)/, { message: 'avatarUrl must be a URL or base64 data image' })
+  @MaxLength(2_000_000)
   avatarUrl?: string;
 
   @IsOptional()

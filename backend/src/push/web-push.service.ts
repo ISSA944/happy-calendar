@@ -98,7 +98,10 @@ export class WebPushService {
           where: { endpoint: subscription.endpoint },
         }).catch(() => {});
       } else {
-        this.logger.error('Error sending Web Push notification', error);
+        this.logger.error(
+          `Web Push failed (status=${statusCode ?? 'n/a'}, endpoint=...${subscription.endpoint.slice(-40)}): ${error?.message ?? error}`,
+          JSON.stringify({ body: error?.body, headers: error?.headers }),
+        );
       }
       return false;
     }

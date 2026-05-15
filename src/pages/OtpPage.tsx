@@ -216,7 +216,7 @@ export function OtpPage() {
     setSubmitError('')
 
     try {
-      await apiClient.post(isLoginFlow ? 'auth/login' : 'auth/register', { email })
+      await apiClient.post('auth/login', { email })
       setCode(['', '', '', ''])
       setResendKey(k => k + 1)
       requestAnimationFrame(() => inputRefs.current[0]?.focus())
