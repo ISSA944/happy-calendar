@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion, type Variants } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import welcomeOrbImg from '../assets/images/welcome-orb.jpg'
+import welcomeOrbImg from '../assets/images/welcome-orb.webp'
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },

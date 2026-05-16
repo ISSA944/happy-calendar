@@ -134,7 +134,7 @@ export function NotificationsPage() {
       />
 
       {/* Header */}
-      <header className="sticky top-0 w-full z-50 bg-background/80 backdrop-blur-[24px] px-5 pt-[env(safe-area-inset-top,0px)]">
+      <header className="sticky top-0 w-full z-50 bg-background/95 px-5 pt-[env(safe-area-inset-top,0px)]">
         <div className="flex items-center h-14 relative">
           <button
             onClick={() => showIosInstruction ? setShowIosInstruction(false) : navigate(-1)}
@@ -283,7 +283,7 @@ export function NotificationsPage() {
       </main>
 
       {/* Bottom Action Panel - PORTRAIT ONLY */}
-      <div className="landscape:hidden fixed bottom-0 left-0 right-0 p-5 pb-10 bg-background/95 backdrop-blur-xl z-[60] flex flex-col items-center">
+      <div className="landscape:hidden fixed bottom-0 left-0 right-0 p-5 pb-10 bg-background/98 z-[60] flex flex-col items-center border-t border-outline-variant/20">
         <div className="w-full max-w-[390px]">
           {showIosInstruction ? (
             <button

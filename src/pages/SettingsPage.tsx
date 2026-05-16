@@ -223,7 +223,7 @@ export function SettingsPage() {
       <AnimatePresence>
         {isEmailConfirmOpen && (
           <motion.div
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-inverse-surface/40 backdrop-blur-sm p-6"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-inverse-surface/60 p-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -272,7 +272,7 @@ export function SettingsPage() {
               nav { display: none !important; }
             `}</style>
             <motion.div
-              className="fixed inset-0 z-[10000] flex items-end justify-center bg-on-background/40 backdrop-blur-[24px] p-0 sm:items-center sm:p-6"
+              className="fixed inset-0 z-[10000] flex items-end justify-center bg-on-background/50 p-0 sm:items-center sm:p-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

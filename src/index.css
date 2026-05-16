@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Respect users / weak devices that request reduced motion.
+   Cuts all CSS animations/transitions to near-zero so old Android stops jankin. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer base {
   .material-symbols-outlined {
     font-family: 'Material Symbols Outlined';
@@ -86,8 +99,7 @@
   }
 
   .abstract-blob {
-    filter: blur(60px);
-    opacity: 0.4;
+    opacity: 0.25;
   }
 
   .hero-gradient {

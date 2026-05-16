@@ -4,6 +4,17 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig(() => {
   return {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            'motion': ['framer-motion'],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 800,
+    },
     server: {
       proxy: {
         '/api': {

@@ -117,15 +117,12 @@ export class AuthService {
       );
     }
 
-    if (isDev) {
-      this.logger.debug(`DEV OTP for ${normalizedEmail}: ${code}`);
-    }
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
     const otpExpiresAt = new Date(Date.now() + this.OTP_TTL_MIN * 60_000);
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { otpHash, otpExpiresAt },
+      data: { otpHash, otpExpiresAt, otpFailedAttempts: 0, otpLastFailedAt: null },
     });
 
     this.logger.log(`OTP отправлен на ${normalizedEmail} (TTL ${this.OTP_TTL_MIN} мин)`);
@@ -151,16 +148,12 @@ export class AuthService {
       this.logger.warn(`\n⚠️  DEV MODE — email send failed for <${normalizedEmail}>.\n   OTP code: [ ${code} ]\n`);
     }
 
-    if (isDev) {
-      this.logger.debug(`DEV login OTP for ${normalizedEmail}: ${code}`);
-    }
-
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
     const otpExpiresAt = new Date(Date.now() + this.OTP_TTL_MIN * 60_000);
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { otpHash, otpExpiresAt },
+      data: { otpHash, otpExpiresAt, otpFailedAttempts: 0, otpLastFailedAt: null },
     });
 
     this.logger.log(`Login OTP отправлен на ${normalizedEmail} (TTL ${this.OTP_TTL_MIN} мин)`);
@@ -180,15 +173,31 @@ export class AuthService {
       throw new UnauthorizedException('OTP expired');
     }
 
+    // Per-email brute-force защита: после 5 неверных попыток за 15 минут блокируем.
+    const MAX_ATTEMPTS = 5;
+    const WINDOW_MS = 15 * 60_000;
+    const recentlyFailed =
+      user.otpLastFailedAt && Date.now() - user.otpLastFailedAt.getTime() < WINDOW_MS;
+    if (recentlyFailed && user.otpFailedAttempts >= MAX_ATTEMPTS) {
+      throw new UnauthorizedException('Too many attempts. Request a new code.');
+    }
+
     const ok = await bcrypt.compare(code, user.otpHash);
     if (!ok) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          otpFailedAttempts: recentlyFailed ? user.otpFailedAttempts + 1 : 1,
+          otpLastFailedAt: new Date(),
+        },
+      });
       throw new UnauthorizedException('Invalid OTP');
     }
 
-    // Одноразовость: чистим OTP
+    // Одноразовость: чистим OTP + сбрасываем счётчик
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { otpHash: null, otpExpiresAt: null },
+      data: { otpHash: null, otpExpiresAt: null, otpFailedAttempts: 0, otpLastFailedAt: null },
     });
 
     // Создаём Profile/Prefs пустыми, если их ещё нет (upsert without update)
@@ -242,9 +251,6 @@ export class AuthService {
         `\n⚠️  DEV MODE — email change send failed for <${normalizedEmail}>.\n` +
         `   OTP code: [ ${code} ]  (enter this on the email-change OTP page)\n`,
       );
-    }
-    if (isDev) {
-      this.logger.debug(`DEV email-change OTP for ${normalizedEmail}: ${code}`);
     }
 
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);

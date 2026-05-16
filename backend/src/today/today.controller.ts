@@ -25,7 +25,19 @@ export class TodayController {
 
   @Get()
   async getToday(@CurrentUser() user: AuthUser) {
-    return this.todayService.getTodayPack(user.sub);
+    // HTTP-level cache: 30s response-level cache, защита от внезапных всплесков
+    // (одновременных запросов одного юзера — например при tab focus).
+    const cacheKey = `today:response:${user.sub}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch { /* fall through to fresh fetch */ }
+    }
+
+    const pack = await this.todayService.getTodayPack(user.sub);
+    await this.redis.set(cacheKey, JSON.stringify(pack), 30);
+    return pack;
   }
 
   @Post('support/next')
@@ -64,6 +76,8 @@ export class TodayController {
     }
 
     await this.todayService.replaceSupportPhrase(user.sub, mood, supportPhrase);
+    // Инвалидируем HTTP-кэш чтобы следующий GET /api/today показал новую фразу
+    await this.redis.del(`today:response:${user.sub}`);
     return { support: { text: supportPhrase } };
   }
 

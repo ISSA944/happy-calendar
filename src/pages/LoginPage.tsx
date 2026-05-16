@@ -48,16 +48,16 @@ export function LoginPage() {
       style={{ willChange: 'opacity' }}
       className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary min-h-[100dvh] w-full max-w-[430px] landscape:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
     >
-      {/* Декоративные блобы */}
+      {/* Декоративные блобы (без blur — заменены на opacity для производительности) */}
       <div className="fixed top-[10%] right-[5%] w-[30%] aspect-square pointer-events-none -z-10">
-        <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/5 to-transparent blur-3xl" />
+        <div className="w-full h-full rounded-full bg-primary/5 opacity-60" />
       </div>
       <div className="fixed bottom-[10%] left-[5%] w-[40%] aspect-square pointer-events-none -z-10">
-        <div className="w-full h-full rounded-full bg-gradient-to-tr from-secondary/5 to-transparent blur-3xl" />
+        <div className="w-full h-full rounded-full bg-secondary/5 opacity-60" />
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 w-full z-50 bg-background/80 backdrop-blur-md px-4 pt-[env(safe-area-inset-top,0px)]">
+      <header className="sticky top-0 w-full z-50 bg-background/95 px-4 pt-[env(safe-area-inset-top,0px)]">
         <div className="flex items-center h-16 relative">
           <button
             onClick={() => navigate(-1)}

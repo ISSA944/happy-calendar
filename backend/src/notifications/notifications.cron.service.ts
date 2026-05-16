@@ -120,6 +120,25 @@ export class NotificationCronService {
     }
   }
 
+  /**
+   * Once a day at 03:00 UTC: deletes stale push subscriptions that haven't been
+   * updated in 60 days. Most browsers expire push subscriptions silently —
+   * without this CRON, dead endpoints accumulate forever and waste CPU on every
+   * push tick.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async cleanupDeadSubscriptions() {
+    const cutoff = new Date(Date.now() - 60 * 24 * 60 * 60_000);
+    try {
+      const result = await this.prisma.webPushSubscription.deleteMany({
+        where: { updatedAt: { lt: cutoff } },
+      });
+      this.logger.log(`Cleaned up ${result.count} stale push subscriptions (>60 days old)`);
+    } catch (error) {
+      this.logger.error('Failed to clean stale push subscriptions', error);
+    }
+  }
+
   private getCurrentTimeKey(): string {
     const now = new Date();
     const h = String(now.getUTCHours()).padStart(2, '0');

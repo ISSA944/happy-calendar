@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -8,29 +8,28 @@ import {
 } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BottomNav } from './components/BottomNav'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { PageLoader } from './components/ui/PageLoader'
 import { useAppStore } from './store'
 import { getAccessToken } from './auth/token-storage'
 import { PWAUpdater } from './components/ui/PWAUpdater'
 
-// Home stays static because it is the primary post-onboarding screen.
-import { HomePage } from './pages/HomePage'
-import { BookmarksPage } from './pages/BookmarksPage'
-import { SettingsPage } from './pages/SettingsPage'
-import { NotificationsListPage } from './pages/NotificationsListPage'
-
-// WelcomePage is static — it's the first screen new users see, no lazy flash.
+// First-render critical pages — eager loaded.
 import { WelcomePage } from './pages/WelcomePage'
-
-// All core auth and onboarding pages are eagerly loaded to prevent white flashes (Suspense fallbacks)
-import { NotificationsPage } from './pages/NotificationsPage'
-import { OtpPage } from './pages/OtpPage'
-import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
-import { ProfileSetupPage } from './pages/ProfileSetupPage'
+import { HomePage } from './pages/HomePage'
 import { RegistrationPage } from './pages/RegistrationPage'
 import { LoginPage } from './pages/LoginPage'
-import { ChangeEmailPage } from './pages/ChangeEmailPage'
-import { ChangeEmailOtpPage } from './pages/ChangeEmailOtpPage'
+import { OtpPage } from './pages/OtpPage'
+import { ProfileSetupPage } from './pages/ProfileSetupPage'
+
+// Secondary pages — lazy loaded (smaller initial bundle).
+const BookmarksPage = lazy(() => import('./pages/BookmarksPage').then(m => ({ default: m.BookmarksPage })))
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
+const NotificationsListPage = lazy(() => import('./pages/NotificationsListPage').then(m => ({ default: m.NotificationsListPage })))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })))
+const ChangeEmailPage = lazy(() => import('./pages/ChangeEmailPage').then(m => ({ default: m.ChangeEmailPage })))
+const ChangeEmailOtpPage = lazy(() => import('./pages/ChangeEmailOtpPage').then(m => ({ default: m.ChangeEmailOtpPage })))
 
 const APP_SHELL_ROUTES: readonly string[] = ['/home', '/bookmarks', '/settings', '/notifications-list']
 
@@ -226,9 +225,11 @@ export default function App() {
         style={{ background: '#fcf9f4' }}
       >
         <PageLoader show={showOnboardingLoader} />
-        <Suspense fallback={<PageFallback />}>
-          <AppRoutes />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={<PageFallback />}>
+            <AppRoutes />
+          </Suspense>
+        </ErrorBoundary>
         <PWAUpdater />
       </div>
     </BrowserRouter>

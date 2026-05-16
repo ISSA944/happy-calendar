@@ -9,6 +9,7 @@ import {
 import { PrismaService } from '../prisma';
 import { AiService } from '../ai';
 import { TodayService } from '../today/today.service';
+import { RedisService } from '../redis/redis.service';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -64,6 +65,7 @@ export class ProfileService {
     private readonly prisma: PrismaService,
     private readonly ai: AiService,
     private readonly today: TodayService,
+    private readonly redis: RedisService,
   ) {}
 
   async getFullProfile(userId: string) {
@@ -141,6 +143,8 @@ export class ProfileService {
 
     // Persist new phrase and update DailyFeed — horoscope stays the same
     await this.today.replaceSupportPhrase(userId, mood, supportPhrase);
+    // Инвалидируем HTTP-кэш /api/today чтобы фронт сразу увидел новое настроение
+    await this.redis.del(`today:response:${userId}`);
 
     return { currentMood: mood, support: { text: supportPhrase, mood } };
   }

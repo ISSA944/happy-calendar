@@ -87,4 +87,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       return 0;
     }
   }
+
+  async del(key: string): Promise<void> {
+    try {
+      await this.client?.del(key);
+    } catch {
+      // Non-fatal — cache will expire on its own
+    }
+  }
 }
