@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
+import { Suspense, useEffect, useState, type ReactNode } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -14,22 +14,20 @@ import { useAppStore } from './store'
 import { getAccessToken } from './auth/token-storage'
 import { PWAUpdater } from './components/ui/PWAUpdater'
 
-// First-render critical pages — eager loaded.
+// All pages eagerly loaded — no Suspense flashes on first navigation.
 import { WelcomePage } from './pages/WelcomePage'
 import { HomePage } from './pages/HomePage'
 import { RegistrationPage } from './pages/RegistrationPage'
 import { LoginPage } from './pages/LoginPage'
 import { OtpPage } from './pages/OtpPage'
 import { ProfileSetupPage } from './pages/ProfileSetupPage'
-
-// Secondary pages — lazy loaded (smaller initial bundle).
-const BookmarksPage = lazy(() => import('./pages/BookmarksPage').then(m => ({ default: m.BookmarksPage })))
-const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
-const NotificationsListPage = lazy(() => import('./pages/NotificationsListPage').then(m => ({ default: m.NotificationsListPage })))
-const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
-const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })))
-const ChangeEmailPage = lazy(() => import('./pages/ChangeEmailPage').then(m => ({ default: m.ChangeEmailPage })))
-const ChangeEmailOtpPage = lazy(() => import('./pages/ChangeEmailOtpPage').then(m => ({ default: m.ChangeEmailOtpPage })))
+import { BookmarksPage } from './pages/BookmarksPage'
+import { SettingsPage } from './pages/SettingsPage'
+import { NotificationsListPage } from './pages/NotificationsListPage'
+import { NotificationsPage } from './pages/NotificationsPage'
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
+import { ChangeEmailPage } from './pages/ChangeEmailPage'
+import { ChangeEmailOtpPage } from './pages/ChangeEmailOtpPage'
 
 const APP_SHELL_ROUTES: readonly string[] = ['/home', '/bookmarks', '/settings', '/notifications-list']
 
