@@ -48,6 +48,21 @@ export function NotificationsListPage() {
   const [items, setItems] = useState<NotificationItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
+
+  const handleClearAll = async () => {
+    setIsClearing(true)
+    try {
+      await apiClient.delete('notifications')
+      setItems([])
+      setShowClearConfirm(false)
+    } catch {
+      // тихо — пользователь может перезагрузить страницу
+    } finally {
+      setIsClearing(false)
+    }
+  }
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
@@ -195,9 +210,53 @@ export function NotificationsListPage() {
               />
             </motion.div>
           )}
+
+          {/* Очистить уведомления */}
+          {items.length > 0 && (
+            <motion.div variants={itemVariants} className="pt-2 pb-4">
+              <button
+                onClick={() => setShowClearConfirm(true)}
+                className="w-full py-4 rounded-[1.5rem] border border-red-200 text-red-500 font-semibold text-sm active:scale-[0.98] transition-colors hover:bg-red-50"
+              >
+                Очистить все уведомления
+              </button>
+            </motion.div>
+          )}
         </div>
 
       </main>
+
+      {/* Модал подтверждения */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-inverse-surface/60 p-6">
+          <div className="bg-background rounded-[28px] p-6 w-full max-w-sm shadow-xl space-y-4">
+            <div className="flex justify-center">
+              <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+                <span className="material-symbols-outlined text-red-400 text-2xl">delete_sweep</span>
+              </div>
+            </div>
+            <h2 className="font-headline font-bold text-lg text-on-surface text-center">
+              Очистить уведомления?
+            </h2>
+            <p className="text-sm text-on-surface-variant text-center leading-relaxed">
+              Все уведомления будут удалены без возможности восстановления.
+            </p>
+            <button
+              onClick={handleClearAll}
+              disabled={isClearing}
+              className="w-full py-3 rounded-full bg-red-500 text-white font-headline font-bold text-base active:scale-[0.98] transition-all"
+            >
+              {isClearing ? 'Удаляем...' : 'Да, очистить'}
+            </button>
+            <button
+              onClick={() => setShowClearConfirm(false)}
+              className="w-full py-3 text-on-surface-variant font-semibold text-sm"
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }

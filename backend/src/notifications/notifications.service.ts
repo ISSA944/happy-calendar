@@ -5,6 +5,10 @@ import { PrismaService } from '../prisma';
 export class NotificationsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async clearAll(userId: string): Promise<void> {
+    await this.prisma.notification.deleteMany({ where: { userId } });
+  }
+
   async list(userId: string) {
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
