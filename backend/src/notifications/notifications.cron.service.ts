@@ -135,24 +135,29 @@ export class NotificationCronService {
     },
     pack: Awaited<ReturnType<TodayService['getTodayPack']>>,
   ): PushContent | null {
-    const trim = (text: string, max = 80) =>
-      text.length > max ? text.slice(0, max) + '…' : text;
+    // Обрезает по границе слова, не разрывая на полуслове
+    const trim = (text: string, max = 70): string => {
+      if (text.length <= max) return text;
+      const cut = text.slice(0, max);
+      const lastSpace = cut.lastIndexOf(' ');
+      return (lastSpace > 20 ? cut.slice(0, lastSpace) : cut) + '…';
+    };
 
     const parts: string[] = [];
 
     if (prefs.holidaysEnabled && pack.holiday?.title) {
-      parts.push(`🎉 ${pack.holiday.title}`);
+      parts.push(`Праздник: ${pack.holiday.title}`);
     }
     if (prefs.horoscopeEnabled && pack.horoscope?.main) {
-      parts.push(`⭐ ${trim(pack.horoscope.main)}`);
+      parts.push(`Гороскоп: ${trim(pack.horoscope.main)}`);
     }
     if (prefs.supportEnabled && pack.support?.text) {
-      parts.push(`💙 ${trim(pack.support.text)}`);
+      parts.push(`Поддержка: ${trim(pack.support.text)}`);
     }
 
     if (parts.length === 0) return null;
 
-    // Один тип — специфичный заголовок без emoji-префикса
+    // Один тип — специфичный заголовок, полный текст
     if (parts.length === 1) {
       if (prefs.holidaysEnabled && pack.holiday?.title) {
         return { title: 'Праздник дня', body: pack.holiday.title, type: 'daily_holiday' };
@@ -165,7 +170,7 @@ export class NotificationCronService {
       }
     }
 
-    // Несколько типов — комбо
+    // Несколько типов — комбо с метками
     return {
       title: 'YoYoJoy Day',
       body: parts.join('\n'),
