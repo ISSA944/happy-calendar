@@ -244,7 +244,7 @@ export function NotificationsListPage() {
             <button
               onClick={handleClearAll}
               disabled={isClearing}
-              className="w-full py-3 rounded-full bg-red-500 text-white font-headline font-bold text-base active:scale-[0.98] transition-all"
+              className="w-full py-3 rounded-full bg-[#006a65] text-white font-headline font-bold text-base active:scale-[0.98] transition-all shadow-lg shadow-[#006a65]/30"
             >
               {isClearing ? 'Удаляем...' : 'Да, очистить'}
             </button>
