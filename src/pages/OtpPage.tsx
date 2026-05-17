@@ -258,11 +258,9 @@ export function OtpPage() {
             Проверим почту
           </h2>
           <p className="text-on-surface-variant text-base landscape:text-sm font-medium leading-relaxed">
-            Мы отправили код на{' '}
-            {email ? (
-              <span className="text-primary font-bold break-all">{email}</span>
-            ) : (
-              'вашу электронную почту'
+            Мы отправили код на вашу электронную почту
+            {email && (
+              <> <span className="text-primary font-bold break-all">{email}</span></>
             )}
           </p>
         </section>
