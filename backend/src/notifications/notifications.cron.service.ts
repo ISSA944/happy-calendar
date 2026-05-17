@@ -135,12 +135,26 @@ export class NotificationCronService {
     },
     pack: Awaited<ReturnType<TodayService['getTodayPack']>>,
   ): PushContent | null {
-    // Обрезает по границе слова, не разрывая на полуслове
-    const trim = (text: string, max = 70): string => {
+    // Берёт первое законченное предложение (до . ! ?).
+    // Если предложение длиннее max — обрезает по границе слова.
+    const firstSentence = (text: string, max = 120): string => {
+      const end = text.search(/[.!?]/);
+      if (end > 0 && end + 1 <= max) return text.slice(0, end + 1);
       if (text.length <= max) return text;
       const cut = text.slice(0, max);
       const lastSpace = cut.lastIndexOf(' ');
       return (lastSpace > 20 ? cut.slice(0, lastSpace) : cut) + '…';
+    };
+
+    // Убирает обращение по имени из начала фразы поддержки для пуш-уведомлений.
+    // Формат: "Имя, текст..." → "Текст..."
+    const stripName = (text: string): string => {
+      const commaIdx = text.indexOf(', ');
+      if (commaIdx > 0 && commaIdx <= 30) {
+        const candidate = text.slice(commaIdx + 2);
+        if (candidate.length > 10) return candidate.charAt(0).toUpperCase() + candidate.slice(1);
+      }
+      return text;
     };
 
     const parts: string[] = [];
@@ -149,10 +163,10 @@ export class NotificationCronService {
       parts.push(`Праздник: ${pack.holiday.title}`);
     }
     if (prefs.horoscopeEnabled && pack.horoscope?.main) {
-      parts.push(`Гороскоп: ${trim(pack.horoscope.main)}`);
+      parts.push(`Гороскоп: ${firstSentence(pack.horoscope.main)}`);
     }
     if (prefs.supportEnabled && pack.support?.text) {
-      parts.push(`Поддержка: ${trim(pack.support.text)}`);
+      parts.push(`Поддержка: ${firstSentence(stripName(pack.support.text))}`);
     }
 
     if (parts.length === 0) return null;
