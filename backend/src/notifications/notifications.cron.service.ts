@@ -61,7 +61,7 @@ export class NotificationCronService {
     for (const prefs of prefsList) {
       try {
         const pack = await this.todayService.getTodayPack(prefs.userId);
-        const content = this.selectPushContent(prefs, pack);
+        const content = this.buildPushContent(prefs, pack);
 
         if (!content) {
           this.logger.log(`No enabled push content for userId=${prefs.userId}`);
@@ -127,7 +127,7 @@ export class NotificationCronService {
     return `${h}:${m}`;
   }
 
-  private selectPushContent(
+  private buildPushContent(
     prefs: {
       holidaysEnabled: boolean;
       horoscopeEnabled: boolean;
@@ -135,30 +135,41 @@ export class NotificationCronService {
     },
     pack: Awaited<ReturnType<TodayService['getTodayPack']>>,
   ): PushContent | null {
+    const trim = (text: string, max = 80) =>
+      text.length > max ? text.slice(0, max) + '…' : text;
+
+    const parts: string[] = [];
+
     if (prefs.holidaysEnabled && pack.holiday?.title) {
-      return {
-        title: 'Праздник дня',
-        body: pack.holiday.title,
-        type: 'daily_holiday',
-      };
+      parts.push(`🎉 ${pack.holiday.title}`);
+    }
+    if (prefs.horoscopeEnabled && pack.horoscope?.main) {
+      parts.push(`⭐ ${trim(pack.horoscope.main)}`);
+    }
+    if (prefs.supportEnabled && pack.support?.text) {
+      parts.push(`💙 ${trim(pack.support.text)}`);
     }
 
-    if (prefs.horoscopeEnabled) {
-      return {
-        title: 'Твой гороскоп на сегодня',
-        body: pack.horoscope.main,
-        type: 'daily_horoscope',
-      };
+    if (parts.length === 0) return null;
+
+    // Один тип — специфичный заголовок без emoji-префикса
+    if (parts.length === 1) {
+      if (prefs.holidaysEnabled && pack.holiday?.title) {
+        return { title: 'Праздник дня', body: pack.holiday.title, type: 'daily_holiday' };
+      }
+      if (prefs.horoscopeEnabled && pack.horoscope?.main) {
+        return { title: 'Твой гороскоп на сегодня', body: pack.horoscope.main, type: 'daily_horoscope' };
+      }
+      if (prefs.supportEnabled && pack.support?.text) {
+        return { title: 'Поддержка на сегодня', body: pack.support.text, type: 'daily_support' };
+      }
     }
 
-    if (prefs.supportEnabled) {
-      return {
-        title: 'Поддержка на сегодня',
-        body: pack.support.text,
-        type: 'daily_support',
-      };
-    }
-
-    return null;
+    // Несколько типов — комбо
+    return {
+      title: 'YoYoJoy Day',
+      body: parts.join('\n'),
+      type: 'daily_combined',
+    };
   }
 }
