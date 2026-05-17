@@ -131,10 +131,11 @@ export class ProfileService {
       this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
     ]);
     const zodiacSign = profile?.zodiacSign ?? undefined;
+    const gender     = profile?.gender     ?? undefined;
     const name       = user?.name ?? undefined;
 
     const [{ supportPhrase }] = await Promise.all([
-      this.ai.updateMoodSupport(userId, mood, zodiacSign, name),
+      this.ai.updateMoodSupport(userId, mood, zodiacSign, name, gender),
       this.prisma.profile.upsert({
         where: { userId },
         update: { currentMood: mood },

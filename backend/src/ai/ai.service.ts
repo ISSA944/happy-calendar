@@ -360,13 +360,15 @@ export class AiService {
     newMood: string,
     zodiacSign?: string,
     name?: string,
+    gender?: string,
   ): Promise<{ supportPhrase: string }> {
-    this.logger.log(`updateMoodSupport user=${userId}, mood=${newMood}, sign=${zodiacSign ?? 'unknown'}, name=${name ?? 'unknown'}`);
+    this.logger.log(`updateMoodSupport user=${userId}, mood=${newMood}, sign=${zodiacSign ?? 'unknown'}, name=${name ?? 'unknown'}, gender=${gender ?? 'unknown'}`);
 
     if (this.openai) {
       try {
         const signContext = zodiacSign ? `Знак зодиака: ${zodiacSign}. ` : '';
         const nameContext = name ? `Имя пользователя: ${name}. ` : '';
+        const genderContext = gender === 'M' ? 'Пол: мужской. ' : gender === 'F' ? 'Пол: женский. ' : '';
         const addressInstruction = name
           ? `Обращайся по имени: "${name}, ...". Не упоминай знак зодиака.`
           : zodiacSign
@@ -381,13 +383,13 @@ export class AiService {
               role: 'system',
               content:
                 'Ты — мудрый астрологический наставник и психолог. Пишешь короткие, тёплые, персональные фразы поддержки на русском языке. ' +
-                'Учитываешь характер знака зодиака и текущее эмоциональное состояние. ' +
+                'Учитываешь характер знака зодиака, текущее эмоциональное состояние и пол пользователя. ' +
                 'Отвечай строго по JSON-схеме. Без вступлений и пояснений.',
             },
             {
               role: 'user',
               content:
-                `${nameContext}${signContext}Текущее настроение: ${newMood}. ` +
+                `${nameContext}${genderContext}${signContext}Текущее настроение: ${newMood}. ` +
                 'Напиши одну персональную фразу поддержки (1–2 предложения). ' +
                 'Она должна: отражать характер знака зодиака, принимать текущее состояние без осуждения, ' +
                 'мягко вдохновлять и звучать как слова близкого человека — не шаблонно. ' +
@@ -425,14 +427,16 @@ export class AiService {
     zodiacSign?: string,
     holiday?: string,
     name?: string,
+    gender?: string,
   ): Promise<string[]> {
-    this.logger.log(`generateSupportPhrasesBatch mood=${mood}, sign=${zodiacSign ?? 'unknown'}, name=${name ?? 'unknown'}`);
+    this.logger.log(`generateSupportPhrasesBatch mood=${mood}, sign=${zodiacSign ?? 'unknown'}, name=${name ?? 'unknown'}, gender=${gender ?? 'unknown'}`);
 
     if (this.openai) {
       try {
         const signContext    = zodiacSign ? `Знак зодиака: ${zodiacSign}. ` : '';
         const holidayContext = holiday    ? `Сегодня праздник: ${holiday}. ` : '';
         const nameContext    = name       ? `Имя пользователя: ${name}. ` : '';
+        const genderContext  = gender === 'M' ? 'Пол: мужской. ' : gender === 'F' ? 'Пол: женский. ' : '';
         const addressInstruction = name
           ? `В каждой фразе обращайся по имени: "${name}, ...". Не упоминай знак зодиака.`
           : zodiacSign
@@ -447,13 +451,13 @@ export class AiService {
               role: 'system',
               content:
                 'Ты — мудрый астрологический наставник и психолог. Пишешь короткие, тёплые, персональные фразы поддержки на русском языке. ' +
-                'Каждая фраза уникальна, не повторяет другие. Учитываешь характер знака зодиака и настроение. ' +
+                'Каждая фраза уникальна, не повторяет другие. Учитываешь характер знака зодиака, настроение и пол пользователя. ' +
                 'Отвечай строго по JSON-схеме.',
             },
             {
               role: 'user',
               content:
-                `${nameContext}${signContext}${holidayContext}Текущее настроение: ${mood}. ` +
+                `${nameContext}${genderContext}${signContext}${holidayContext}Текущее настроение: ${mood}. ` +
                 'Напиши 5 разных персональных фраз поддержки (каждая 1–2 предложения). ' +
                 'Каждая должна звучать по-разному — разный тон, разный угол. ' +
                 'Без шаблонов, как слова близкого человека. ' +

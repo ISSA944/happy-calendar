@@ -51,12 +51,13 @@ export class TodayController {
 
     const mood       = profile?.currentMood ?? 'Нормально';
     const zodiacSign = profile?.zodiacSign  ?? undefined;
+    const gender     = profile?.gender      ?? undefined;
     const name       = userRow?.name        ?? undefined;
     const today      = this.getTodayStr(prefs?.timezone);
     const holiday    = resolveHoliday(today).name ?? undefined;
 
-    // Pool делим по имени (или anon) — иначе фразы Михаила достанутся Ивану.
-    const poolKey = `support-pool:${mood}:${zodiacSign ?? 'unknown'}:${name ?? 'anon'}:${today}`;
+    // Pool делим по имени+полу (или anon) — иначе фразы одного юзера достанутся другому.
+    const poolKey = `support-pool:${mood}:${zodiacSign ?? 'unknown'}:${name ?? 'anon'}:${gender ?? 'u'}:${today}`;
 
     // Try to pop a phrase from the shared pool first (no AI call)
     let supportPhrase = await this.redis.rpop(poolKey);
@@ -66,12 +67,12 @@ export class TodayController {
       // Refill pool in background if running low
       const remaining = await this.redis.llen(poolKey);
       if (remaining < POOL_MIN) {
-        void this.refillPool(poolKey, mood, zodiacSign, holiday, name);
+        void this.refillPool(poolKey, mood, zodiacSign, holiday, name, gender);
       }
     } else {
       // Pool empty — generate batch and fill it
       this.logger.log(`nextSupport pool MISS key=${poolKey}, generating batch`);
-      const batch = await this.ai.generateSupportPhrasesBatch(mood, zodiacSign, holiday, name);
+      const batch = await this.ai.generateSupportPhrasesBatch(mood, zodiacSign, holiday, name, gender);
       if (batch.length > 1) {
         await this.redis.lpush(poolKey, batch.slice(1), POOL_TTL);
       }
@@ -90,9 +91,10 @@ export class TodayController {
     zodiacSign?: string,
     holiday?: string,
     name?: string,
+    gender?: string,
   ): Promise<void> {
     try {
-      const batch = await this.ai.generateSupportPhrasesBatch(mood, zodiacSign, holiday, name);
+      const batch = await this.ai.generateSupportPhrasesBatch(mood, zodiacSign, holiday, name, gender);
       if (batch.length > 0) {
         await this.redis.lpush(poolKey, batch, POOL_TTL);
         this.logger.log(`nextSupport pool refilled key=${poolKey}, ${batch.length} phrases`);
