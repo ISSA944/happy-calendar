@@ -146,17 +146,6 @@ export class NotificationCronService {
       return (lastSpace > 20 ? cut.slice(0, lastSpace) : cut) + '…';
     };
 
-    // Убирает обращение по имени из начала фразы поддержки для пуш-уведомлений.
-    // Формат: "Имя, текст..." → "Текст..."
-    const stripName = (text: string): string => {
-      const commaIdx = text.indexOf(', ');
-      if (commaIdx > 0 && commaIdx <= 30) {
-        const candidate = text.slice(commaIdx + 2);
-        if (candidate.length > 10) return candidate.charAt(0).toUpperCase() + candidate.slice(1);
-      }
-      return text;
-    };
-
     const parts: string[] = [];
 
     if (prefs.holidaysEnabled && pack.holiday?.title) {
@@ -166,7 +155,7 @@ export class NotificationCronService {
       parts.push(`Гороскоп: ${firstSentence(pack.horoscope.main)}`);
     }
     if (prefs.supportEnabled && pack.support?.text) {
-      parts.push(`Поддержка: ${firstSentence(stripName(pack.support.text))}`);
+      parts.push(`Поддержка: ${firstSentence(pack.support.text)}`);
     }
 
     if (parts.length === 0) return null;
