@@ -125,12 +125,16 @@ export class ProfileService {
   async patchMood(userId: string, mood: string) {
     this.logger.log(`PATCH mood userId=${userId}, mood=${mood}`);
 
-    // Fetch zodiacSign first so the AI can generate a sign-aware support phrase.
-    const profile = await this.prisma.profile.findUnique({ where: { userId } });
+    // Fetch zodiacSign + name so the AI can address by name (or sign as fallback).
+    const [profile, user] = await Promise.all([
+      this.prisma.profile.findUnique({ where: { userId } }),
+      this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    ]);
     const zodiacSign = profile?.zodiacSign ?? undefined;
+    const name       = user?.name ?? undefined;
 
     const [{ supportPhrase }] = await Promise.all([
-      this.ai.updateMoodSupport(userId, mood, zodiacSign),
+      this.ai.updateMoodSupport(userId, mood, zodiacSign, name),
       this.prisma.profile.upsert({
         where: { userId },
         update: { currentMood: mood },

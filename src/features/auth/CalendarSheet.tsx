@@ -170,7 +170,7 @@ const GridMonthPicker = memo(function GridMonthPicker({
         <button
           type="button"
           onClick={onConfirm}
-          className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary-container to-primary text-white font-headline font-bold text-base shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
+          className="w-full h-14 rounded-2xl bg-primary text-white font-headline font-bold text-base shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
         >
           Готово
         </button>

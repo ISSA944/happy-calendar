@@ -258,7 +258,12 @@ export function OtpPage() {
             Проверим почту
           </h2>
           <p className="text-on-surface-variant text-base landscape:text-sm font-medium leading-relaxed">
-            Мы отправили код на вашу электронную почту.
+            Мы отправили код на{' '}
+            {email ? (
+              <span className="text-primary font-bold break-all">{email}</span>
+            ) : (
+              'вашу электронную почту'
+            )}
           </p>
         </section>
 
@@ -291,7 +296,7 @@ export function OtpPage() {
             disabled={!isValid || isSubmitting}
             className={`h-14 landscape:h-12 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
               isValid && !isSubmitting
-                ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 cursor-pointer'
+                ? 'bg-[#006a65] text-white shadow-lg shadow-[#006a65]/30 cursor-pointer'
                 : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
             }`}
           >
@@ -306,7 +311,7 @@ export function OtpPage() {
 
           <CountdownTimer
             key={resendKey}
-            initialSeconds={30}
+            initialSeconds={120}
             onExpire={handleExpire}
             onResend={handleResend}
           />

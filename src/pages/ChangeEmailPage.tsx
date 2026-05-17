@@ -144,7 +144,7 @@ export function ChangeEmailPage() {
                 type="submit"
                 className={`h-14 landscape:h-12 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
                   canSubmit && !isSubmitting
-                    ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 cursor-pointer'
+                    ? 'bg-[#006a65] text-white shadow-lg shadow-[#006a65]/30 cursor-pointer'
                     : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
                 }`}
               >

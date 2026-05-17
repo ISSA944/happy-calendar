@@ -114,7 +114,7 @@ export function LoginPage() {
               disabled={!canSubmit || isSubmitting}
               className={`h-14 landscape:h-12 w-full font-headline font-bold text-lg rounded-full transition-all flex items-center justify-center active:scale-[0.98] shadow-md ${
                 canSubmit && !isSubmitting
-                  ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-[#2fa7a0]/30 cursor-pointer hover:shadow-lg'
+                  ? 'bg-[#006a65] text-white shadow-[#006a65]/30 cursor-pointer hover:shadow-lg'
                   : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed shadow-none'
               }`}
             >

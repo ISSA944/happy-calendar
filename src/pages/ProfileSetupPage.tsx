@@ -167,7 +167,7 @@ export function ProfileSetupPage() {
             disabled={!isValid || isSubmitting}
             className={`hidden landscape:flex w-full h-12 rounded-full font-headline font-bold text-lg items-center justify-center transition-colors mt-5 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none active:ring-0 ${
               isValid && !isSubmitting
-                ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 active:scale-[0.98] cursor-pointer'
+                ? 'bg-[#006a65] text-white shadow-lg shadow-[#006a65]/30 active:scale-[0.98] cursor-pointer'
                 : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
             }`}
           >
@@ -234,7 +234,7 @@ export function ProfileSetupPage() {
             disabled={!isValid || isSubmitting}
             className={`w-full h-14 rounded-full font-headline font-bold text-lg flex items-center justify-center transition-colors mt-4 landscape:hidden outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none active:ring-0 ${
               isValid && !isSubmitting
-                ? 'bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white shadow-lg shadow-[#2fa7a0]/30 active:scale-[0.98] cursor-pointer'
+                ? 'bg-[#006a65] text-white shadow-lg shadow-[#006a65]/30 active:scale-[0.98] cursor-pointer'
                 : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
             }`}
           >

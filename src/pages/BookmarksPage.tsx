@@ -55,7 +55,7 @@ export function BookmarksPage() {
                   ? 'text-white'
                   : 'bg-white border border-outline-variant text-on-surface-variant'
               }`}
-              style={filter === type ? { background: 'linear-gradient(to right, #006a65, #2fa7a0)' } : undefined}
+              style={filter === type ? { background: '#006a65' } : undefined}
             >
               {type === 'все' ? 'Все' : type === 'гороскоп' ? 'Гороскоп' : 'Поддержка'}
             </button>

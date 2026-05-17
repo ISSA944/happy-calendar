@@ -249,7 +249,7 @@ export function SettingsPage() {
                     setIsEmailConfirmOpen(false)
                     navigate('/change-email')
                   }}
-                  className="w-full min-h-[44px] rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-body font-medium text-base hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(0,106,101,0.2)]"
+                  className="w-full min-h-[44px] rounded-full bg-primary text-on-primary font-body font-medium text-base hover:opacity-90 transition-opacity shadow-[0_4px_14px_rgba(0,106,101,0.2)]"
                 >
                   Да
                 </button>
@@ -310,7 +310,7 @@ export function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setShowEmailSuccess(false)}
-                className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-semibold text-[17px] py-4 px-6 rounded-full shadow-[0_8px_24px_-8px_rgba(0,106,101,0.4)] hover:shadow-[0_12px_32px_-8px_rgba(0,106,101,0.5)] active:scale-[0.98] transition-all duration-200"
+                className="w-full bg-primary text-on-primary font-headline font-semibold text-[17px] py-4 px-6 rounded-full shadow-[0_8px_24px_-8px_rgba(0,106,101,0.4)] hover:shadow-[0_12px_32px_-8px_rgba(0,106,101,0.5)] active:scale-[0.98] transition-all duration-200"
               >
                 Готово
               </button>

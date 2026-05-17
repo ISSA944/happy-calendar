@@ -123,7 +123,7 @@ export function WelcomePage() {
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/register')}
-            className="w-full h-14 landscape:h-12 bg-gradient-to-r from-[#006a65] to-[#2fa7a0] text-white font-headline font-bold text-lg landscape:text-base rounded-full shadow-lg shadow-[#2fa7a0]/30 transition-transform duration-150"
+            className="w-full h-14 landscape:h-12 bg-[#006a65] text-white font-headline font-bold text-lg landscape:text-base rounded-full shadow-lg shadow-[#006a65]/30 transition-transform duration-150"
           >
             Начать
           </motion.button>

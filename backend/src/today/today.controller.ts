@@ -43,17 +43,20 @@ export class TodayController {
   @Post('support/next')
   @HttpCode(200)
   async nextSupport(@CurrentUser() user: AuthUser) {
-    const [profile, prefs] = await Promise.all([
+    const [profile, prefs, userRow] = await Promise.all([
       this.prisma.profile.findUnique({ where: { userId: user.sub } }),
       this.prisma.prefs.findUnique({ where: { userId: user.sub } }),
+      this.prisma.user.findUnique({ where: { id: user.sub }, select: { name: true } }),
     ]);
 
     const mood       = profile?.currentMood ?? 'Нормально';
     const zodiacSign = profile?.zodiacSign  ?? undefined;
+    const name       = userRow?.name        ?? undefined;
     const today      = this.getTodayStr(prefs?.timezone);
     const holiday    = resolveHoliday(today).name ?? undefined;
 
-    const poolKey = `support-pool:${mood}:${zodiacSign ?? 'unknown'}:${today}`;
+    // Pool делим по имени (или anon) — иначе фразы Михаила достанутся Ивану.
+    const poolKey = `support-pool:${mood}:${zodiacSign ?? 'unknown'}:${name ?? 'anon'}:${today}`;
 
     // Try to pop a phrase from the shared pool first (no AI call)
     let supportPhrase = await this.redis.rpop(poolKey);
@@ -63,12 +66,12 @@ export class TodayController {
       // Refill pool in background if running low
       const remaining = await this.redis.llen(poolKey);
       if (remaining < POOL_MIN) {
-        void this.refillPool(poolKey, mood, zodiacSign, holiday);
+        void this.refillPool(poolKey, mood, zodiacSign, holiday, name);
       }
     } else {
       // Pool empty — generate batch and fill it
       this.logger.log(`nextSupport pool MISS key=${poolKey}, generating batch`);
-      const batch = await this.ai.generateSupportPhrasesBatch(mood, zodiacSign, holiday);
+      const batch = await this.ai.generateSupportPhrasesBatch(mood, zodiacSign, holiday, name);
       if (batch.length > 1) {
         await this.redis.lpush(poolKey, batch.slice(1), POOL_TTL);
       }
@@ -86,9 +89,10 @@ export class TodayController {
     mood: string,
     zodiacSign?: string,
     holiday?: string,
+    name?: string,
   ): Promise<void> {
     try {
-      const batch = await this.ai.generateSupportPhrasesBatch(mood, zodiacSign, holiday);
+      const batch = await this.ai.generateSupportPhrasesBatch(mood, zodiacSign, holiday, name);
       if (batch.length > 0) {
         await this.redis.lpush(poolKey, batch, POOL_TTL);
         this.logger.log(`nextSupport pool refilled key=${poolKey}, ${batch.length} phrases`);

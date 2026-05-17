@@ -209,7 +209,7 @@ export function NotificationsPage() {
               <div className="hidden landscape:block mt-4">
                 <button
                   onClick={() => navigate('/profile-setup')}
-                  className="w-full h-14 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-2xl font-headline font-bold text-lg shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
+                  className="w-full h-14 bg-primary text-on-primary rounded-2xl font-headline font-bold text-lg shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
                 >
                   Понятно, спасибо
                 </button>
@@ -265,7 +265,7 @@ export function NotificationsPage() {
                   <button
                     onClick={handleAllow}
                     disabled={isRequestingPush}
-                    className="w-full h-14 bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold text-base rounded-full shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+                    className="w-full h-14 bg-primary text-on-primary font-headline font-bold text-base rounded-full shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
                   >
                     {isRequestingPush ? 'Подключаем...' : 'Разрешить уведомления'}
                   </button>
@@ -288,7 +288,7 @@ export function NotificationsPage() {
           {showIosInstruction ? (
             <button
               onClick={() => navigate('/profile-setup')}
-              className="w-full h-14 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-2xl font-headline font-bold text-lg shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
+              className="w-full h-14 bg-primary text-on-primary rounded-2xl font-headline font-bold text-lg shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
             >
               Понятно, спасибо
             </button>
@@ -297,7 +297,7 @@ export function NotificationsPage() {
               <button
                 onClick={handleAllow}
                 disabled={isRequestingPush}
-                className="w-full h-14 bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold text-base rounded-full shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+                className="w-full h-14 bg-primary text-on-primary font-headline font-bold text-base rounded-full shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
               >
                 {isRequestingPush ? 'Подключаем...' : 'Разрешить уведомления'}
               </button>

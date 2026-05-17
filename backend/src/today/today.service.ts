@@ -17,16 +17,18 @@ export class TodayService {
   ) {}
 
   async getTodayPack(userId: string) {
-    // ── 0. Prefs + Profile in parallel (both needed before cache check) ────────
-    const [prefs, profile] = await Promise.all([
+    // ── 0. Prefs + Profile + User.name in parallel (all needed before cache check) ─
+    const [prefs, profile, user] = await Promise.all([
       this.prisma.prefs.findUnique({ where: { userId } }),
       this.prisma.profile.findUnique({ where: { userId } }),
+      this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
     ]);
 
     const today      = this.getTodayDateStr(prefs?.timezone ?? undefined);
     const zodiacSign = profile?.zodiacSign  ?? '';
     const mood       = profile?.currentMood ?? 'Нормально';
     const gender     = profile?.gender      ?? 'UNKNOWN';
+    const name       = user?.name           ?? undefined;
 
     // ── 1. DailyFeed DB cache — must match current zodiac sign ────────────────
     const existingFeed = await this.prisma.dailyFeed.findUnique({
@@ -52,10 +54,11 @@ export class TodayService {
       await this.prisma.dailyFeed.delete({ where: { userId_date: { userId, date: today } } });
     }
 
-    // ── 2. Redis shared cache (zodiacSign + mood + date) ───────────────────────
-    // Key is shared across ALL users with same sign+mood on same day.
-    // This means 1 AI call per sign+mood per day regardless of user count.
-    const cacheKey = `pack:${zodiacSign}:${mood}:${today}`;
+    // ── 2. Redis cache (zodiacSign + mood + name + date) ───────────────────────
+    // Включаем имя в ключ: AI обращается по имени, поэтому фразу нельзя шарить
+    // между разными юзерами с одним знаком. Юзеры без имени делят anon-кэш.
+    const nameKey  = name ?? 'anon';
+    const cacheKey = `pack:${zodiacSign}:${mood}:${nameKey}:${today}`;
     const lockKey  = `lock:${cacheKey}`;
 
     let pack: AiDailyPack | null = null;
@@ -85,7 +88,7 @@ export class TodayService {
         // Edge case without lock: two concurrent writes are idempotent (same data).
         try {
           this.logger.log(`getTodayPack calling AI key=${cacheKey}`);
-          const context: PromptContext = { zodiacSign, mood, gender, date: today };
+          const context: PromptContext = { zodiacSign, mood, gender, date: today, name };
           pack = await this.ai.generateDailyPack(userId, context);
           const ttl = pack.isFallback ? 300 : CACHE_TTL_SECONDS;
           if (pack.isFallback) {
