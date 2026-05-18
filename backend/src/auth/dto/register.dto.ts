@@ -18,4 +18,8 @@ export class RegisterDto {
   @IsOptional()
   @IsBoolean()
   consents?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  marketing?: boolean;
 }

@@ -81,7 +81,7 @@ export class AuthService {
     this.logger.log(`Email provider: ${this.provider}`);
   }
 
-  async register(email: string, name?: string, consents?: boolean) {
+  async register(email: string, name?: string, consents?: boolean, marketing?: boolean) {
     const normalizedEmail = email.trim().toLowerCase();
 
     const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
@@ -96,8 +96,8 @@ export class AuthService {
     if (consents !== undefined) {
       await this.prisma.prefs.upsert({
         where: { userId: user.id },
-        update: { consentPd: consents },
-        create: { userId: user.id, consentPd: consents },
+        update: { consentPd: consents, marketingConsent: marketing ?? false },
+        create: { userId: user.id, consentPd: consents, marketingConsent: marketing ?? false },
       });
     }
 

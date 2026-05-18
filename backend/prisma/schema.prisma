@@ -67,6 +67,7 @@ model Prefs {
   holidaysEnabled  Boolean  @default(false) @map("holidays_enabled")
   supportEnabled   Boolean  @default(true) @map("support_enabled")
   consentPd        Boolean  @default(false) @map("consent_pd")
+  marketingConsent Boolean  @default(false) @map("marketing_consent")
   timezone         String   @default("Europe/Moscow")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")

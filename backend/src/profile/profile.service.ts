@@ -149,7 +149,9 @@ export class ProfileService {
     // Persist new phrase and update DailyFeed — horoscope stays the same
     await this.today.replaceSupportPhrase(userId, mood, supportPhrase);
     // Инвалидируем HTTP-кэш /api/today чтобы фронт сразу увидел новое настроение
-    await this.redis.del(`today:response:${userId}`);
+    const nowInv = new Date();
+    const dateInv = `${String(nowInv.getUTCDate()).padStart(2, '0')}.${String(nowInv.getUTCMonth() + 1).padStart(2, '0')}`;
+    await this.redis.del(`today:response:${userId}:${dateInv}`);
 
     return { currentMood: mood, support: { text: supportPhrase, mood } };
   }

@@ -25,9 +25,11 @@ export class TodayController {
 
   @Get()
   async getToday(@CurrentUser() user: AuthUser) {
-    // HTTP-level cache: 30s response-level cache, защита от внезапных всплесков
-    // (одновременных запросов одного юзера — например при tab focus).
-    const cacheKey = `today:response:${user.sub}`;
+    // HTTP-level cache: 30s cache per user+date — при смене дня старый ключ
+    // автоматически устаревает и пользователь сразу видит новый праздник/контент.
+    const now = new Date();
+    const dateKey = `${String(now.getUTCDate()).padStart(2, '0')}.${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+    const cacheKey = `today:response:${user.sub}:${dateKey}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) {
       try {
@@ -81,7 +83,9 @@ export class TodayController {
 
     await this.todayService.replaceSupportPhrase(user.sub, mood, supportPhrase);
     // Инвалидируем HTTP-кэш чтобы следующий GET /api/today показал новую фразу
-    await this.redis.del(`today:response:${user.sub}`);
+    const nowInv = new Date();
+    const dateInv = `${String(nowInv.getUTCDate()).padStart(2, '0')}.${String(nowInv.getUTCMonth() + 1).padStart(2, '0')}`;
+    await this.redis.del(`today:response:${user.sub}:${dateInv}`);
     return { support: { text: supportPhrase } };
   }
 

@@ -10,13 +10,10 @@ export class NotificationsService {
   }
 
   async list(userId: string) {
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
-
     return this.prisma.notification.findMany({
-      where: { userId, status: 'sent', sentAt: { gte: todayStart } },
+      where: { userId, status: 'sent' },
       orderBy: { sentAt: 'desc' },
-      take: 20,
+      take: 50,
       select: {
         id: true,
         sentAt: true,
