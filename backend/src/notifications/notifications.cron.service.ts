@@ -61,6 +61,16 @@ export class NotificationCronService {
     for (const prefs of prefsList) {
       try {
         const pack = await this.todayService.getTodayPack(prefs.userId);
+
+        // For support pushes: always get a fresh phrase from pool so consecutive
+        // pushes have different texts (pool rotates like "Другая фраза" button).
+        if (prefs.supportEnabled) {
+          const freshPhrase = await this.todayService.getNextSupportPhrase(prefs.userId);
+          if (freshPhrase && pack.support) {
+            pack.support.text = freshPhrase;
+          }
+        }
+
         const contents = this.buildPushContents(prefs, pack);
 
         if (!contents.length) {

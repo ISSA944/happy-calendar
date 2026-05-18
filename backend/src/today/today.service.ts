@@ -175,6 +175,58 @@ export class TodayService {
     return newPhrase;
   }
 
+  /**
+   * For push notifications: returns a FRESH support phrase from the Redis pool.
+   * Each call pops the next phrase so consecutive pushes have different texts.
+   * If pool is empty — generates a new batch via AI.
+   */
+  async getNextSupportPhrase(userId: string): Promise<string | null> {
+    const [profile, prefs, user] = await Promise.all([
+      this.prisma.profile.findUnique({ where: { userId } }),
+      this.prisma.prefs.findUnique({ where: { userId } }),
+      this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    ]);
+
+    const mood      = profile?.currentMood ?? 'Нормально';
+    const zodiac    = profile?.zodiacSign  ?? undefined;
+    const gender    = profile?.gender      ?? undefined;
+    const name      = user?.name           ?? undefined;
+    const today     = this.getTodayDateStr(prefs?.timezone ?? undefined);
+
+    const poolKey = `support-pool:${mood}:${zodiac ?? 'unknown'}:${name ?? 'anon'}:${gender ?? 'u'}:${today}`;
+
+    let phrase = await this.redis.rpop(poolKey);
+
+    if (!phrase) {
+      // Pool empty — generate fresh batch
+      const context: PromptContext = {
+        zodiacSign: zodiac ?? '',
+        mood,
+        gender: gender ?? 'UNKNOWN',
+        date: today,
+        name,
+      };
+      const batch = await this.ai.generateSupportPhrasesBatch(
+        context.mood,
+        context.zodiacSign || undefined,
+        undefined,
+        context.name,
+        context.gender !== 'UNKNOWN' ? context.gender : undefined,
+      );
+      if (batch.length > 1) {
+        await this.redis.lpush(poolKey, batch.slice(1), 86400);
+      }
+      phrase = batch[0] ?? null;
+    }
+
+    // Update DailyFeed so home screen also shows the new phrase
+    if (phrase) {
+      await this.replaceSupportPhrase(userId, mood, phrase);
+    }
+
+    return phrase;
+  }
+
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   private buildResponse(
