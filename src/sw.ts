@@ -79,18 +79,21 @@ registerRoute(
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const targetUrl = event.notification.data?.url || '/home'
+  const targetUrl = (event.notification.data?.url as string) || '/home'
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if ('focus' in client) {
-          void client.navigate(targetUrl)
-          return client.focus()
-        }
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (clients) => {
+      if (clients.length > 0) {
+        const client = clients[0]
+        // postMessage works on both iOS and Android — App.tsx handles navigation
+        client.postMessage({ type: 'PUSH_NAV', url: targetUrl })
+        // Android: also try native navigate (no-op on iOS)
+        try { await (client as WindowClient).navigate(targetUrl) } catch { /* iOS ignores */ }
+        try { await client.focus() } catch { /* may fail if not focused */ }
+        return
       }
-
-      return self.clients.openWindow?.(targetUrl)
+      // App is closed — open with query param so App.tsx can navigate on mount
+      return self.clients.openWindow?.(`/?push_nav=${encodeURIComponent(targetUrl)}`)
     }),
   )
 })

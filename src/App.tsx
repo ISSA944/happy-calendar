@@ -5,6 +5,7 @@ import {
   Route,
   Routes,
   useLocation,
+  useNavigate,
 } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BottomNav } from './components/BottomNav'
@@ -110,6 +111,7 @@ function TabOutlet() {
 }
 
 function AppLayout() {
+  const navigate = useNavigate()
   const syncProfile = useAppStore(s => s.syncProfile)
   const initDailyPack = useAppStore(s => s.initDailyPack)
   const processOfflineQueue = useAppStore(s => s.processOfflineQueue)
@@ -120,8 +122,31 @@ function AppLayout() {
     void initDailyPack()
     void processOfflineQueue()
 
+    // Push nav: app was closed → opened via /?push_nav=/home (iOS + Android)
+    const params = new URLSearchParams(window.location.search)
+    const pushNavParam = params.get('push_nav')
+    if (pushNavParam) {
+      window.history.replaceState({}, '', '/')
+      setTimeout(() => navigate(decodeURIComponent(pushNavParam)), 200)
+    }
+
+    // Push nav: app was open → SW sends postMessage (iOS + Android)
+    const handleSwMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'PUSH_NAV' && event.data?.url) {
+        setTimeout(() => navigate(event.data.url as string), 100)
+      }
+    }
+    navigator.serviceWorker?.addEventListener('message', handleSwMessage)
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
+        // Push nav: iOS PWA — check localStorage for pending navigation
+        const pendingNav = localStorage.getItem('push_pending_nav')
+        if (pendingNav) {
+          localStorage.removeItem('push_pending_nav')
+          navigate(pendingNav)
+          return
+        }
         const now = Date.now()
         if (now - lastSyncAt > 5 * 60 * 1000) {
           lastSyncAt = now
@@ -137,12 +162,13 @@ function AppLayout() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('online', handleOnline)
-    
+
     return () => {
+      navigator.serviceWorker?.removeEventListener('message', handleSwMessage)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('online', handleOnline)
     }
-  }, [syncProfile, initDailyPack, processOfflineQueue])
+  }, [syncProfile, initDailyPack, processOfflineQueue, navigate])
 
   return (
     <div
