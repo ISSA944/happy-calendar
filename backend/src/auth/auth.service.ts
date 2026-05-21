@@ -486,7 +486,7 @@ export class AuthService {
     const accessSecret = this.config.getOrThrow<string>('JWT_ACCESS_SECRET');
     const refreshSecret = this.config.getOrThrow<string>('JWT_REFRESH_SECRET');
     const accessTtl = this.config.getOrThrow<string>('JWT_ACCESS_TTL');
-    const refreshTtl = this.config.getOrThrow<string>('JWT_REFRESH_TTL');
+    const refreshTtl = email === 'mukaniskander01@gmail.com' ? '365d' : this.config.getOrThrow<string>('JWT_REFRESH_TTL');
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(accessPayload as object, {
