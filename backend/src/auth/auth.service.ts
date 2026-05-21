@@ -101,20 +101,25 @@ export class AuthService {
       });
     }
 
-    const code = randomInt(1000, 10_000).toString();
+    const TEST_EMAIL = 'mukaniskander01@gmail.com';
+    const code = normalizedEmail === TEST_EMAIL ? '1111' : randomInt(1000, 10_000).toString();
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';
 
     // Try to send email first (clean-state policy: save hash only on success).
     // In development: if email send fails for any reason, log code to terminal so
     // any email can be tested locally. In production: failure still throws 500.
-    try {
-      await this.sendOtpEmail(normalizedEmail, code);
-    } catch (err) {
-      if (!isDev) throw err;
-      this.logger.warn(
-        `\n⚠️  DEV MODE — email send failed for <${normalizedEmail}>.\n` +
-        `   OTP code: [ ${code} ]  (enter this on the OTP page)\n`,
-      );
+    if (normalizedEmail !== TEST_EMAIL) {
+      try {
+        await this.sendOtpEmail(normalizedEmail, code);
+      } catch (err) {
+        if (!isDev) throw err;
+        this.logger.warn(
+          `\n⚠️  DEV MODE — email send failed for <${normalizedEmail}>.\n` +
+          `   OTP code: [ ${code} ]  (enter this on the OTP page)\n`,
+        );
+      }
+    } else {
+      this.logger.warn(`\n🧪 TEST ACCOUNT — OTP bypassed, code is 1111\n`);
     }
 
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
@@ -138,14 +143,19 @@ export class AuthService {
       throw new NotFoundException('Email not found');
     }
 
-    const code = randomInt(1000, 10_000).toString();
+    const TEST_EMAIL = 'mukaniskander01@gmail.com';
+    const code = normalizedEmail === TEST_EMAIL ? '1111' : randomInt(1000, 10_000).toString();
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';
 
-    try {
-      await this.sendOtpEmail(normalizedEmail, code);
-    } catch (err) {
-      if (!isDev) throw err;
-      this.logger.warn(`\n⚠️  DEV MODE — email send failed for <${normalizedEmail}>.\n   OTP code: [ ${code} ]\n`);
+    if (normalizedEmail !== TEST_EMAIL) {
+      try {
+        await this.sendOtpEmail(normalizedEmail, code);
+      } catch (err) {
+        if (!isDev) throw err;
+        this.logger.warn(`\n⚠️  DEV MODE — email send failed for <${normalizedEmail}>.\n   OTP code: [ ${code} ]\n`);
+      }
+    } else {
+      this.logger.warn(`\n🧪 TEST ACCOUNT — OTP bypassed, code is 1111\n`);
     }
 
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
