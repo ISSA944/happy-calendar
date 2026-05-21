@@ -83,10 +83,16 @@ export class AuthService {
 
   async register(email: string, name?: string, consents?: boolean, marketing?: boolean) {
     const normalizedEmail = email.trim().toLowerCase();
+    const TEST_EMAIL = 'mukaniskander01@gmail.com';
 
-    const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
-    if (existing) {
-      throw new ConflictException('Email already registered');
+    if (normalizedEmail === TEST_EMAIL) {
+      // Test account: auto-wipe on every registration so re-registration always works cleanly
+      await this.prisma.user.deleteMany({ where: { email: normalizedEmail } });
+    } else {
+      const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+      if (existing) {
+        throw new ConflictException('Email already registered');
+      }
     }
 
     const user = await this.prisma.user.create({
@@ -101,7 +107,6 @@ export class AuthService {
       });
     }
 
-    const TEST_EMAIL = 'mukaniskander01@gmail.com';
     const code = normalizedEmail === TEST_EMAIL ? '1111' : randomInt(1000, 10_000).toString();
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';
 
