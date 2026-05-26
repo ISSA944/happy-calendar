@@ -27,10 +27,21 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/></noscript>
     <!-- Default mood photo (Нормально) — preloaded so the home banner appears without delay -->
     <link rel="preload" as="image" href="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop&q=80" fetchpriority="high" />
-
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+      (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+      })(window,document,'script','https://mc.yandex.ru/metrika/tag.js?id=109427116','ym');
+      ym(109427116,'init',{ssr:true,webvisor:true,clickmap:true,ecommerce:"dataLayer",referrer:document.referrer,url:location.href,accurateTrackBounce:true,trackLinks:true});
+    </script>
+    <!-- /Yandex.Metrika counter -->
   </head>
   <body>
     <div id="root"></div>
+    <noscript><div><img src="https://mc.yandex.ru/watch/109427116" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
