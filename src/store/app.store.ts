@@ -149,6 +149,17 @@ export const useAppStore = create<AppState>()(
           set({ showOnboardingLoader: false })
           return
         }
+
+        // Clear stale pack from previous day so yesterday's content isn't shown while fetching
+        const stored = get().dailyPack
+        if (stored) {
+          const now = new Date()
+          const clientToday = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}`
+          if (stored.date !== clientToday) {
+            set({ dailyPack: null })
+          }
+        }
+
         // Если показываем прелоадер — держим минимум 6 сек для плавного UX
         const isLoaderShowing = get().showOnboardingLoader
         const minWait = isLoaderShowing ? delay(6000) : Promise.resolve()
