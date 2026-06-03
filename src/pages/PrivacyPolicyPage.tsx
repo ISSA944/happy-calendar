@@ -303,7 +303,7 @@ export function PrivacyPolicyPage() {
         <footer className="mt-12 text-center">
           <div className="inline-block px-4 py-3 bg-surface-container rounded-2xl">
             <p className="text-[12px] text-on-surface-variant font-medium">
-              Редакция 2024 г.
+              Редакция 2026 г.
             </p>
           </div>
         </footer>
