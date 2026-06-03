@@ -221,7 +221,7 @@ function AppRoutes() {
         <Route path="/change-email" element={<PageTransition><RequireAuth><ChangeEmailPage /></RequireAuth></PageTransition>} />
         <Route path="/change-email-otp" element={<PageTransition><RequireAuth><ChangeEmailOtpPage /></RequireAuth></PageTransition>} />
         <Route path="/profile-setup" element={<PageTransition><RequireAuth><ProfileSetupPage /></RequireAuth></PageTransition>} />
-        <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
+        <Route path="/politika" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
         <Route element={<RequireAppReady><AppLayout /></RequireAppReady>}>
           <Route path="/home" element={null} />
           <Route path="/bookmarks" element={null} />

@@ -113,7 +113,7 @@ export function ChangeEmailPage() {
                 </div>
                 <span className="text-[13px] font-medium text-on-surface-variant leading-snug">
                   Я согласен(а) на обработку персональных данных (обязательно).{' '}
-                  <Link to="/privacy-policy" onClick={(e) => e.stopPropagation()} className="text-primary font-bold underline underline-offset-4 decoration-primary/50">
+                  <Link to="/politika" onClick={(e) => e.stopPropagation()} className="text-primary font-bold underline underline-offset-4 decoration-primary/50">
                     Политика
                   </Link>
                 </span>
