@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import type { PanInfo, Variants } from 'framer-motion'
@@ -24,11 +24,22 @@ type ParsedDate = {
 
 const WEEK_DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
-// Grid picker defaults: per design spec, picker always opens on 2026 / Январь when nothing is committed.
-const PICKER_DEFAULT_YEAR = 2026
+// Age gate: app is 6+, so birth year can be at most (current year − 6).
+const MIN_AGE_YEARS = 6
+const PICKER_MAX_YEAR = new Date().getFullYear() - MIN_AGE_YEARS
+// Picker opens on the newest allowed year (current year − 6) / Январь when nothing is committed.
+const PICKER_DEFAULT_YEAR = PICKER_MAX_YEAR
 const PICKER_DEFAULT_MONTH = 0
 const PICKER_MIN_YEAR = 1900
-const PICKER_MAX_YEAR = new Date().getFullYear()
+// Upper bound for selectable dates — Dec 31 of the max allowed year (enforces 6+ at day level).
+const MAX_SELECTABLE_DATE = new Date(PICKER_MAX_YEAR, 11, 31)
+const PICKER_YEARS = Array.from(
+  { length: PICKER_MAX_YEAR - PICKER_MIN_YEAR + 1 },
+  (_, index) => PICKER_MIN_YEAR + index,
+)
+// Year scroll-list metrics
+const YEAR_ROW_HEIGHT = 52
+const YEAR_LIST_HEIGHT = 264
 
 const slideVariants: Variants = {
   enter: (direction: number) => ({ x: direction > 0 ? 20 : -20, opacity: 0 }),
@@ -94,8 +105,22 @@ const GridMonthPicker = memo(function GridMonthPicker({
   onMonthChange: (month: number) => void
   onConfirm: () => void
 }) {
-  const canDecrement = pickerYear > PICKER_MIN_YEAR
-  const canIncrement = pickerYear < PICKER_MAX_YEAR
+  const [isYearListOpen, setIsYearListOpen] = useState(false)
+  const yearListRef = useRef<HTMLDivElement>(null)
+
+  // Center the selected year in the scroll list when it opens (pattern from WheelColumn).
+  useLayoutEffect(() => {
+    if (!isYearListOpen) return
+    const container = yearListRef.current
+    if (!container) return
+    const selectedIndex = pickerYear - PICKER_MIN_YEAR
+    container.scrollTop = selectedIndex * YEAR_ROW_HEIGHT - container.clientHeight / 2 + YEAR_ROW_HEIGHT / 2
+  }, [isYearListOpen, pickerYear])
+
+  const handleYearPick = (year: number) => {
+    onYearChange(year)
+    setIsYearListOpen(false)
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -112,57 +137,69 @@ const GridMonthPicker = memo(function GridMonthPicker({
       </div>
 
       <div className="flex-1 px-6">
-        {/* Year selector with arrows */}
-        <div className="mb-6 flex items-center justify-between rounded-2xl bg-white p-2 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-surface-variant/30">
-          <button
-            type="button"
-            disabled={!canDecrement}
-            onClick={() => canDecrement && onYearChange(pickerYear - 1)}
-            className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors active:scale-95 ${
-              canDecrement ? 'text-primary hover:bg-surface-container' : 'text-on-surface-variant/30 cursor-not-allowed'
-            }`}
-            aria-label="Предыдущий год"
-          >
-            <span className="material-symbols-outlined text-[22px]">chevron_left</span>
-          </button>
-
+        {/* Tappable year — opens a scrollable year list (Google Calendar style) */}
+        <button
+          type="button"
+          onClick={() => setIsYearListOpen((open) => !open)}
+          className="mb-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-white p-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-surface-variant/30 active:scale-[0.99] transition-transform"
+          aria-label="Выбрать год"
+        >
           <span className="font-headline text-xl font-bold text-primary tabular-nums select-none">
             {pickerYear}
           </span>
+          <span className={`material-symbols-outlined text-[22px] text-primary transition-transform ${isYearListOpen ? 'rotate-180' : ''}`}>
+            expand_more
+          </span>
+        </button>
 
-          <button
-            type="button"
-            disabled={!canIncrement}
-            onClick={() => canIncrement && onYearChange(pickerYear + 1)}
-            className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors active:scale-95 ${
-              canIncrement ? 'text-primary hover:bg-surface-container' : 'text-on-surface-variant/30 cursor-not-allowed'
-            }`}
-            aria-label="Следующий год"
+        {isYearListOpen ? (
+          /* Scrollable year list */
+          <div
+            ref={yearListRef}
+            className="[&::-webkit-scrollbar]:hidden"
+            style={{ height: YEAR_LIST_HEIGHT, overflowY: 'scroll', scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
           >
-            <span className="material-symbols-outlined text-[22px]">chevron_right</span>
-          </button>
-        </div>
-
-        {/* Months grid 3x4 */}
-        <div className="grid grid-cols-3 gap-3">
-          {MONTHS.map((label, index) => {
-            const isSelected = index === pickerMonth
-            return (
-              <button
-                key={label}
-                type="button"
-                onClick={() => onMonthChange(index)}
-                className={`py-3.5 rounded-2xl font-body text-sm transition-colors active:scale-[0.97] ${
-                  isSelected
-                    ? 'bg-primary text-white font-bold shadow-md shadow-primary/20'
-                    : 'bg-surface-container-low text-on-surface font-medium hover:bg-surface-container'
-                }`}
-              >
-                {label}
-              </button>
-            )
-          })}
-        </div>
+            {PICKER_YEARS.map((year) => {
+              const isSelected = year === pickerYear
+              return (
+                <button
+                  key={year}
+                  type="button"
+                  onClick={() => handleYearPick(year)}
+                  style={{ height: YEAR_ROW_HEIGHT }}
+                  className={`flex w-full items-center justify-center rounded-2xl font-body tabular-nums transition-colors active:scale-[0.98] ${
+                    isSelected
+                      ? 'bg-primary text-white text-lg font-bold shadow-md shadow-primary/20'
+                      : 'text-on-surface text-base font-medium hover:bg-surface-container'
+                  }`}
+                >
+                  {year}
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          /* Months grid 3x4 */
+          <div className="grid grid-cols-3 gap-3">
+            {MONTHS.map((label, index) => {
+              const isSelected = index === pickerMonth
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => onMonthChange(index)}
+                  className={`py-3.5 rounded-2xl font-body text-sm transition-colors active:scale-[0.97] ${
+                    isSelected
+                      ? 'bg-primary text-white font-bold shadow-md shadow-primary/20'
+                      : 'bg-surface-container-low text-on-surface font-medium hover:bg-surface-container'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Done button */}
@@ -194,10 +231,6 @@ const CalendarGrid = memo(function CalendarGrid({
   baseYear: number
   onSelectDay: (cell: CalendarCell) => void
 }) {
-  // Block future dates — birthdates can't be in the future.
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
   return (
     <div className="grid grid-cols-7 auto-rows-[40px]">
       {cells.map((cell) => {
@@ -209,16 +242,17 @@ const CalendarGrid = memo(function CalendarGrid({
         const value = formatDate(cell.day, baseMonth, baseYear)
         const isSelected = value === selectedValue
         const cellDate = new Date(baseYear, baseMonth, cell.day)
-        const isFuture = cellDate.getTime() > today.getTime()
+        // Block dates past the 6+ age gate (Dec 31 of current year − 6).
+        const isDisabled = cellDate.getTime() > MAX_SELECTABLE_DATE.getTime()
 
         return (
           <div key={cell.key} className="flex min-w-0 items-center justify-center">
             <button
               type="button"
-              disabled={isFuture}
-              onClick={() => !isFuture && onSelectDay(cell)}
+              disabled={isDisabled}
+              onClick={() => !isDisabled && onSelectDay(cell)}
               className={`flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-full text-sm font-medium transition-colors ${
-                isFuture
+                isDisabled
                   ? 'text-on-surface-variant/25 cursor-not-allowed'
                   : isSelected
                     ? 'bg-primary text-white shadow-md shadow-primary/30 active:scale-95'
@@ -269,7 +303,9 @@ function CalendarSheetContent({
   onSelect,
 }: Pick<CalendarSheetProps, 'currentValue' | 'onSelect'>) {
   const parsedCurrentValue = useMemo(() => parseDate(currentValue), [currentValue])
-  const [currentYear, setCurrentYear] = useState(parsedCurrentValue?.year ?? PICKER_DEFAULT_YEAR)
+  // Clamp seeded year to the age gate in case an older stored value exceeds it.
+  const seedYear = Math.min(parsedCurrentValue?.year ?? PICKER_DEFAULT_YEAR, PICKER_MAX_YEAR)
+  const [currentYear, setCurrentYear] = useState(seedYear)
   const [currentMonth, setCurrentMonth] = useState(parsedCurrentValue?.month ?? PICKER_DEFAULT_MONTH)
   const [selectedDate, setSelectedDate] = useState<ParsedDate | null>(parsedCurrentValue)
   const [direction, setDirection] = useState(0)
@@ -277,7 +313,7 @@ function CalendarSheetContent({
   const [disableSlideAnimation, setDisableSlideAnimation] = useState(false)
 
   // Grid picker draft state (committed only on "Готово" click)
-  const [pickerYear, setPickerYear] = useState(parsedCurrentValue?.year ?? PICKER_DEFAULT_YEAR)
+  const [pickerYear, setPickerYear] = useState(seedYear)
   const [pickerMonth, setPickerMonth] = useState(parsedCurrentValue?.month ?? PICKER_DEFAULT_MONTH)
 
   const cells = useMemo(() => buildCalendarCells(currentYear, currentMonth), [currentMonth, currentYear])
@@ -291,6 +327,9 @@ function CalendarSheetContent({
 
   const changeMonth = useCallback((delta: number) => {
     const nextDate = new Date(currentYear, currentMonth + delta, 1)
+    // Clamp navigation within [Jan PICKER_MIN_YEAR .. Dec PICKER_MAX_YEAR] so arrows
+    // can't slip into disallowed (under-6) years.
+    if (nextDate.getFullYear() > PICKER_MAX_YEAR || nextDate.getFullYear() < PICKER_MIN_YEAR) return
     setIsPickerOpen(false)
     updateDisplayedMonth(nextDate.getFullYear(), nextDate.getMonth(), delta)
   }, [currentMonth, currentYear, updateDisplayedMonth])
