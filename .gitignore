@@ -36,3 +36,8 @@ backend/.env.*
 # NotebookLM analytical snapshots (local only)
 NotebookLM_Export/
 CYBER_BRAIN.md
+
+# Client-delivered raw content artifacts (kept local; imported → committed JSON seed)
+backend/data/
+# Client gift PDFs for welcome email (not committed)
+backend/assets/gifts/

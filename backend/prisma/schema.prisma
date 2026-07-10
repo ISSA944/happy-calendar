@@ -11,28 +11,31 @@ datasource db {
 // CORE: users + auth credentials
 // ─────────────────────────────────────────────────────────────
 model User {
-  id               String    @id @default(uuid())
-  email            String    @unique
-  name             String?
-  passwordHash     String?   @map("password_hash")
-  otpHash          String?   @map("otp_hash")
-  otpExpiresAt     DateTime? @map("otp_expires_at")
-  otpFailedAttempts Int      @default(0) @map("otp_failed_attempts")
-  otpLastFailedAt  DateTime? @map("otp_last_failed_at")
-  pendingEmail     String?   @map("pending_email")
-  emailChangeOtpHash String? @map("email_change_otp_hash")
+  id                      String    @id @default(uuid())
+  email                   String    @unique
+  name                    String?
+  passwordHash            String?   @map("password_hash")
+  otpHash                 String?   @map("otp_hash")
+  otpExpiresAt            DateTime? @map("otp_expires_at")
+  otpFailedAttempts       Int       @default(0) @map("otp_failed_attempts")
+  otpLastFailedAt         DateTime? @map("otp_last_failed_at")
+  pendingEmail            String?   @map("pending_email")
+  emailChangeOtpHash      String?   @map("email_change_otp_hash")
   emailChangeOtpExpiresAt DateTime? @map("email_change_otp_expires_at")
-  refreshTokenHash String?   @map("refresh_token_hash")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  refreshTokenHash        String?   @map("refresh_token_hash")
+  welcomeEmailSentAt      DateTime? @map("welcome_email_sent_at")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
 
-  profile              Profile?
-  prefs                Prefs?
-  dailyFeeds           DailyFeed[]
-  bookmarks            Bookmark[]
-  moodLogs             MoodLog[]
-  notifications        Notification[]
-  webPushSubscriptions WebPushSubscription[]
+  profile                 Profile?
+  prefs                   Prefs?
+  dailyFeeds              DailyFeed[]
+  bookmarks               Bookmark[]
+  moodLogs                MoodLog[]
+  notifications           Notification[]
+  webPushSubscriptions    WebPushSubscription[]
+  userGoals               UserGoal[]
+  personalCareCompletions PersonalCareCompletion[]
 
   @@map("users")
 }
@@ -59,18 +62,24 @@ model Profile {
 // PREFS: настройки + устройства + согласие ПД
 // ─────────────────────────────────────────────────────────────
 model Prefs {
-  id               String   @id @default(uuid())
-  userId           String   @unique @map("user_id")
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pushTime         String   @default("09:00") @map("push_time")
-  horoscopeEnabled Boolean  @default(true) @map("horoscope_enabled")
-  holidaysEnabled  Boolean  @default(false) @map("holidays_enabled")
-  supportEnabled   Boolean  @default(true) @map("support_enabled")
-  consentPd        Boolean  @default(false) @map("consent_pd")
-  marketingConsent Boolean  @default(false) @map("marketing_consent")
-  timezone         String   @default("Europe/Moscow")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  id                  String   @id @default(uuid())
+  userId              String   @unique @map("user_id")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pushTime            String   @default("09:00") @map("push_time")
+  horoscopeEnabled    Boolean  @default(true) @map("horoscope_enabled")
+  holidaysEnabled     Boolean  @default(false) @map("holidays_enabled")
+  supportEnabled      Boolean  @default(true) @map("support_enabled")
+  personalCareEnabled Boolean  @default(true) @map("personal_care_enabled")
+  // Per-category push times (HH:MM UTC). horoscopeTime seeded from legacy pushTime in migration.
+  horoscopeTime       String   @default("09:00") @map("horoscope_time")
+  supportTime         String   @default("12:00") @map("support_time")
+  holidaysTime        String   @default("10:00") @map("holidays_time")
+  personalCareTime    String   @default("08:30") @map("personal_care_time")
+  consentPd           Boolean  @default(false) @map("consent_pd")
+  marketingConsent    Boolean  @default(false) @map("marketing_consent")
+  timezone            String   @default("Europe/Moscow")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
   @@map("prefs")
 }
@@ -211,4 +220,106 @@ model WebPushSubscription {
 
   @@index([userId])
   @@map("web_push_subscriptions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// GOALS: выбранные пользователем цели (ТЗ п. 4.2 / 6.4)
+// Прогресс НЕ хранится здесь — считается по PersonalCareCompletion.
+// active=false → «не активна», прогресс сохраняется, можно вернуть.
+// ─────────────────────────────────────────────────────────────
+model UserGoal {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalId    String   @map("goal_id") // 'calm' | 'hear' | 'food' | 'move' — см. GOALS в src/goals
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, goalId])
+  @@index([userId])
+  @@map("user_goals")
+}
+
+// ─────────────────────────────────────────────────────────────
+// PERSONAL CARE: справочник дней заботы (ТЗ п. 6.2) — общий на всех.
+// Импортируется из таблицы клиента; пока сид из прототипа.
+// ─────────────────────────────────────────────────────────────
+model PersonalCareDay {
+  id          String   @id @default(uuid())
+  title       String
+  task        String // содержит {имя}
+  affirmation String
+  goalTags    String[] @map("goal_tags") // ['calm','hear']
+  themeKey    String   @map("theme_key") // одна из 19 тем п. 7.4
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  completions PersonalCareCompletion[]
+
+  @@map("personal_care_days")
+}
+
+// ─────────────────────────────────────────────────────────────
+// PERSONAL CARE COMPLETION: «Я сделала это» — один зачёт в день.
+// Прогресс цели = count(completions с тегом этой цели).
+// ─────────────────────────────────────────────────────────────
+model PersonalCareCompletion {
+  id                String          @id @default(uuid())
+  userId            String          @map("user_id")
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personalCareDayId String          @map("personal_care_day_id")
+  personalCareDay   PersonalCareDay @relation(fields: [personalCareDayId], references: [id])
+  date              String // DD.MM.YYYY, локальная дата юзера
+  completedAt       DateTime        @default(now()) @map("completed_at")
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("personal_care_completions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// CALENDAR HOLIDAYS: праздники + открытки в 3 тонах (ТЗ п. 2/5).
+// Импорт из Праздники_поздравления_2026.xlsx. Ключ — date (DD.MM).
+// На одну дату может быть несколько строк.
+// ─────────────────────────────────────────────────────────────
+model CalendarHoliday {
+  id       String @id @default(uuid())
+  date     String // DD.MM — год условный, праздники ежегодные
+  title    String
+  cute     String
+  humor    String
+  cynical  String
+  themeKey String @map("theme_key")
+  scope    String @default("ru") // 'ru' | 'intl' — размётка от клиента ожидается
+
+  @@index([date])
+  @@map("calendar_holidays")
+}
+
+// ─────────────────────────────────────────────────────────────
+// HOLIDAY IMAGES: готовые фоны из стороннего сервиса (ТЗ п. 7.1).
+// Пока пусто — фронт рендерит CSS-градиент по themeKey.
+// ─────────────────────────────────────────────────────────────
+model HolidayImage {
+  id                String  @id @default(uuid())
+  calendarHolidayId String? @map("calendar_holiday_id")
+  personalCareDayId String? @map("personal_care_day_id")
+  themeKey          String  @map("theme_key")
+  url               String
+
+  @@index([themeKey])
+  @@map("holiday_images")
+}
+
+// ─────────────────────────────────────────────────────────────
+// PUSH MILESTONES: шаблоны пушей по вехам целей (ТЗ п. 3).
+// Импорт из Пуши_мотивация_целей.xlsx (лист «Пуши по вехам»).
+// ─────────────────────────────────────────────────────────────
+model PushMilestoneTemplate {
+  milestone Int    @id // 1,5,10,...,365
+  emoji     String
+  title     String
+  body      String // содержит {имя}
+
+  @@map("push_milestone_templates")
 }
