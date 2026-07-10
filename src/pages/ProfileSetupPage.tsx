@@ -26,6 +26,9 @@ function isValidBirthDate(dateStr: string): boolean {
 }
 
 import { CalendarSheet } from '../features/auth/CalendarSheet'
+import { GoalsSelector } from '../features/goals/GoalsSelector'
+import { NotificationCategoriesEditor } from '../features/notifications/NotificationCategoriesEditor'
+import { useNotificationCategories } from '../features/notifications/useNotificationCategories'
 
 export function ProfileSetupPage() {
   const navigate = useNavigate()
@@ -35,12 +38,18 @@ export function ProfileSetupPage() {
   const setHasCompletedOnboarding = useAppStore((s) => s.setHasCompletedOnboarding)
   const setShowOnboardingLoader = useAppStore((s) => s.setShowOnboardingLoader)
   const horoscopeTime = useAppStore((s) => s.horoscopeTime)
+  const supportTime = useAppStore((s) => s.supportTime)
+  const holidaysTime = useAppStore((s) => s.holidaysTime)
+  const personalCareTime = useAppStore((s) => s.personalCareTime)
   const showHoroscope = useAppStore((s) => s.showHoroscope)
   const showHolidays = useAppStore((s) => s.showHolidays)
   const showSupport = useAppStore((s) => s.showSupport)
+  const showPersonalCare = useAppStore((s) => s.showPersonalCare)
   const profilePhoto = useAppStore((s) => s.profilePhoto)
   const setProfilePhoto = useAppStore((s) => s.setProfilePhoto)
+  const setGoals = useAppStore((s) => s.setGoals)
   const { subscribe } = useWebPush()
+  const notificationCategories = useNotificationCategories()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [birthDate, setBirthDate] = useState('')
@@ -48,6 +57,11 @@ export function ProfileSetupPage() {
   const [gender, setGender] = useState<'F' | 'M' | 'UNKNOWN'>('UNKNOWN')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([])
+
+  const toggleGoal = (id: string) => {
+    setSelectedGoals((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]))
+  }
 
   const handlePhotoClick = () => fileInputRef.current?.click()
 
@@ -77,11 +91,19 @@ export function ProfileSetupPage() {
         zodiacSign: zodiacSign ?? '',
         gender,
         pushTime: localTimeToUtc(horoscopeTime),
+        horoscopeTime: localTimeToUtc(horoscopeTime),
+        supportTime: localTimeToUtc(supportTime),
+        holidaysTime: localTimeToUtc(holidaysTime),
+        personalCareTime: localTimeToUtc(personalCareTime),
         horoscopeEnabled: showHoroscope,
         holidaysEnabled: showHolidays,
         supportEnabled: showSupport,
+        personalCareEnabled: showPersonalCare,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       })
+      if (selectedGoals.length) {
+        await setGoals(selectedGoals)
+      }
 
       await subscribe()
 
@@ -161,20 +183,6 @@ export function ProfileSetupPage() {
             <span className="text-[15px] font-medium text-on-surface-variant">Твой знак</span>
             <span className="text-lg font-bold text-on-surface">{zodiacSign || '—'}</span>
           </div>
-
-          <button
-            onClick={handleSubmit}
-            disabled={!isValid || isSubmitting}
-            className={`hidden landscape:flex w-full h-12 rounded-full font-headline font-bold text-lg items-center justify-center transition-colors mt-5 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none active:ring-0 ${
-              isValid && !isSubmitting
-                ? 'bg-[#006a65] text-white shadow-lg shadow-[#006a65]/30 active:scale-[0.98] cursor-pointer'
-                : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
-            }`}
-          >
-            {isSubmitting ? 'Сохраняем...' : 'Продолжить'}
-          </button>
-
-          {submitError && <p className="hidden landscape:block mt-3 text-center text-sm font-medium text-red-500">{submitError}</p>}
         </div>
 
         {/* Portrait: full width. Landscape: left column with date + gender */}
@@ -228,11 +236,31 @@ export function ProfileSetupPage() {
             </div>
           </div>
 
-          {/* CTA */}
+        </div>
+
+        {/* 🆕 Цели — тот же блок, что в Настройках (ТЗ п. 4.2) */}
+        <div className="order-3 mt-8 landscape:col-span-2 landscape:mt-2">
+          <h2 className="text-[15px] font-semibold text-on-surface-variant ml-1 mb-3">Что хочешь улучшить в себе?</h2>
+          <GoalsSelector selected={selectedGoals} onToggle={toggleGoal} />
+        </div>
+
+        {/* 🆕 Уведомления — тот же блок, что в Настройках (ТЗ п. 4.2) */}
+        <div className="order-4 mt-8 landscape:col-span-2 bg-white/60 landscape:bg-white/60 border border-outline-variant/30 rounded-[24px] p-5">
+          <h2 className="text-[15px] font-semibold text-on-surface-variant mb-1">Уведомления</h2>
+          <p className="text-[13px] text-on-surface-variant/70 mb-2">Когда и что тебе присылать</p>
+          <NotificationCategoriesEditor categories={notificationCategories} />
+        </div>
+
+        <p className="order-5 mt-5 landscape:col-span-2 text-[13px] text-on-surface-variant/80 text-center leading-relaxed px-2">
+          Всё это — имя, цели, время уведомлений — можно изменить в любой момент в Настройках.
+        </p>
+
+        {/* Общая CTA (одна на оба режима — раньше дублировалась под portrait/landscape) */}
+        <div className="order-6 mt-6 landscape:col-span-2">
           <button
             onClick={handleSubmit}
             disabled={!isValid || isSubmitting}
-            className={`w-full h-14 rounded-full font-headline font-bold text-lg flex items-center justify-center transition-colors mt-4 landscape:hidden outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none active:ring-0 ${
+            className={`w-full h-14 rounded-full font-headline font-bold text-lg flex items-center justify-center transition-colors outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none active:ring-0 ${
               isValid && !isSubmitting
                 ? 'bg-[#006a65] text-white shadow-lg shadow-[#006a65]/30 active:scale-[0.98] cursor-pointer'
                 : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
@@ -240,7 +268,7 @@ export function ProfileSetupPage() {
           >
             {isSubmitting ? 'Сохраняем...' : 'Продолжить'}
           </button>
-          {submitError && <p className="text-center text-sm font-medium text-red-500 landscape:hidden">{submitError}</p>}
+          {submitError && <p className="mt-3 text-center text-sm font-medium text-red-500">{submitError}</p>}
         </div>
       </main>
 

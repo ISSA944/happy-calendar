@@ -8,7 +8,7 @@ import { getMoodImage } from '../services/content.service'
 import { useRegistrationDraft } from './registrationDraft.store'
 import { useEmailChangeDraft } from './emailChangeDraft.store'
 
-export type BookmarkType = 'гороскоп' | 'поддержка'
+export type BookmarkType = 'гороскоп' | 'поддержка' | 'открытка' | 'забота'
 
 export interface Bookmark {
   id: string
@@ -33,6 +33,49 @@ export interface DailyPack {
   }
   supportPhrase: string
   holiday: string | null
+}
+
+// ── Goals ────────────────────────────────────────────────────────────────
+export interface GoalView {
+  id: string
+  title: string
+  sub: string
+  emoji: string
+  active: boolean
+  progress: number
+}
+
+// ── Holidays (ТЗ п. 4.3/5) ──────────────────────────────────────────────
+export interface HolidayCard {
+  id: string
+  date: string
+  title: string
+  scope: string // 'ru' | 'intl'
+  themeKey: string
+  imageUrl: string | null
+}
+export type Tone = 'cute' | 'humor' | 'cynical'
+export interface HolidayCardWithText extends HolidayCard {
+  tone: Tone
+  text: string
+}
+
+// ── Personal care day (ТЗ п. 6.1) ───────────────────────────────────────
+export interface PersonalCareView {
+  id: string
+  title: string
+  task: string
+  affirmation: string
+  goalTags: string[]
+  themeKey: string
+  imageUrl: string | null
+  doneToday: boolean
+}
+export interface MilestoneHit {
+  goalId: string
+  goalTitle: string
+  count: number
+  emoji: string
 }
 
 // Server response shapes
@@ -102,7 +145,31 @@ type AppState = {
   toggleHolidays: () => void
   showSupport: boolean
   toggleSupport: () => void
+  showPersonalCare: boolean
+  togglePersonalCare: () => void
+  // Per-category push times (ТЗ п. 4.5) — horoscopeTime уже существовал, остальные новые.
+  supportTime: string
+  setSupportTime: (time: string) => void
+  holidaysTime: string
+  setHolidaysTime: (time: string) => void
+  personalCareTime: string
+  setPersonalCareTime: (time: string) => void
   syncProfile: () => Promise<void>
+
+  // Goals (ТЗ п. 4.2/4.5/6.4)
+  goals: GoalView[]
+  fetchGoals: () => Promise<void>
+  setGoals: (selected: string[]) => Promise<void>
+
+  // Holidays today (ТЗ п. 4.3/5)
+  todayHolidays: HolidayCard[]
+  fetchHolidaysToday: () => Promise<void>
+  getHolidayCard: (id: string, tone: Tone) => Promise<HolidayCardWithText>
+
+  // Personal care day (ТЗ п. 6.1)
+  personalCareToday: PersonalCareView | null
+  fetchPersonalCareToday: () => Promise<void>
+  completePersonalCare: () => Promise<MilestoneHit[]>
 
   // Bookmarks (sync с бэком)
   bookmarks: Bookmark[]
@@ -330,6 +397,106 @@ export const useAppStore = create<AppState>()(
           })
         }
       },
+      showPersonalCare: true,
+      togglePersonalCare: () => {
+        const next = !get().showPersonalCare
+        set({ showPersonalCare: next })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { personalCareEnabled: next }).catch((err) => {
+            console.warn('[store] Failed to sync personalCareEnabled with backend', err)
+            set({ showPersonalCare: !next })
+          })
+        }
+      },
+
+      supportTime: '12:00',
+      setSupportTime: (supportTime) => {
+        set({ supportTime })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { supportTime: localTimeToUtc(supportTime) }).catch((err) => {
+            console.warn('[store] Failed to sync supportTime with backend', err)
+          })
+        }
+      },
+      holidaysTime: '10:00',
+      setHolidaysTime: (holidaysTime) => {
+        set({ holidaysTime })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { holidaysTime: localTimeToUtc(holidaysTime) }).catch((err) => {
+            console.warn('[store] Failed to sync holidaysTime with backend', err)
+          })
+        }
+      },
+      personalCareTime: '08:30',
+      setPersonalCareTime: (personalCareTime) => {
+        set({ personalCareTime })
+        if (getAccessToken()) {
+          apiClient.patch('profile', { personalCareTime: localTimeToUtc(personalCareTime) }).catch((err) => {
+            console.warn('[store] Failed to sync personalCareTime with backend', err)
+          })
+        }
+      },
+
+      goals: [],
+      fetchGoals: async () => {
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.get<GoalView[]>('goals')
+          set({ goals: data })
+        } catch (err) {
+          console.warn('[store] Failed to fetch /goals', err)
+        }
+      },
+      setGoals: async (selected: string[]) => {
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.patch<GoalView[]>('goals', { selected })
+          set({ goals: data })
+        } catch (err) {
+          console.warn('[store] Failed to PATCH /goals', err)
+        }
+      },
+
+      todayHolidays: [],
+      fetchHolidaysToday: async () => {
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.get<HolidayCard[]>('holidays/today')
+          set({ todayHolidays: data })
+        } catch (err) {
+          console.warn('[store] Failed to fetch /holidays/today', err)
+        }
+      },
+      getHolidayCard: async (id: string, tone: Tone) => {
+        const { data } = await apiClient.get<HolidayCardWithText>(`holidays/${id}/card`, { params: { tone } })
+        return data
+      },
+
+      personalCareToday: null,
+      fetchPersonalCareToday: async () => {
+        if (!getAccessToken()) return
+        try {
+          const { data } = await apiClient.get<PersonalCareView | null>('personal-care/today')
+          set({ personalCareToday: data })
+        } catch (err) {
+          console.warn('[store] Failed to fetch /personal-care/today', err)
+        }
+      },
+      completePersonalCare: async () => {
+        const care = get().personalCareToday
+        if (!care || !getAccessToken()) return []
+        try {
+          const { data } = await apiClient.post<{ alreadyDone: boolean; milestoneHits: MilestoneHit[] }>(
+            `personal-care/${care.id}/complete`,
+          )
+          set({ personalCareToday: { ...care, doneToday: true } })
+          void get().fetchGoals()
+          return data.milestoneHits
+        } catch (err) {
+          console.warn('[store] Failed to POST /personal-care/:id/complete', err)
+          return []
+        }
+      },
 
       syncProfile: async () => {
         if (!getAccessToken()) return
@@ -345,9 +512,14 @@ export const useAppStore = create<AppState>()(
             } | null
             prefs?: {
               pushTime?: string | null
+              horoscopeTime?: string | null
+              supportTime?: string | null
+              holidaysTime?: string | null
+              personalCareTime?: string | null
               horoscopeEnabled?: boolean | null
               holidaysEnabled?: boolean | null
               supportEnabled?: boolean | null
+              personalCareEnabled?: boolean | null
             } | null
           }>('profile')
 
@@ -361,10 +533,20 @@ export const useAppStore = create<AppState>()(
             gender: (data.profile?.gender as 'F' | 'M' | 'UNKNOWN' | undefined) ?? get().gender,
             profilePhoto: data.profile?.avatarUrl ?? get().profilePhoto,
             currentMood: data.profile?.currentMood ?? get().currentMood,
-            horoscopeTime: data.prefs?.pushTime ? utcToLocal(data.prefs.pushTime) : get().horoscopeTime,
+            horoscopeTime: data.prefs?.horoscopeTime
+              ? utcToLocal(data.prefs.horoscopeTime)
+              : data.prefs?.pushTime
+                ? utcToLocal(data.prefs.pushTime)
+                : get().horoscopeTime,
+            supportTime: data.prefs?.supportTime ? utcToLocal(data.prefs.supportTime) : get().supportTime,
+            holidaysTime: data.prefs?.holidaysTime ? utcToLocal(data.prefs.holidaysTime) : get().holidaysTime,
+            personalCareTime: data.prefs?.personalCareTime
+              ? utcToLocal(data.prefs.personalCareTime)
+              : get().personalCareTime,
             showHoroscope: data.prefs?.horoscopeEnabled ?? get().showHoroscope,
             showHolidays: data.prefs?.holidaysEnabled ?? get().showHolidays,
             showSupport: data.prefs?.supportEnabled ?? get().showSupport,
+            showPersonalCare: data.prefs?.personalCareEnabled ?? get().showPersonalCare,
           })
         } catch (err) {
           console.warn('[store] Failed to fetch /profile', err)
@@ -490,6 +672,9 @@ export const useAppStore = create<AppState>()(
           bookmarks: [],
           offlineQueue: [],
           installBannerDismissCount: 0,
+          goals: [],
+          todayHolidays: [],
+          personalCareToday: null,
         })
       },
     }),
