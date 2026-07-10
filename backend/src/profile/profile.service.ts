@@ -39,6 +39,27 @@ export class UpdateProfileDto {
   @Matches(/^\d{2}:\d{2}$/, { message: 'pushTime must be HH:MM' })
   pushTime?: string;
 
+  // Per-category push times (HH:MM UTC) — ТЗ п. 4.5.
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{2}:\d{2}$/, { message: 'horoscopeTime must be HH:MM' })
+  horoscopeTime?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{2}:\d{2}$/, { message: 'supportTime must be HH:MM' })
+  supportTime?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{2}:\d{2}$/, { message: 'holidaysTime must be HH:MM' })
+  holidaysTime?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{2}:\d{2}$/, { message: 'personalCareTime must be HH:MM' })
+  personalCareTime?: string;
+
   @IsOptional()
   @IsBoolean()
   horoscopeEnabled?: boolean;
@@ -50,6 +71,10 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsBoolean()
   supportEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  personalCareEnabled?: boolean;
 
   @IsOptional()
   @IsString()
@@ -89,12 +114,18 @@ export class ProfileService {
 
     const prefsData: Record<string, unknown> = {};
     if (dto.pushTime !== undefined) prefsData.pushTime = dto.pushTime;
+    if (dto.horoscopeTime !== undefined) prefsData.horoscopeTime = dto.horoscopeTime;
+    if (dto.supportTime !== undefined) prefsData.supportTime = dto.supportTime;
+    if (dto.holidaysTime !== undefined) prefsData.holidaysTime = dto.holidaysTime;
+    if (dto.personalCareTime !== undefined) prefsData.personalCareTime = dto.personalCareTime;
     if (dto.horoscopeEnabled !== undefined)
       prefsData.horoscopeEnabled = dto.horoscopeEnabled;
     if (dto.holidaysEnabled !== undefined)
       prefsData.holidaysEnabled = dto.holidaysEnabled;
     if (dto.supportEnabled !== undefined)
       prefsData.supportEnabled = dto.supportEnabled;
+    if (dto.personalCareEnabled !== undefined)
+      prefsData.personalCareEnabled = dto.personalCareEnabled;
     if (dto.timezone !== undefined) prefsData.timezone = dto.timezone;
 
     const [user, profile, prefs] = await Promise.all([

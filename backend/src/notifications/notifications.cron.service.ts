@@ -3,6 +3,8 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma';
 import { TodayService } from '../today/today.service';
 import { WebPushService } from '../push/web-push.service';
+import { HolidaysService } from '../holidays';
+import { PersonalCareService } from '../personal-care';
 
 type PushContent = {
   title: string;
@@ -17,6 +19,8 @@ export class NotificationCronService {
     private readonly prisma: PrismaService,
     private readonly todayService: TodayService,
     private readonly webPushService: WebPushService,
+    private readonly holidaysService: HolidaysService,
+    private readonly personalCareService: PersonalCareService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -24,32 +28,29 @@ export class NotificationCronService {
     const currentTime = this.getCurrentTimeKey();
     this.logger.log(`Push CRON tick: ${currentTime}`);
 
+    // Юзер попадает в выборку, если ХОТЯ БЫ у одной включённой категории время == текущему,
+    // и есть хотя бы одна активная подписка (ТЗ п. 8: у каждой категории своё время).
     const prefsList = await this.prisma.prefs.findMany({
       where: {
-        pushTime: currentTime,
-        AND: [
-          {
-            OR: [
-              { holidaysEnabled: true },
-              { horoscopeEnabled: true },
-              { supportEnabled: true },
-            ],
-          },
-          {
-            user: { webPushSubscriptions: { some: {} } },
-          },
+        user: { webPushSubscriptions: { some: {} } },
+        OR: [
+          { horoscopeEnabled: true, horoscopeTime: currentTime },
+          { supportEnabled: true, supportTime: currentTime },
+          { holidaysEnabled: true, holidaysTime: currentTime },
+          { personalCareEnabled: true, personalCareTime: currentTime },
         ],
       },
       select: {
         userId: true,
         horoscopeEnabled: true,
-        holidaysEnabled: true,
         supportEnabled: true,
-        user: {
-          select: {
-            webPushSubscriptions: true,
-          },
-        },
+        holidaysEnabled: true,
+        personalCareEnabled: true,
+        horoscopeTime: true,
+        supportTime: true,
+        holidaysTime: true,
+        personalCareTime: true,
+        user: { select: { webPushSubscriptions: true } },
       },
     });
 
@@ -60,21 +61,21 @@ export class NotificationCronService {
 
     for (const prefs of prefsList) {
       try {
-        const pack = await this.todayService.getTodayPack(prefs.userId);
+        // Какие категории «стреляют» именно в эту минуту.
+        const fireHoroscope = prefs.horoscopeEnabled && prefs.horoscopeTime === currentTime;
+        const fireSupport = prefs.supportEnabled && prefs.supportTime === currentTime;
+        const fireHolidays = prefs.holidaysEnabled && prefs.holidaysTime === currentTime;
+        const firePersonalCare = prefs.personalCareEnabled && prefs.personalCareTime === currentTime;
 
-        // For support pushes: always get a fresh phrase from pool so consecutive
-        // pushes have different texts (pool rotates like "Другая фраза" button).
-        if (prefs.supportEnabled) {
-          const freshPhrase = await this.todayService.getNextSupportPhrase(prefs.userId);
-          if (freshPhrase && pack.support) {
-            pack.support.text = freshPhrase;
-          }
-        }
-
-        const contents = this.buildPushContents(prefs, pack);
+        const contents = await this.buildPushContents(prefs.userId, {
+          fireHoroscope,
+          fireSupport,
+          fireHolidays,
+          firePersonalCare,
+        });
 
         if (!contents.length) {
-          this.logger.log(`No enabled push content for userId=${prefs.userId}`);
+          this.logger.log(`No firing push content for userId=${prefs.userId} at ${currentTime}`);
           continue;
         }
 
@@ -97,16 +98,12 @@ export class NotificationCronService {
                 body: content.body,
                 data: {
                   userId: prefs.userId,
-                  date: pack.date,
                   type: content.type,
                   url: 'https://yoyojoy.online/home',
                 },
               },
             );
-
-            if (response) {
-              hasSuccessfulSend = true;
-            }
+            if (response) hasSuccessfulSend = true;
           }
 
           if (hasSuccessfulSend) {
@@ -117,17 +114,13 @@ export class NotificationCronService {
                 status: 'sent',
                 title: content.title,
                 body: content.body,
-                date: pack.date,
                 mood: profile?.currentMood ?? null,
               },
             });
           }
         }
       } catch (error) {
-        this.logger.error(
-          `Failed to send scheduled push for userId=${prefs.userId}`,
-          error,
-        );
+        this.logger.error(`Failed to send scheduled push for userId=${prefs.userId}`, error);
       }
     }
   }
@@ -139,38 +132,45 @@ export class NotificationCronService {
     return `${h}:${m}`;
   }
 
-  private buildPushContents(
-    prefs: {
-      holidaysEnabled: boolean;
-      horoscopeEnabled: boolean;
-      supportEnabled: boolean;
-    },
-    pack: Awaited<ReturnType<TodayService['getTodayPack']>>,
-  ): PushContent[] {
+  /**
+   * Собирает контент только для «стреляющих» категорий. Тяжёлый getTodayPack (AI/кэш)
+   * вызываем лишь если нужен гороскоп или поддержка.
+   */
+  private async buildPushContents(
+    userId: string,
+    fire: { fireHoroscope: boolean; fireSupport: boolean; fireHolidays: boolean; firePersonalCare: boolean },
+  ): Promise<PushContent[]> {
     const contents: PushContent[] = [];
 
-    if (prefs.holidaysEnabled && pack.holiday?.title) {
-      contents.push({
-        title: 'Праздник дня',
-        body: pack.holiday.title,
-        type: 'daily_holiday',
-      });
+    if (fire.fireHoroscope || fire.fireSupport) {
+      const pack = await this.todayService.getTodayPack(userId);
+
+      if (fire.fireHoroscope && pack.horoscope?.main) {
+        contents.push({ title: 'Твой гороскоп на сегодня', body: pack.horoscope.main, type: 'daily_horoscope' });
+      }
+
+      if (fire.fireSupport) {
+        // Свежая фраза из пула, чтобы подряд идущие пуши отличались (как «Другая фраза»).
+        const freshPhrase = await this.todayService.getNextSupportPhrase(userId);
+        const text = freshPhrase ?? pack.support?.text;
+        if (text) contents.push({ title: 'Поддержка на сегодня', body: text, type: 'daily_support' });
+      }
     }
 
-    if (prefs.horoscopeEnabled && pack.horoscope?.main) {
-      contents.push({
-        title: 'Твой гороскоп на сегодня',
-        body: pack.horoscope.main,
-        type: 'daily_horoscope',
-      });
+    if (fire.fireHolidays) {
+      const holidays = await this.holidaysService.getTodayHolidays(userId);
+      if (holidays.length) {
+        const extra = holidays.length - 1;
+        const body = extra > 0 ? `${holidays[0].title} и ещё ${extra}` : holidays[0].title;
+        contents.push({ title: 'Праздник дня', body, type: 'daily_holiday' });
+      }
     }
 
-    if (prefs.supportEnabled && pack.support?.text) {
-      contents.push({
-        title: 'Поддержка на сегодня',
-        body: pack.support.text,
-        type: 'daily_support',
-      });
+    if (fire.firePersonalCare) {
+      const care = await this.personalCareService.getToday(userId);
+      if (care) {
+        contents.push({ title: care.title, body: care.affirmation, type: 'daily_personal_care' });
+      }
     }
 
     return contents;

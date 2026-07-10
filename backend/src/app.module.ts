@@ -13,6 +13,9 @@ import { BookmarksModule } from './bookmarks';
 import { ProfileModule } from './profile';
 import { PushModule } from './push';
 import { NotificationsModule } from './notifications/notifications.module';
+import { GoalsModule } from './goals';
+import { HolidaysModule } from './holidays';
+import { PersonalCareModule } from './personal-care';
 
 @Module({
   imports: [
@@ -36,6 +39,9 @@ import { NotificationsModule } from './notifications/notifications.module';
     ProfileModule,
     PushModule,
     NotificationsModule,
+    GoalsModule,
+    HolidaysModule,
+    PersonalCareModule,
   ],
   providers: [
     {
