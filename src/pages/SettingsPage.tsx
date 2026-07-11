@@ -183,15 +183,18 @@ export function SettingsPage() {
           <NotificationCategoriesEditor categories={notificationCategories} />
         </section>
 
-        {/* Reset */}
-        <section className="mb-6 landscape:mb-0 landscape:col-span-2 landscape:row-start-4">
-          <button
-            onClick={handleReset}
-            className="w-full py-4 rounded-[1.5rem] border border-red-200 text-red-500 font-semibold text-sm active:scale-[0.98] transition-colors hover:bg-red-50"
-          >
-            Сбросить профиль и начать заново
-          </button>
-        </section>
+        {/* Reset — только для локальной разработки. В проде не показываем реальным
+            пользователям кнопку, стирающую аккаунт (пункт хендофф-TODO). */}
+        {import.meta.env.DEV && (
+          <section className="mb-6 landscape:mb-0 landscape:col-span-2 landscape:row-start-4">
+            <button
+              onClick={handleReset}
+              className="w-full py-4 rounded-[1.5rem] border border-red-200 text-red-500 font-semibold text-sm active:scale-[0.98] transition-colors hover:bg-red-50"
+            >
+              Сбросить профиль и начать заново
+            </button>
+          </section>
+        )}
 
         <div className="h-6 landscape:hidden" />
       </main>
