@@ -14,6 +14,8 @@ import { randomInt } from 'crypto';
 import { Resend } from 'resend';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
+import * as fs from 'fs';
+import * as path from 'path';
 import { PrismaService } from '../prisma';
 
 export interface JwtPayload {
@@ -226,6 +228,24 @@ export class AuthService {
       update: {},
       create: { userId: user.id },
     });
+
+    // Приветственное письмо — один раз за всю жизнь аккаунта (флаг welcomeEmailSentAt).
+    // verifyOtp() — общая точка входа для регистрации И логина, поэтому завязываемся на флаг,
+    // а не на тип запроса. Best-effort: письмо НИКОГДА не блокирует вход — любая ошибка гасится.
+    if (!user.welcomeEmailSentAt) {
+      try {
+        await this.sendWelcomeEmail(normalizedEmail, user.name);
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { welcomeEmailSentAt: new Date() },
+        });
+      } catch (err) {
+        this.logger.warn(
+          `Welcome email failed for ${normalizedEmail} (не критично, вход продолжается): ` +
+            (err instanceof Error ? err.message : String(err)),
+        );
+      }
+    }
 
     return this.issueTokens(user.id, user.email);
   }
@@ -472,6 +492,111 @@ export class AuthService {
               <div style="border-top:1px solid #e8e3db;padding-top:24px">
                 <p style="margin:0;font-size:12px;line-height:1.5;color:#8a9998;text-align:center">
                   Если ты не запрашивал(а) код — просто проигнорируй это письмо.
+                </p>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+  }
+
+  // Читает PDF-подарки из backend/assets/gifts/*.pdf. Файлов от клиента пока нет —
+  // возвращает [] (письмо уйдёт без вложений). Когда файлы положат в папку — они подхватятся
+  // автоматически, без изменения кода.
+  private loadGiftAttachments(): { filename: string; content: Buffer }[] {
+    const dir = path.join(process.cwd(), 'assets', 'gifts');
+    try {
+      if (!fs.existsSync(dir)) return [];
+      return fs
+        .readdirSync(dir)
+        .filter((f) => f.toLowerCase().endsWith('.pdf'))
+        .map((f) => ({ filename: f, content: fs.readFileSync(path.join(dir, f)) }));
+    } catch (err) {
+      this.logger.warn(
+        `Не удалось прочитать подарки из ${dir}: ` + (err instanceof Error ? err.message : String(err)),
+      );
+      return [];
+    }
+  }
+
+  // Приветственное письмо. Переиспользует тот же провайдер (Resend/SMTP), что и OTP.
+  // Вложения (PDF-подарки) — best-effort: если файлов нет, письмо уходит без них.
+  private async sendWelcomeEmail(to: string, name: string | null) {
+    const subject = 'Добро пожаловать в YoYoJoy Day 🌿';
+    const html = this.renderWelcomeEmailHtml(name);
+    const gifts = this.loadGiftAttachments();
+    const giftNote = gifts.length ? ` (+${gifts.length} PDF)` : ' (без вложений — файлов подарков пока нет)';
+
+    if (this.provider === 'smtp' && this.smtpTransport) {
+      const info = await this.smtpTransport.sendMail({
+        from: `${this.smtpFromName} <${this.smtpFromEmail}>`,
+        to,
+        subject,
+        html,
+        attachments: gifts.map((g) => ({ filename: g.filename, content: g.content })),
+      });
+      this.logger.log(`Welcome email sent to ${to} via SMTP${giftNote} (id=${info.messageId})`);
+      return;
+    }
+
+    if (this.provider === 'resend' && this.resend) {
+      const { data, error } = await this.resend.emails.send({
+        from: `YoYoJoy Day <${this.resendFromEmail}>`,
+        to,
+        subject,
+        html,
+        attachments: gifts.map((g) => ({ filename: g.filename, content: g.content })),
+      });
+      if (error) throw new Error(`Resend rejected welcome email: ${JSON.stringify(error)}`);
+      this.logger.log(`Welcome email sent to ${to} via Resend${giftNote} (id=${data?.id ?? 'n/a'})`);
+      return;
+    }
+
+    throw new Error('No email provider configured for welcome email');
+  }
+
+  private renderWelcomeEmailHtml(name: string | null): string {
+    const greeting = name && name.trim() ? `Привет, ${name.trim()}!` : 'Привет!';
+    return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>YoYoJoy Day</title>
+</head>
+<body style="margin:0;padding:32px 16px;background:#f5f2ed;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="480" cellspacing="0" cellpadding="0" border="0" style="max-width:480px;background:#fcf9f4;border-radius:24px;overflow:hidden">
+          <tr>
+            <td style="padding:40px 40px 28px;background:#006a65;text-align:center">
+              <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px">YoYoJoy Day 🌿</div>
+              <div style="color:#a4d8d5;font-size:13px;margin-top:6px">Твой персональный компаньон дня</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 40px 8px">
+              <p style="margin:0 0 16px;font-size:18px;font-weight:700;color:#006a65">${greeting}</p>
+              <p style="margin:0 0 20px;font-size:16px;line-height:1.55;color:#2a3f3e">
+                Спасибо, что ты с нами. Каждый день тебя будут ждать гороскоп, тёплая фраза поддержки и
+                праздники — всё подобрано лично для тебя.
+              </p>
+              <p style="margin:0 0 8px;font-size:15px;line-height:1.55;color:#5a6968">
+                Загляни на главную прямо сейчас — там уже готов твой сегодняшний день. А в настройках можно
+                выбрать цели на год и время, когда тебе присылать заботу.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 40px 40px">
+              <div style="border-top:1px solid #e8e3db;padding-top:24px">
+                <p style="margin:0;font-size:12px;line-height:1.5;color:#8a9998;text-align:center">
+                  С любовью, команда YoYoJoy Day
                 </p>
               </div>
             </td>
