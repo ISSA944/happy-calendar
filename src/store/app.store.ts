@@ -352,8 +352,8 @@ export const useAppStore = create<AppState>()(
       setHoroscopeTime: (horoscopeTime) => {
         set({ horoscopeTime })
         if (getAccessToken()) {
-          apiClient.patch('profile', { pushTime: localTimeToUtc(horoscopeTime) }).catch((err) => {
-            console.warn('[store] Failed to sync pushTime with backend', err)
+          apiClient.patch('profile', { horoscopeTime: localTimeToUtc(horoscopeTime) }).catch((err) => {
+            console.warn('[store] Failed to sync horoscopeTime with backend', err)
           })
         }
       },

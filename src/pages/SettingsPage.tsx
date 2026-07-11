@@ -6,6 +6,7 @@ import { CalendarSheet } from '../features/auth/CalendarSheet'
 import { BottomSheet } from '../components/ui/BottomSheet'
 import { GoalsSelector } from '../features/goals/GoalsSelector'
 import { GoalsProgress } from '../features/goals/GoalsProgress'
+import { useGoalsEditor } from '../features/goals/useGoalsEditor'
 import { NotificationCategoriesEditor } from '../features/notifications/NotificationCategoriesEditor'
 import { useNotificationCategories } from '../features/notifications/useNotificationCategories'
 import { prepareAvatarDataUrl } from '../utils/image'
@@ -34,8 +35,7 @@ export function SettingsPage() {
   const [isEmailConfirmOpen, setIsEmailConfirmOpen] = useState(false)
   const [showEmailSuccess, setShowEmailSuccess] = useState(false)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
-  const [isGoalsEditorOpen, setIsGoalsEditorOpen] = useState(false)
-  const [editingGoals, setEditingGoals] = useState<string[]>([])
+  const goalsEditor = useGoalsEditor(goals, setGoals)
 
   useEffect(() => {
     void fetchGoals()
@@ -69,22 +69,6 @@ export function SettingsPage() {
     setIsCalendarOpen(false)
     startTransition(() => setBirthDate(dateStr))
   }, [setBirthDate])
-
-  const openGoalsEditor = useCallback(() => {
-    setEditingGoals(goals.filter(g => g.active).map(g => g.id))
-    setIsGoalsEditorOpen(true)
-  }, [goals])
-  const toggleEditingGoal = useCallback((id: string) => {
-    setEditingGoals(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }, [])
-  const saveGoalsEditor = useCallback(async () => {
-    await setGoals(editingGoals)
-    setIsGoalsEditorOpen(false)
-  }, [editingGoals, setGoals])
-  const handleReactivateGoal = useCallback((id: string) => {
-    const current = goals.filter(g => g.active).map(g => g.id)
-    void setGoals([...current, id])
-  }, [goals, setGoals])
 
   return (
     <div className="flex flex-col min-h-full bg-background font-body">
@@ -181,11 +165,14 @@ export function SettingsPage() {
         <section className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-span-2 landscape:row-start-3">
           <div className="flex items-baseline justify-between mb-4 px-1">
             <h2 className="text-sm font-bold text-on-surface uppercase tracking-wider opacity-60">Мои цели за год</h2>
-            <button onClick={openGoalsEditor} className="text-xs font-semibold text-primary flex-shrink-0">
+            <button
+              onClick={goalsEditor.open}
+              className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-full flex-shrink-0 active:scale-95 transition-transform"
+            >
               Изменить цели →
             </button>
           </div>
-          <GoalsProgress goals={goals} onReactivate={handleReactivateGoal} />
+          <GoalsProgress goals={goals} onReactivate={goalsEditor.handleReactivateGoal} />
         </section>
 
         {/* Уведомления — время и категории */}
@@ -217,11 +204,11 @@ export function SettingsPage() {
       />
 
       {/* Goals editor — тот же GoalsSelector, что в онбординге (ТЗ п. 4.5 «Изменить цели») */}
-      <BottomSheet isOpen={isGoalsEditorOpen} onClose={() => setIsGoalsEditorOpen(false)} title="Твои цели">
+      <BottomSheet isOpen={goalsEditor.isOpen} onClose={goalsEditor.close} title="Твои цели">
         <div className="px-5 pb-6 flex flex-col gap-4">
-          <GoalsSelector selected={editingGoals} onToggle={toggleEditingGoal} />
+          <GoalsSelector selected={goalsEditor.editingGoals} onToggle={goalsEditor.toggle} />
           <button
-            onClick={saveGoalsEditor}
+            onClick={goalsEditor.save}
             className="w-full h-12 rounded-full bg-primary-container text-white font-headline font-bold text-sm"
           >
             Сохранить

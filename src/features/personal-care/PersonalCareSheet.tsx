@@ -16,6 +16,7 @@ interface PersonalCareSheetProps {
 export function PersonalCareSheet({ isOpen, onClose, onMilestones }: PersonalCareSheetProps) {
   const care = useAppStore((s) => s.personalCareToday)
   const addBookmark = useAppStore((s) => s.addBookmark)
+  const removeBookmark = useAppStore((s) => s.removeBookmark)
   const bookmarks = useAppStore((s) => s.bookmarks)
   const completePersonalCare = useAppStore((s) => s.completePersonalCare)
 
@@ -24,10 +25,12 @@ export function PersonalCareSheet({ isOpen, onClose, onMilestones }: PersonalCar
     [care],
   )
 
-  const isSaved = care ? bookmarks.some((b) => b.type === 'забота' && b.text === care.task) : false
+  const savedBookmark = care ? bookmarks.find((b) => b.type === 'забота' && b.text === care.task) : undefined
+  const isSaved = Boolean(savedBookmark)
 
   const handleSave = useCallback(() => {
-    if (!care || isSaved) return
+    if (savedBookmark) { void removeBookmark(savedBookmark.id); return }
+    if (!care) return
     void addBookmark({
       id: `tmp-p-${Date.now()}`,
       type: 'забота',
@@ -35,7 +38,7 @@ export function PersonalCareSheet({ isOpen, onClose, onMilestones }: PersonalCar
       text: care.task,
       icon: 'spa',
     })
-  }, [care, isSaved, addBookmark])
+  }, [care, savedBookmark, addBookmark, removeBookmark])
 
   const handleComplete = useCallback(async () => {
     if (!care || care.doneToday) return
@@ -82,7 +85,6 @@ export function PersonalCareSheet({ isOpen, onClose, onMilestones }: PersonalCar
         <div className="flex gap-3 mt-1">
           <button
             onClick={handleSave}
-            disabled={isSaved}
             className={`flex-1 h-12 rounded-xl border font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
               isSaved ? 'border-primary/30 text-primary bg-primary/5' : 'border-outline-variant text-on-surface-variant'
             }`}

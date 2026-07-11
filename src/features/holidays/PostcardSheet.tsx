@@ -22,6 +22,7 @@ interface PostcardSheetProps {
 export function PostcardSheet({ holiday, onClose, onBack }: PostcardSheetProps) {
   const getHolidayCard = useAppStore((s) => s.getHolidayCard)
   const addBookmark = useAppStore((s) => s.addBookmark)
+  const removeBookmark = useAppStore((s) => s.removeBookmark)
   const bookmarks = useAppStore((s) => s.bookmarks)
 
   const [tone, setTone] = useState<Tone>('cute')
@@ -47,10 +48,12 @@ export function PostcardSheet({ holiday, onClose, onBack }: PostcardSheetProps) 
     return () => { cancelled = true }
   }, [holiday, tone, getHolidayCard])
 
-  const isSaved = card ? bookmarks.some((b) => b.type === 'открытка' && b.text === card.text) : false
+  const savedBookmark = card ? bookmarks.find((b) => b.type === 'открытка' && b.text === card.text) : undefined
+  const isSaved = Boolean(savedBookmark)
 
   const handleSave = useCallback(() => {
-    if (!card || isSaved) return
+    if (savedBookmark) { void removeBookmark(savedBookmark.id); return }
+    if (!card) return
     void addBookmark({
       id: `tmp-c-${Date.now()}`,
       type: 'открытка',
@@ -58,7 +61,7 @@ export function PostcardSheet({ holiday, onClose, onBack }: PostcardSheetProps) 
       text: card.text,
       icon: 'celebration',
     })
-  }, [card, isSaved, addBookmark])
+  }, [card, savedBookmark, addBookmark, removeBookmark])
 
   const handleShare = useCallback(async () => {
     if (!card) return
@@ -123,7 +126,6 @@ export function PostcardSheet({ holiday, onClose, onBack }: PostcardSheetProps) 
           <div className="flex gap-3">
             <button
               onClick={handleSave}
-              disabled={isSaved}
               className={`flex-1 h-12 rounded-xl border font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
                 isSaved ? 'border-primary/30 text-primary bg-primary/5' : 'border-outline-variant text-on-surface-variant'
               }`}

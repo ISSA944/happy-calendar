@@ -35,6 +35,7 @@ export function HomePage() {
   const initDailyPack      = useAppStore(s => s.initDailyPack)
   const refreshSupportPhrase = useAppStore(s => s.refreshSupportPhrase)
   const addBookmark        = useAppStore(s => s.addBookmark)
+  const removeBookmark     = useAppStore(s => s.removeBookmark)
   const bookmarks          = useAppStore(s => s.bookmarks)
   const fetchBookmarks     = useAppStore(s => s.fetchBookmarks)
   const fetchGoals         = useAppStore(s => s.fetchGoals)
@@ -84,14 +85,16 @@ export function HomePage() {
   const todayStr       = useMemo(() => getFullDateStr(), [])
   const moodLabel      = useMemo(() => getMoodLabel(currentMood, gender), [currentMood, gender])
 
-  const savedQuote = useMemo(
-    () => bookmarks.some(b => b.type === 'поддержка' && b.text === supportPhrase),
+  const savedQuoteBookmark = useMemo(
+    () => bookmarks.find(b => b.type === 'поддержка' && b.text === supportPhrase),
     [bookmarks, supportPhrase],
   )
-  const savedHoroscope = useMemo(
-    () => bookmarks.some(b => b.type === 'гороскоп' && b.date === todayStr),
+  const savedHoroscopeBookmark = useMemo(
+    () => bookmarks.find(b => b.type === 'гороскоп' && b.date === todayStr),
     [bookmarks, todayStr],
   )
+  const savedQuote = Boolean(savedQuoteBookmark)
+  const savedHoroscope = Boolean(savedHoroscopeBookmark)
 
   const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -103,15 +106,17 @@ export function HomePage() {
   }, [refreshSupportPhrase, isRefreshing])
 
   const handleSaveQuote = useCallback(() => {
-    if (!supportPhrase || savedQuote) return
+    if (savedQuoteBookmark) { void removeBookmark(savedQuoteBookmark.id); return }
+    if (!supportPhrase) return
     void addBookmark({ id: `tmp-q-${Date.now()}`, type: 'поддержка', date: todayStr, text: supportPhrase, icon: 'favorite' })
-  }, [addBookmark, supportPhrase, savedQuote, todayStr])
+  }, [addBookmark, removeBookmark, savedQuoteBookmark, supportPhrase, todayStr])
 
   const handleSaveHoroscope = useCallback(() => {
-    if (savedHoroscope || !horoscope) return
+    if (savedHoroscopeBookmark) { void removeBookmark(savedHoroscopeBookmark.id); return }
+    if (!horoscope) return
     const text = horoscopeTab === 'short' ? horoscope.main : horoscope.detailed
     void addBookmark({ id: `tmp-h-${Date.now()}`, type: 'гороскоп', date: todayStr, text: `${zodiacSign}: ${text}`, icon: 'auto_awesome' })
-  }, [addBookmark, horoscope, horoscopeTab, savedHoroscope, zodiacSign, todayStr])
+  }, [addBookmark, removeBookmark, savedHoroscopeBookmark, horoscope, horoscopeTab, zodiacSign, todayStr])
 
   const handleTabChange = useCallback((tab: 'short' | 'detailed') => {
     setTabDir(tab === 'detailed' ? 1 : -1)
@@ -268,7 +273,6 @@ export function HomePage() {
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={handleSaveQuote}
-                disabled={savedQuote}
                 className={`flex-1 h-12 border rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
                   savedQuote
                     ? 'border-primary/30 text-primary bg-primary/5'
@@ -370,9 +374,10 @@ export function HomePage() {
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={handleSaveHoroscope}
-                disabled={savedHoroscope}
-                className={`font-semibold text-sm flex items-center gap-2 transition-colors px-4 py-2 rounded-full ${
-                  savedHoroscope ? 'text-primary/50' : 'text-primary hover:opacity-80'
+                className={`border font-semibold text-sm flex items-center gap-2 transition-colors px-4 py-2 rounded-full ${
+                  savedHoroscope
+                    ? 'border-primary/30 text-primary bg-primary/5'
+                    : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
                 }`}
               >
                 <span className="material-symbols-outlined text-lg" style={savedHoroscope ? { fontVariationSettings: "'FILL' 1" } : undefined}>bookmark_add</span>

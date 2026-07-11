@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom'
 import { apiClient } from '../api'
 import { useWebPush } from '../hooks'
 import { useAppStore } from '../store'
-import { localTimeToUtc } from '../lib/time'
 import { prepareAvatarDataUrl } from '../utils/image'
 import { getZodiac } from '../utils/zodiac'
 
@@ -27,8 +26,6 @@ function isValidBirthDate(dateStr: string): boolean {
 
 import { CalendarSheet } from '../features/auth/CalendarSheet'
 import { GoalsSelector } from '../features/goals/GoalsSelector'
-import { NotificationCategoriesEditor } from '../features/notifications/NotificationCategoriesEditor'
-import { useNotificationCategories } from '../features/notifications/useNotificationCategories'
 
 export function ProfileSetupPage() {
   const navigate = useNavigate()
@@ -37,19 +34,10 @@ export function ProfileSetupPage() {
   const storeZodiac = useAppStore((s) => s.setZodiacSign)
   const setHasCompletedOnboarding = useAppStore((s) => s.setHasCompletedOnboarding)
   const setShowOnboardingLoader = useAppStore((s) => s.setShowOnboardingLoader)
-  const horoscopeTime = useAppStore((s) => s.horoscopeTime)
-  const supportTime = useAppStore((s) => s.supportTime)
-  const holidaysTime = useAppStore((s) => s.holidaysTime)
-  const personalCareTime = useAppStore((s) => s.personalCareTime)
-  const showHoroscope = useAppStore((s) => s.showHoroscope)
-  const showHolidays = useAppStore((s) => s.showHolidays)
-  const showSupport = useAppStore((s) => s.showSupport)
-  const showPersonalCare = useAppStore((s) => s.showPersonalCare)
   const profilePhoto = useAppStore((s) => s.profilePhoto)
   const setProfilePhoto = useAppStore((s) => s.setProfilePhoto)
   const setGoals = useAppStore((s) => s.setGoals)
   const { subscribe } = useWebPush()
-  const notificationCategories = useNotificationCategories()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [birthDate, setBirthDate] = useState('')
@@ -90,15 +78,6 @@ export function ProfileSetupPage() {
         birthdate: birthDate,
         zodiacSign: zodiacSign ?? '',
         gender,
-        pushTime: localTimeToUtc(horoscopeTime),
-        horoscopeTime: localTimeToUtc(horoscopeTime),
-        supportTime: localTimeToUtc(supportTime),
-        holidaysTime: localTimeToUtc(holidaysTime),
-        personalCareTime: localTimeToUtc(personalCareTime),
-        horoscopeEnabled: showHoroscope,
-        holidaysEnabled: showHolidays,
-        supportEnabled: showSupport,
-        personalCareEnabled: showPersonalCare,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       })
       if (selectedGoals.length) {
@@ -244,19 +223,12 @@ export function ProfileSetupPage() {
           <GoalsSelector selected={selectedGoals} onToggle={toggleGoal} />
         </div>
 
-        {/* 🆕 Уведомления — тот же блок, что в Настройках (ТЗ п. 4.2) */}
-        <div className="order-4 mt-8 landscape:col-span-2 bg-white/60 landscape:bg-white/60 border border-outline-variant/30 rounded-[24px] p-5">
-          <h2 className="text-[15px] font-semibold text-on-surface-variant mb-1">Уведомления</h2>
-          <p className="text-[13px] text-on-surface-variant/70 mb-2">Когда и что тебе присылать</p>
-          <NotificationCategoriesEditor categories={notificationCategories} />
-        </div>
-
-        <p className="order-5 mt-5 landscape:col-span-2 text-[13px] text-on-surface-variant/80 text-center leading-relaxed px-2">
+        <p className="order-4 mt-5 landscape:col-span-2 text-[13px] text-on-surface-variant/80 text-center leading-relaxed px-2">
           Всё это — имя, цели, время уведомлений — можно изменить в любой момент в Настройках.
         </p>
 
         {/* Общая CTA (одна на оба режима — раньше дублировалась под portrait/landscape) */}
-        <div className="order-6 mt-6 landscape:col-span-2">
+        <div className="order-5 mt-6 landscape:col-span-2">
           <button
             onClick={handleSubmit}
             disabled={!isValid || isSubmitting}
