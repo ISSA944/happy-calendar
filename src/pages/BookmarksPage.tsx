@@ -4,13 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../store'
 import type { BookmarkType } from '../store/app.store'
 
-// Цветовая схема тегов закладок по типу — единый источник для табов, тегов и иконок.
-// Цвета из дизайн-системы (tailwind.config.js): accent/primary/tertiary/secondary.
-const TYPE_META: Record<BookmarkType, { label: string; color: string }> = {
-  'гороскоп': { label: 'Гороскоп', color: '#2FA7A0' },
-  'поддержка': { label: 'Поддержка', color: '#006a65' },
-  'открытка': { label: 'Открытки', color: '#954928' },
-  'забота': { label: 'Забота', color: '#914946' },
+// Лейблы типов закладок. Цвет тегов/иконок единый и лёгкий (primary) — по просьбе:
+// «должно быть один свет, очень лёгкий, как у всех», без разноцветья по типам.
+const TYPE_LABEL: Record<BookmarkType, string> = {
+  'гороскоп': 'Гороскоп',
+  'поддержка': 'Поддержка',
+  'открытка': 'Открытки',
+  'забота': 'Забота',
 }
 
 const FILTERS = ['все', 'гороскоп', 'поддержка', 'открытка', 'забота'] as const
@@ -59,17 +59,15 @@ export function BookmarksPage() {
         <div className="flex gap-2 overflow-x-auto pb-6 no-scrollbar">
           {FILTERS.map(type => {
             const active = filter === type
-            const color = type === 'все' ? '#006a65' : TYPE_META[type].color
             return (
               <button
                 key={type}
                 onClick={() => setFilter(type)}
                 className={`flex-shrink-0 px-6 py-2 rounded-full text-sm font-medium transition-colors active:scale-95 ${
-                  active ? 'text-white' : 'bg-white border border-outline-variant text-on-surface-variant'
+                  active ? 'bg-primary text-white' : 'bg-white border border-outline-variant text-on-surface-variant'
                 }`}
-                style={active ? { background: color } : undefined}
               >
-                {type === 'все' ? 'Все' : TYPE_META[type].label}
+                {type === 'все' ? 'Все' : TYPE_LABEL[type]}
               </button>
             )
           })}
@@ -88,20 +86,14 @@ export function BookmarksPage() {
                 className="bg-white rounded-[24px] p-5 flex flex-col gap-4 shadow-[0_4px_16px_rgba(0,0,0,0.04)]"
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: `${TYPE_META[bm.type].color}1a`, color: TYPE_META[bm.type].color }}
-                  >
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary">
                     <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
                       {bm.icon}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div
-                      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold mb-0.5 uppercase tracking-wider"
-                      style={{ backgroundColor: `${TYPE_META[bm.type].color}1a`, color: TYPE_META[bm.type].color }}
-                    >
-                      {TYPE_META[bm.type].label}
+                    <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold mb-0.5 uppercase tracking-wider bg-primary/10 text-primary">
+                      {TYPE_LABEL[bm.type]}
                     </div>
                     <p className="text-[11px] text-on-surface-variant">{bm.date}</p>
                   </div>

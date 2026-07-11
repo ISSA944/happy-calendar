@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import { useAppStore } from '../../store'
 import { GOALS } from '../goals/goals.constant'
-import { themeGradientCss } from '../holidays/themeGradients'
+import { ThemeArt } from '../holidays/ThemeArt'
 import { getFullDateStr } from '../../services/content.service'
 import type { MilestoneHit } from '../../store/app.store'
 
@@ -52,13 +52,10 @@ export function PersonalCareSheet({ isOpen, onClose, onMilestones }: PersonalCar
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Персональный день">
       <div className="px-5 pb-6 flex flex-col gap-4">
-        <div
-          className="h-36 rounded-3xl flex items-center justify-center overflow-hidden"
-          style={{ background: care.imageUrl ? undefined : themeGradientCss(care.themeKey) }}
-        >
+        <div className="h-36 rounded-3xl overflow-hidden">
           {care.imageUrl
             ? <img src={care.imageUrl} alt="" className="w-full h-full object-cover" />
-            : <span className="material-symbols-outlined text-white text-5xl" style={{ fontVariationSettings: "'FILL' 1" }}>spa</span>
+            : <ThemeArt themeKey={care.themeKey} className="w-full h-full" />
           }
         </div>
 

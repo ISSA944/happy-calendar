@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAppStore } from '../../store'
 import type { MilestoneHit } from '../../store/app.store'
-import { themeGradientCss } from './themeGradients'
+import { ThemeArt } from './ThemeArt'
 import { HolidayListSheet } from './HolidayListSheet'
 import { PersonalCareSheet } from '../personal-care/PersonalCareSheet'
 import { MilestoneCelebrationSheet } from '../personal-care/MilestoneCelebrationSheet'
@@ -26,13 +26,10 @@ export function HolidaysTodayBlock() {
         disabled={!main}
         className="text-left bg-surface-container-lowest rounded-[1.5rem] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] active:scale-[0.98] transition-transform disabled:active:scale-100"
       >
-        <div
-          className="h-20 flex items-center justify-center"
-          style={{ background: main ? themeGradientCss(main.themeKey) : themeGradientCss('Уютные пустяки и радости') }}
-        >
+        <div className="h-20 overflow-hidden">
           {main?.imageUrl
             ? <img src={main.imageUrl} alt="" className="w-full h-full object-cover" />
-            : <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>celebration</span>
+            : <ThemeArt themeKey={main?.themeKey ?? 'Уютные пустяки и радости'} className="w-full h-full" />
           }
         </div>
         <div className="p-3">
@@ -50,13 +47,10 @@ export function HolidaysTodayBlock() {
         disabled={!care}
         className="text-left bg-surface-container-lowest rounded-[1.5rem] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] active:scale-[0.98] transition-transform relative disabled:active:scale-100"
       >
-        <div
-          className="h-20 flex items-center justify-center relative"
-          style={{ background: care ? themeGradientCss(care.themeKey) : themeGradientCss('Забота о себе и спокойствие') }}
-        >
+        <div className="h-20 overflow-hidden relative">
           {care?.imageUrl
             ? <img src={care.imageUrl} alt="" className="w-full h-full object-cover" />
-            : <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>spa</span>
+            : <ThemeArt themeKey={care?.themeKey ?? 'Забота о себе и спокойствие'} className="w-full h-full" />
           }
           {care?.doneToday && (
             <span className="absolute top-2 right-2 bg-white text-primary text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-0.5">

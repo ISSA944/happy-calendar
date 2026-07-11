@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import { useAppStore } from '../../store'
 import type { HolidayCard, HolidayCardWithText, Tone } from '../../store/app.store'
-import { themeGradientCss } from './themeGradients'
+import { ThemeArt } from './ThemeArt'
 import { nativeShare, shareViaChannel, SHARE_CHANNELS } from '../../utils/share'
 import { getFullDateStr } from '../../services/content.service'
 
@@ -106,13 +106,10 @@ export function PostcardSheet({ holiday, onClose, onBack }: PostcardSheetProps) 
         </div>
 
         <div className="rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-          <div
-            className="h-40 flex items-center justify-center"
-            style={{ background: card?.imageUrl ? undefined : themeGradientCss(holiday.themeKey) }}
-          >
+          <div className="h-40 overflow-hidden">
             {card?.imageUrl
               ? <img src={card.imageUrl} alt="" className="w-full h-full object-cover" />
-              : <span className="material-symbols-outlined text-white text-5xl" style={{ fontVariationSettings: "'FILL' 1" }}>celebration</span>
+              : <ThemeArt themeKey={holiday.themeKey} className="w-full h-full" />
             }
           </div>
           <div className="bg-white p-5 min-h-[64px]">
