@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { TimePickerSheet } from '../auth/TimePickerSheet'
+import { Toggle } from '../../components/ui/Toggle'
 
 export interface NotificationCategory {
   id: 'horoscope' | 'support' | 'holidays' | 'personalCare'
@@ -45,19 +46,11 @@ export function NotificationCategoriesEditor({ categories }: NotificationCategor
           >
             {cat.time}
           </button>
-          <button
-            type="button"
-            onClick={cat.onToggle}
+          <Toggle
+            checked={cat.enabled}
+            onChange={cat.onToggle}
             aria-label={`${cat.enabled ? 'Выключить' : 'Включить'} ${cat.title}`}
-            className={`w-11 h-6 rounded-full relative transition-colors duration-200 flex-shrink-0 ${
-              cat.enabled ? 'bg-primary' : 'bg-surface-container-highest'
-            }`}
-          >
-            <span
-              className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200"
-              style={{ transform: cat.enabled ? 'translateX(24px)' : 'translateX(4px)' }}
-            />
-          </button>
+          />
         </div>
       ))}
 

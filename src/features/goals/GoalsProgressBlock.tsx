@@ -16,9 +16,10 @@ export function GoalsProgressBlock() {
         <h2 className="font-headline text-lg font-bold text-on-surface">Твои цели</h2>
         <button
           onClick={goalsEditor.open}
-          className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-full active:scale-95 transition-transform"
+          className="inline-flex items-center gap-0.5 text-xs font-semibold text-primary bg-primary/10 pl-3 pr-2 py-1.5 rounded-full active:scale-95 transition-transform"
         >
-          Изменить →
+          Изменить
+          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
         </button>
       </div>
       <div className="bg-surface-container-lowest rounded-[1.5rem] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">

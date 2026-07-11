@@ -144,8 +144,8 @@ export function NotificationsPage() {
             >
               {/* Что и когда присылать — 4 категории, каждая со своим временем */}
               <section className="bg-white rounded-[24px] p-6 shadow-soft landscape:col-span-2">
-                <h2 className="font-headline font-bold text-[17px] mb-1 text-on-surface">Что присылать</h2>
-                <p className="text-xs text-on-surface-variant font-body mb-2">Можно изменить в любой момент в Настройках</p>
+                <h2 className="font-headline font-bold text-[17px] mb-1 text-on-surface">Что и когда присылать</h2>
+                <p className="text-xs text-on-surface-variant font-body mb-2">У каждой категории своё время. Можно изменить в любой момент в Настройках.</p>
                 <NotificationCategoriesEditor categories={notificationCategories} />
               </section>
 

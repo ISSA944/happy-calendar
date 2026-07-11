@@ -167,9 +167,10 @@ export function SettingsPage() {
             <h2 className="text-sm font-bold text-on-surface uppercase tracking-wider opacity-60">Мои цели за год</h2>
             <button
               onClick={goalsEditor.open}
-              className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-full flex-shrink-0 active:scale-95 transition-transform"
+              className="inline-flex items-center gap-0.5 text-xs font-semibold text-primary bg-primary/10 pl-3 pr-2 py-1.5 rounded-full flex-shrink-0 active:scale-95 transition-transform"
             >
-              Изменить цели →
+              Изменить цели
+              <span className="material-symbols-outlined text-[16px]">chevron_right</span>
             </button>
           </div>
           <GoalsProgress goals={goals} onReactivate={goalsEditor.handleReactivateGoal} />

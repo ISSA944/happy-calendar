@@ -37,7 +37,12 @@ export function HolidaysTodayBlock() {
           <p className="text-[13px] font-bold text-on-surface leading-tight mt-1 line-clamp-2">
             {main ? main.title : 'Сегодня без праздников'}
           </p>
-          {extra > 0 && <p className="text-[11px] text-on-surface-variant mt-1">Ещё {extra} →</p>}
+          {extra > 0 && (
+            <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-primary mt-1">
+              Ещё {extra}
+              <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+            </span>
+          )}
         </div>
       </button>
 

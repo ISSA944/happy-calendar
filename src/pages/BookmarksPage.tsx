@@ -56,21 +56,25 @@ export function BookmarksPage() {
           </p>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-6 no-scrollbar">
-          {FILTERS.map(type => {
-            const active = filter === type
-            return (
-              <button
-                key={type}
-                onClick={() => setFilter(type)}
-                className={`flex-shrink-0 px-6 py-2 rounded-full text-sm font-medium transition-colors active:scale-95 ${
-                  active ? 'bg-primary text-white' : 'bg-white border border-outline-variant text-on-surface-variant'
-                }`}
-              >
-                {type === 'все' ? 'Все' : TYPE_LABEL[type]}
-              </button>
-            )
-          })}
+        <div className="relative mb-6">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pr-6">
+            {FILTERS.map(type => {
+              const active = filter === type
+              return (
+                <button
+                  key={type}
+                  onClick={() => setFilter(type)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors active:scale-95 ${
+                    active ? 'bg-primary text-white' : 'bg-white border border-outline-variant text-on-surface-variant'
+                  }`}
+                >
+                  {type === 'все' ? 'Все' : TYPE_LABEL[type]}
+                </button>
+              )
+            })}
+          </div>
+          {/* Fade справа — подсказка, что список табов скроллится */}
+          <div className="pointer-events-none absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-background to-transparent" />
         </div>
 
         <section className="space-y-5 landscape:space-y-0 landscape:grid landscape:grid-cols-2 landscape:gap-5">
