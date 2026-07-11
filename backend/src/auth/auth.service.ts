@@ -31,6 +31,8 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly OTP_TTL_MIN = 15;
   private readonly BCRYPT_ROUNDS = 10;
+  // Тестовый аккаунт с обходом OTP — активен ТОЛЬКО в dev (см. isTestAccount ниже).
+  private readonly TEST_EMAIL = 'mukaniskander01@gmail.com';
 
   private readonly smtpTransport: Transporter | null;
   private readonly smtpFromEmail: string;
@@ -85,9 +87,12 @@ export class AuthService {
 
   async register(email: string, name?: string, consents?: boolean, marketing?: boolean) {
     const normalizedEmail = email.trim().toLowerCase();
-    const TEST_EMAIL = 'mukaniskander01@gmail.com';
+    const isDev = this.config.get<string>('NODE_ENV') !== 'production';
+    // Тест-аккаунт (авто-сброс + OTP 1111) разрешён ТОЛЬКО в dev. В проде этот email
+    // ведёт себя как обычный — без обхода OTP и без затирания данных (иначе это бэкдор).
+    const isTestAccount = isDev && normalizedEmail === this.TEST_EMAIL;
 
-    if (normalizedEmail === TEST_EMAIL) {
+    if (isTestAccount) {
       // Test account: auto-wipe on every registration so re-registration always works cleanly
       await this.prisma.user.deleteMany({ where: { email: normalizedEmail } });
     } else {
@@ -109,13 +114,12 @@ export class AuthService {
       });
     }
 
-    const code = normalizedEmail === TEST_EMAIL ? '1111' : randomInt(1000, 10_000).toString();
-    const isDev = this.config.get<string>('NODE_ENV') !== 'production';
+    const code = isTestAccount ? '1111' : randomInt(1000, 10_000).toString();
 
     // Try to send email first (clean-state policy: save hash only on success).
     // In development: if email send fails for any reason, log code to terminal so
     // any email can be tested locally. In production: failure still throws 500.
-    if (normalizedEmail !== TEST_EMAIL) {
+    if (!isTestAccount) {
       try {
         await this.sendOtpEmail(normalizedEmail, code);
       } catch (err) {
@@ -150,11 +154,11 @@ export class AuthService {
       throw new NotFoundException('Email not found');
     }
 
-    const TEST_EMAIL = 'mukaniskander01@gmail.com';
-    const code = normalizedEmail === TEST_EMAIL ? '1111' : randomInt(1000, 10_000).toString();
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';
+    const isTestAccount = isDev && normalizedEmail === this.TEST_EMAIL;
+    const code = isTestAccount ? '1111' : randomInt(1000, 10_000).toString();
 
-    if (normalizedEmail !== TEST_EMAIL) {
+    if (!isTestAccount) {
       try {
         await this.sendOtpEmail(normalizedEmail, code);
       } catch (err) {
