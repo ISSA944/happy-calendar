@@ -6,6 +6,8 @@ import { useAppStore } from '../store'
 import { MoodSheet } from '../features/mood/MoodSheet'
 import { BottomSheet } from '../components/ui/BottomSheet'
 import { usePWAInstall } from '../hooks'
+import { HolidaysTodayBlock } from '../features/holidays/HolidaysTodayBlock'
+import { GoalsProgressBlock } from '../features/goals/GoalsProgressBlock'
 import {
   getGreeting,
   getTodayFormatted,
@@ -35,6 +37,9 @@ export function HomePage() {
   const addBookmark        = useAppStore(s => s.addBookmark)
   const bookmarks          = useAppStore(s => s.bookmarks)
   const fetchBookmarks     = useAppStore(s => s.fetchBookmarks)
+  const fetchGoals         = useAppStore(s => s.fetchGoals)
+  const fetchHolidaysToday = useAppStore(s => s.fetchHolidaysToday)
+  const fetchPersonalCareToday = useAppStore(s => s.fetchPersonalCareToday)
   const profilePhoto       = useAppStore(s => s.profilePhoto)
   const installBannerDismissCount = useAppStore(s => s.installBannerDismissCount)
   const dismissInstallBanner      = useAppStore(s => s.dismissInstallBanner)
@@ -49,6 +54,9 @@ export function HomePage() {
   useEffect(() => {
     void initDailyPack()
     void fetchBookmarks()
+    void fetchGoals()
+    void fetchHolidaysToday()
+    void fetchPersonalCareToday()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -72,7 +80,6 @@ export function HomePage() {
 
   const supportPhrase  = dailyPack?.supportPhrase ?? ''
   const horoscope      = dailyPack?.horoscope ?? null
-  const holidayTitle   = dailyPack?.holiday ?? null
   const moodImage      = useMemo(() => getMoodImage(currentMood), [currentMood])
   const todayStr       = useMemo(() => getFullDateStr(), [])
   const moodLabel      = useMemo(() => getMoodLabel(currentMood, gender), [currentMood, gender])
@@ -144,28 +151,30 @@ export function HomePage() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               style={{ willChange: 'opacity' }}
-              className="bg-surface-container-low rounded-[24px] py-4 pl-4 pr-10 border border-white/40 flex items-center gap-3 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8 overflow-hidden"
+              className="bg-surface-container-low rounded-[24px] p-4 border border-white/40 flex flex-col gap-3 relative shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8 overflow-hidden"
             >
               <button
                 onClick={() => {
                   setSessionDismissed(true)
                   dismissInstallBanner()
                 }}
-                className="absolute top-3 right-3 text-on-surface-variant/30 hover:text-on-surface-variant transition-colors active:scale-90"
+                className="absolute top-3 right-3 text-on-surface-variant/30 hover:text-on-surface-variant transition-colors active:scale-90 z-10"
                 aria-label="Закрыть"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
-              <div className="w-12 h-12 landscape:w-10 landscape:h-10 flex-shrink-0 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-                <span className="material-symbols-outlined text-primary-container text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_today</span>
-              </div>
-              <div className="flex-1 min-w-0 pr-2">
-                <p className="font-headline font-bold text-on-surface text-sm tracking-tight">Установить приложение</p>
-                <p className="text-[12px] text-on-surface-variant/80 font-medium leading-tight">Работает офлайн · Как родное</p>
+              <div className="flex items-center gap-3 pr-8">
+                <div className="w-12 h-12 landscape:w-10 landscape:h-10 flex-shrink-0 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                  <span className="material-symbols-outlined text-primary-container text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_today</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-headline font-bold text-on-surface text-sm tracking-tight">Установить приложение</p>
+                  <p className="text-[12px] text-on-surface-variant/80 font-medium leading-tight">Работает офлайн · как родное приложение</p>
+                </div>
               </div>
               <button
                 onClick={handleInstallClick}
-                className="flex-shrink-0 bg-primary-container text-white px-5 py-2 rounded-full font-bold text-xs shadow-sm active:scale-95 transition-colors"
+                className="w-full bg-primary-container text-white py-2.5 rounded-full font-bold text-xs shadow-sm active:scale-95 transition-colors"
               >
                 Установить
               </button>
@@ -200,17 +209,16 @@ export function HomePage() {
             </div>
           </section>
 
-          {/* ── Holiday Card ── */}
-          {holidayTitle && (
-            <section className="bg-surface-container-lowest p-5 rounded-lg flex items-center gap-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:col-start-1 landscape:row-start-3">
-              <div className="w-16 h-16 flex-shrink-0 bg-secondary-fixed/30 rounded-full flex items-center justify-center">
-                <span className="material-symbols-outlined text-[32px] text-secondary/70" style={{ fontVariationSettings: "'FILL' 1" }}>celebration</span>
-              </div>
-              <div className="space-y-1 min-w-0">
-                <h2 className="font-headline text-base font-bold text-on-surface leading-snug">Сегодня праздник: {holidayTitle}</h2>
-              </div>
-            </section>
-          )}
+          {/* ── 🆕 Праздники сегодня (2 карточки) ── */}
+          <div className="landscape:col-span-2 landscape:row-start-3">
+            <h2 className="font-headline text-lg font-bold text-on-surface mb-3 px-1">Праздники сегодня</h2>
+            <HolidaysTodayBlock />
+          </div>
+
+          {/* ── 🆕 Твои цели ── */}
+          <div className="landscape:col-span-2 landscape:row-start-4">
+            <GoalsProgressBlock />
+          </div>
 
           {/* ── Mood Banner ── */}
           <section className="w-full h-[200px] landscape:h-[140px] rounded-lg overflow-hidden relative landscape:col-start-2 landscape:row-start-2">
@@ -222,29 +230,28 @@ export function HomePage() {
           </section>
 
           {/* ── Support Card ── */}
-          <section className="bg-surface-container-low p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-4 landscape:col-start-2 landscape:row-start-3">
+          <section className="bg-surface-container-low p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-4 landscape:col-span-2 landscape:row-start-5">
             <div className="flex justify-between items-start gap-3">
               <h2 className="font-headline text-xl font-bold text-on-surface">Поддержка на сегодня</h2>
               <span className="flex-shrink-0 bg-primary-container/20 text-on-primary-container px-3 py-1 rounded-full text-xs font-semibold tracking-wide">{moodLabel}</span>
             </div>
 
-            {/* Phrase slider — new phrase always slides in from the right */}
+            {/* Phrase slider — new phrase slides in from the right on each change.
+                No AnimatePresence/mode="wait": that two-phase exit-then-enter choreography
+                gets stuck (stale empty node, opacity:0 forever) when the key's very first
+                value is '' (before dailyPack loads) and later changes to real text. A plain
+                keyed remount is more robust and still gives the same "slide in" feel. */}
             <div className="relative overflow-hidden min-h-[60px]">
-              <AnimatePresence mode="wait" custom={1}>
-                <motion.p
-                  key={supportPhrase}
-                  custom={1}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={SLIDE_TRANSITION}
-                  style={SLIDE_STYLE}
-                  className="font-body text-on-surface leading-relaxed italic text-[15px]"
-                >
-                  {supportPhrase}
-                </motion.p>
-              </AnimatePresence>
+              <motion.p
+                key={supportPhrase || 'support-loading'}
+                initial={{ x: 36, opacity: 0, scale: 0.98 }}
+                animate={{ x: 0, opacity: 1, scale: 1 }}
+                transition={SLIDE_TRANSITION}
+                style={SLIDE_STYLE}
+                className="font-body text-on-surface leading-relaxed italic text-[15px]"
+              >
+                {supportPhrase}
+              </motion.p>
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -275,7 +282,7 @@ export function HomePage() {
           </section>
 
           {/* ── Change Mood (moved above Horoscope) ── */}
-          <section className="pb-2 landscape:col-span-2 landscape:row-start-4">
+          <section className="pb-2 landscape:col-span-2 landscape:row-start-6">
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={() => setIsMoodSheetOpen(true)}
@@ -289,7 +296,7 @@ export function HomePage() {
           </section>
 
           {/* ── Horoscope Card ── */}
-          <section className="bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6 landscape:col-span-2 landscape:row-start-5">
+          <section className="bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-6 landscape:col-span-2 landscape:row-start-7">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-headline text-xl font-bold text-on-surface">Гороскоп на сегодня</h2>
 
