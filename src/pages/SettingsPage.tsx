@@ -1,27 +1,28 @@
-import { memo, useCallback, useEffect, useRef, useState, startTransition } from 'react'
+import { useCallback, useEffect, useRef, useState, startTransition } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
-import { useWebPush } from '../hooks'
 import { CalendarSheet } from '../features/auth/CalendarSheet'
-import { TimePickerSheet } from '../features/auth/TimePickerSheet'
+import { BottomSheet } from '../components/ui/BottomSheet'
+import { GoalsSelector } from '../features/goals/GoalsSelector'
+import { GoalsProgress } from '../features/goals/GoalsProgress'
+import { NotificationCategoriesEditor } from '../features/notifications/NotificationCategoriesEditor'
+import { useNotificationCategories } from '../features/notifications/useNotificationCategories'
 import { prepareAvatarDataUrl } from '../utils/image'
 
 export function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { permission, subscribe } = useWebPush()
 
   const {
     userName,
     email,
     birthDate, setBirthDate,
-    horoscopeTime, setHoroscopeTime,
     profilePhoto, setProfilePhoto,
-    showHoroscope, showHolidays, showSupport,
-    toggleHoroscope, toggleHolidays, toggleSupport,
+    goals, fetchGoals, setGoals,
     resetApp,
   } = useAppStore()
+  const notificationCategories = useNotificationCategories()
 
   const handleReset = useCallback(async () => {
     await resetApp()
@@ -33,7 +34,13 @@ export function SettingsPage() {
   const [isEmailConfirmOpen, setIsEmailConfirmOpen] = useState(false)
   const [showEmailSuccess, setShowEmailSuccess] = useState(false)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
-  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
+  const [isGoalsEditorOpen, setIsGoalsEditorOpen] = useState(false)
+  const [editingGoals, setEditingGoals] = useState<string[]>([])
+
+  useEffect(() => {
+    void fetchGoals()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if ((location.state as { emailChanged?: boolean } | null)?.emailChanged) {
@@ -57,23 +64,27 @@ export function SettingsPage() {
   const handleBack = useCallback(() => navigate(-1), [navigate])
   const openCalendar = useCallback(() => setIsCalendarOpen(true), [])
   const closeCalendar = useCallback(() => setIsCalendarOpen(false), [])
-  const openTimePicker = useCallback(() => setIsTimePickerOpen(true), [])
-  const closeTimePicker = useCallback(() => setIsTimePickerOpen(false), [])
 
   const handleSaveBirthDate = useCallback((dateStr: string) => {
     setIsCalendarOpen(false)
     startTransition(() => setBirthDate(dateStr))
   }, [setBirthDate])
 
-  const handleSaveTime = useCallback((time: string) => {
-    setIsTimePickerOpen(false)
-    startTransition(() => setHoroscopeTime(time))
-    // If the user never granted notification permission during onboarding,
-    // ask now. Otherwise, refresh the FCM/Web Push subscription.
-    if (permission === 'default' || permission === 'granted') {
-      void subscribe()
-    }
-  }, [setHoroscopeTime, permission, subscribe])
+  const openGoalsEditor = useCallback(() => {
+    setEditingGoals(goals.filter(g => g.active).map(g => g.id))
+    setIsGoalsEditorOpen(true)
+  }, [goals])
+  const toggleEditingGoal = useCallback((id: string) => {
+    setEditingGoals(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }, [])
+  const saveGoalsEditor = useCallback(async () => {
+    await setGoals(editingGoals)
+    setIsGoalsEditorOpen(false)
+  }, [editingGoals, setGoals])
+  const handleReactivateGoal = useCallback((id: string) => {
+    const current = goals.filter(g => g.active).map(g => g.id)
+    void setGoals([...current, id])
+  }, [goals, setGoals])
 
   return (
     <div className="flex flex-col min-h-full bg-background font-body">
@@ -135,13 +146,13 @@ export function SettingsPage() {
         <section className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-span-2 landscape:row-start-2">
           <div className="flex flex-col gap-5">
             {/* Email */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 min-w-0">
               <label className="text-xs font-semibold text-on-surface-variant px-1">Электронная почта</label>
-              <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5">
-                <span className="text-on-surface-variant text-sm">{email || '—'}</span>
+              <div className="flex items-center justify-between gap-3 bg-surface-container-low rounded-xl px-5 py-3.5">
+                <span className="text-on-surface-variant text-sm min-w-0 flex-1 truncate">{email || '—'}</span>
                 <button
                   onClick={() => setIsEmailConfirmOpen(true)}
-                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors ml-3 flex-shrink-0"
+                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors flex-shrink-0"
                   aria-label="Поменять электронную почту"
                 >
                   <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -150,27 +161,13 @@ export function SettingsPage() {
             </div>
 
             {/* Birth Date */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 min-w-0">
               <label className="text-xs font-semibold text-on-surface-variant px-1">Дата рождения</label>
-              <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5">
-                <span className="text-on-surface text-sm">{birthDate || '—'}</span>
+              <div className="flex items-center justify-between gap-3 bg-surface-container-low rounded-xl px-5 py-3.5">
+                <span className="text-on-surface text-sm min-w-0 flex-1 truncate">{birthDate || '—'}</span>
                 <button
                   onClick={openCalendar}
-                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors ml-3 flex-shrink-0"
-                >
-                  <span className="material-symbols-outlined text-[18px]">edit</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Horoscope Time */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-on-surface-variant px-1">Время гороскопа</label>
-              <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-5 py-3.5">
-                <span className="text-on-surface text-sm">{horoscopeTime || '—'}</span>
-                <button
-                  onClick={openTimePicker}
-                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors ml-3 flex-shrink-0"
+                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors flex-shrink-0"
                 >
                   <span className="material-symbols-outlined text-[18px]">edit</span>
                 </button>
@@ -180,19 +177,26 @@ export function SettingsPage() {
           </div>
         </section>
 
-        {/* Контент уведомлений */}
-        <section className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-start-2 landscape:row-start-1">
-          <h2 className="text-sm font-bold text-on-surface mb-2 px-1 uppercase tracking-wider opacity-60">Контент уведомлений</h2>
-          <p className="text-xs text-on-surface-variant/70 mb-5 px-1">Что вы хотите получать от нас в своих уведомлениях.</p>
-          <div className="flex flex-col gap-6">
-            <ToggleItem label="Гороскоп" isActive={showHoroscope} onToggle={toggleHoroscope} />
-            <ToggleItem label="Праздники" isActive={showHolidays} onToggle={toggleHolidays} />
-            <ToggleItem label="Поддержка на сегодня" isActive={showSupport} onToggle={toggleSupport} />
+        {/* 🆕 Мои цели за год (ТЗ п. 4.5) */}
+        <section className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-span-2 landscape:row-start-3">
+          <div className="flex items-baseline justify-between mb-4 px-1">
+            <h2 className="text-sm font-bold text-on-surface uppercase tracking-wider opacity-60">Мои цели за год</h2>
+            <button onClick={openGoalsEditor} className="text-xs font-semibold text-primary flex-shrink-0">
+              Изменить цели →
+            </button>
           </div>
+          <GoalsProgress goals={goals} onReactivate={handleReactivateGoal} />
+        </section>
+
+        {/* Уведомления — время и категории */}
+        <section className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-start-2 landscape:row-start-1">
+          <h2 className="text-sm font-bold text-on-surface mb-1 px-1 uppercase tracking-wider opacity-60">Уведомления</h2>
+          <p className="text-xs text-on-surface-variant/70 mb-2 px-1">Когда и что тебе присылать</p>
+          <NotificationCategoriesEditor categories={notificationCategories} />
         </section>
 
         {/* Reset */}
-        <section className="mb-6 landscape:mb-0 landscape:col-span-2 landscape:row-start-3">
+        <section className="mb-6 landscape:mb-0 landscape:col-span-2 landscape:row-start-4">
           <button
             onClick={handleReset}
             className="w-full py-4 rounded-[1.5rem] border border-red-200 text-red-500 font-semibold text-sm active:scale-[0.98] transition-colors hover:bg-red-50"
@@ -212,13 +216,18 @@ export function SettingsPage() {
         currentValue={birthDate}
       />
 
-      {/* TimePickerSheet */}
-      <TimePickerSheet
-        isOpen={isTimePickerOpen}
-        initialTime={horoscopeTime || '09:00'}
-        onSave={handleSaveTime}
-        onCancel={closeTimePicker}
-      />
+      {/* Goals editor — тот же GoalsSelector, что в онбординге (ТЗ п. 4.5 «Изменить цели») */}
+      <BottomSheet isOpen={isGoalsEditorOpen} onClose={() => setIsGoalsEditorOpen(false)} title="Твои цели">
+        <div className="px-5 pb-6 flex flex-col gap-4">
+          <GoalsSelector selected={editingGoals} onToggle={toggleEditingGoal} />
+          <button
+            onClick={saveGoalsEditor}
+            className="w-full h-12 rounded-full bg-primary-container text-white font-headline font-bold text-sm"
+          >
+            Сохранить
+          </button>
+        </div>
+      </BottomSheet>
 
       <AnimatePresence>
         {isEmailConfirmOpen && (
@@ -322,22 +331,3 @@ export function SettingsPage() {
     </div>
   )
 }
-
-const ToggleItem = memo(function ToggleItem({ label, isActive, onToggle }: { label: string; isActive: boolean; onToggle: () => void }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="font-medium text-on-surface">{label}</span>
-      <button
-        onClick={onToggle}
-        className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${isActive ? 'bg-accent' : 'bg-surface-container-highest'}`}
-      >
-        <motion.span
-          animate={{ x: isActive ? 24 : 4 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          style={{ willChange: 'transform' }}
-          className="absolute left-0 top-1 w-4 h-4 bg-white rounded-full shadow-sm"
-        />
-      </button>
-    </div>
-  )
-})

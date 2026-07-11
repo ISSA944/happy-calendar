@@ -54,17 +54,19 @@ export function GoalsProgress({ goals, onReactivate, compact = false }: GoalsPro
               <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
             </div>
             {!compact && (
-              <p className="text-xs text-primary bg-primary/[0.07] rounded-xl px-3 py-2 mt-2 leading-relaxed">
-                {goalPhrase(g.progress)}
-              </p>
+              <div className="flex items-start gap-2 bg-primary/[0.07] rounded-xl px-3 py-2 mt-2">
+                <span className="material-symbols-outlined text-primary text-base flex-shrink-0 mt-0.5">favorite</span>
+                <p className="text-xs text-primary leading-relaxed">{goalPhrase(g.progress)}</p>
+              </div>
             )}
             {!compact && !g.active && g.progress > 0 && onReactivate && (
               <button
                 type="button"
                 onClick={() => onReactivate(g.id)}
-                className="text-xs font-semibold text-primary mt-2"
+                className="flex items-center gap-1 text-xs font-semibold text-primary mt-2"
               >
-                ↩ Вернуть цель — прогресс сохранится
+                <span className="material-symbols-outlined text-sm">restart_alt</span>
+                Вернуть цель — прогресс сохранится
               </button>
             )}
           </div>
