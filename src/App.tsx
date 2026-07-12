@@ -98,7 +98,7 @@ function TabOutlet() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -15 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="absolute inset-0 w-full h-full overflow-y-auto pb-24 touch-pan-y overscroll-y-contain"
+          className="absolute inset-0 w-full h-full overflow-y-auto touch-pan-y overscroll-y-contain"
         >
           {pathname === '/home' && <HomePage />}
           {pathname === '/bookmarks' && <BookmarksPage />}

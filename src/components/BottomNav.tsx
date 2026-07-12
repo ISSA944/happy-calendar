@@ -8,7 +8,10 @@ export function BottomNav() {
     }`
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-[430px] landscape:max-w-[860px] z-50 bg-white">
+    // Не position:fixed — обычный flex-элемент внутри 100dvh-колонки AppLayout.
+    // fixed+env(safe-area-inset-bottom) в standalone iOS PWA даёт неточный замер
+    // вьюпорта (нав "висит выше", чем должен) — flex-в-потоке надёжнее кросс-девайсно.
+    <nav className="mx-auto w-full max-w-[430px] landscape:max-w-[860px] z-50 bg-white flex-shrink-0">
       {/* Rounded top edge with shadow — visually the "card" */}
       <div className="rounded-t-[2rem] shadow-[0_-4px_24px_rgba(0,0,0,0.06)] border-t border-stone-100/80">
         <div className="flex justify-around items-center px-4 pt-3 pb-3">
