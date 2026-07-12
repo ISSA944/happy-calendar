@@ -25,6 +25,23 @@ const slideVariants: Variants = {
 const SLIDE_TRANSITION = { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }
 const SLIDE_STYLE = { willChange: 'transform, opacity' as const }
 
+/** Шиммер-плейсхолдер вместо пустого текста, пока /api/today не ответил (первый заход
+    за день — холодный кэш, живой AI-вызов занимает несколько секунд). Без этого блоки
+    рендерились пустыми и приложение выглядело зависшим — см. план "долгий вход". */
+function SkeletonLines({ lines = 2 }: { lines?: number }) {
+  return (
+    <div className="space-y-2.5 animate-pulse">
+      {Array.from({ length: lines }).map((_, i) => (
+        <div
+          key={i}
+          className="h-3.5 rounded-full bg-outline-variant/20"
+          style={{ width: i === lines - 1 ? '55%' : '90%' }}
+        />
+      ))}
+    </div>
+  )
+}
+
 export function HomePage() {
   const navigate = useNavigate()
 
@@ -247,16 +264,20 @@ export function HomePage() {
                 value is '' (before dailyPack loads) and later changes to real text. A plain
                 keyed remount is more robust and still gives the same "slide in" feel. */}
             <div className="relative overflow-hidden min-h-[60px]">
-              <motion.p
-                key={supportPhrase || 'support-loading'}
-                initial={{ x: 36, opacity: 0, scale: 0.98 }}
-                animate={{ x: 0, opacity: 1, scale: 1 }}
-                transition={SLIDE_TRANSITION}
-                style={SLIDE_STYLE}
-                className="font-body text-on-surface leading-relaxed italic text-[15px]"
-              >
-                {supportPhrase}
-              </motion.p>
+              {dailyPack ? (
+                <motion.p
+                  key={supportPhrase || 'support-loading'}
+                  initial={{ x: 36, opacity: 0, scale: 0.98 }}
+                  animate={{ x: 0, opacity: 1, scale: 1 }}
+                  transition={SLIDE_TRANSITION}
+                  style={SLIDE_STYLE}
+                  className="font-body text-on-surface leading-relaxed italic text-[15px]"
+                >
+                  {supportPhrase}
+                </motion.p>
+              ) : (
+                <div className="pt-1"><SkeletonLines lines={2} /></div>
+              )}
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -331,43 +352,56 @@ export function HomePage() {
 
             {/* Horoscope content — direction-aware slide + subtle scale */}
             <div className="relative overflow-hidden">
-              <AnimatePresence mode="wait" custom={tabDir}>
-                <motion.div
-                  key={horoscopeTab}
-                  custom={tabDir}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                  style={{ willChange: 'transform, opacity' }}
-                  className="space-y-4 text-on-surface"
-                >
+              {horoscope ? (
+                <AnimatePresence mode="wait" custom={tabDir}>
+                  <motion.div
+                    key={horoscopeTab}
+                    custom={tabDir}
+                    variants={slideVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    style={{ willChange: 'transform, opacity' }}
+                    className="space-y-4 text-on-surface"
+                  >
+                    <div className="flex gap-3">
+                      <span className="material-symbols-outlined text-primary-container flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
+                      <p className="text-sm">
+                        <span className="font-bold">Главное:</span>{' '}
+                        {horoscopeTab === 'short' ? horoscope?.main : horoscope?.detailed}
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="material-symbols-outlined text-primary-container flex-shrink-0">lightbulb</span>
+                      <p className="text-sm"><span className="font-bold">Совет:</span> {horoscope?.advice}</p>
+                    </div>
+                    {horoscopeTab === 'detailed' && (
+                      <>
+                        <div className="flex items-center gap-3 opacity-80">
+                          <span className="material-symbols-outlined text-primary-container flex-shrink-0">dark_mode</span>
+                          <p className="text-sm"><span className="font-bold">Луна:</span> {horoscope?.moon}</p>
+                        </div>
+                        <div className="flex items-center gap-3 opacity-80">
+                          <span className="material-symbols-outlined text-primary-container flex-shrink-0">balance</span>
+                          <p className="text-sm"><span className="font-bold">Аспект:</span> {horoscope?.aspect}</p>
+                        </div>
+                      </>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              ) : (
+                <div className="space-y-4">
                   <div className="flex gap-3">
-                    <span className="material-symbols-outlined text-primary-container flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
-                    <p className="text-sm">
-                      <span className="font-bold">Главное:</span>{' '}
-                      {horoscopeTab === 'short' ? horoscope?.main : horoscope?.detailed}
-                    </p>
+                    <span className="material-symbols-outlined text-primary-container flex-shrink-0 opacity-40" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
+                    <div className="flex-1 pt-1"><SkeletonLines lines={2} /></div>
                   </div>
                   <div className="flex gap-3">
-                    <span className="material-symbols-outlined text-primary-container flex-shrink-0">lightbulb</span>
-                    <p className="text-sm"><span className="font-bold">Совет:</span> {horoscope?.advice}</p>
+                    <span className="material-symbols-outlined text-primary-container flex-shrink-0 opacity-40">lightbulb</span>
+                    <div className="flex-1 pt-1"><SkeletonLines lines={1} /></div>
                   </div>
-                  {horoscopeTab === 'detailed' && (
-                    <>
-                      <div className="flex items-center gap-3 opacity-80">
-                        <span className="material-symbols-outlined text-primary-container flex-shrink-0">dark_mode</span>
-                        <p className="text-sm"><span className="font-bold">Луна:</span> {horoscope?.moon}</p>
-                      </div>
-                      <div className="flex items-center gap-3 opacity-80">
-                        <span className="material-symbols-outlined text-primary-container flex-shrink-0">balance</span>
-                        <p className="text-sm"><span className="font-bold">Аспект:</span> {horoscope?.aspect}</p>
-                      </div>
-                    </>
-                  )}
-                </motion.div>
-              </AnimatePresence>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-center pt-2">
