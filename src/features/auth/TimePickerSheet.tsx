@@ -16,6 +16,9 @@ interface TimePickerSheetProps {
   initialTime: string
   onSave: (time: string) => void
   onCancel: () => void
+  /** Название категории/события, для которого выбирается время (напр. "Гороскоп").
+      Если не передано — используется нейтральный дефолт (обратная совместимость). */
+  categoryLabel?: string
 }
 
 const HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'))
@@ -175,7 +178,7 @@ const WheelColumn = memo(
   ),
 )
 
-export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimePickerSheetProps) {
+export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel, categoryLabel }: TimePickerSheetProps) {
   const headerRight = (
     <button
       type="button"
@@ -190,11 +193,11 @@ export function TimePickerSheet({ isOpen, initialTime, onSave, onCancel }: TimeP
     <BottomSheet
       isOpen={isOpen}
       onClose={onCancel}
-      title="Установить время"
+      title={categoryLabel ? `Время: ${categoryLabel}` : 'Установить время'}
       headerRight={headerRight}
       draggable={false}
     >
-      <TimePickerContent key={initialTime} initialTime={initialTime} onSave={onSave} onCancel={onCancel} />
+      <TimePickerContent key={initialTime} initialTime={initialTime} onSave={onSave} onCancel={onCancel} categoryLabel={categoryLabel} />
     </BottomSheet>
   )
 }
@@ -203,7 +206,8 @@ function TimePickerContent({
   initialTime,
   onSave,
   onCancel,
-}: Pick<TimePickerSheetProps, 'initialTime' | 'onSave' | 'onCancel'>) {
+  categoryLabel,
+}: Pick<TimePickerSheetProps, 'initialTime' | 'onSave' | 'onCancel' | 'categoryLabel'>) {
   const [initialHours, initialMinutes] = initialTime.split(':')
   const nextHourIndex = HOURS.indexOf(initialHours)
   const nextMinuteIndex = Math.round(Number(initialMinutes) / 5)
@@ -227,7 +231,7 @@ function TimePickerContent({
       <div className="relative px-6 pb-2 pt-1">
         <div className="relative z-10 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/65">
-            ВРЕМЯ ПРАКТИКИ
+            {categoryLabel ? categoryLabel.toUpperCase() : 'ВРЕМЯ ПРАКТИКИ'}
           </p>
         </div>
 
@@ -248,7 +252,9 @@ function TimePickerContent({
 
         <div className="relative z-10 mt-8 px-4 text-center">
           <p className="text-[13px] font-medium italic leading-relaxed text-on-surface-variant/70">
-            Выберите спокойное время для ежедневного напоминания об осознанности.
+            {categoryLabel
+              ? 'Выбери время, когда тебе удобно получать это уведомление.'
+              : 'Выберите спокойное время для ежедневного напоминания об осознанности.'}
           </p>
         </div>
       </div>

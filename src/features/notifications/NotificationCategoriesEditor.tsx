@@ -40,10 +40,14 @@ export function NotificationCategoriesEditor({ categories }: NotificationCategor
             type="button"
             onClick={() => cat.enabled && setEditingId(cat.id)}
             disabled={!cat.enabled}
-            className={`text-sm font-semibold tabular-nums px-2 py-1 rounded-lg transition-colors ${
-              cat.enabled ? 'text-primary active:bg-primary/10' : 'text-on-surface-variant/40'
+            aria-label={`Изменить время: ${cat.title}`}
+            className={`flex items-center gap-1 text-sm font-semibold tabular-nums pl-2 pr-2.5 py-1.5 rounded-full border transition-colors ${
+              cat.enabled
+                ? 'text-primary bg-surface-container-low border-outline-variant/30 active:bg-primary/10'
+                : 'text-on-surface-variant/40 bg-transparent border-transparent'
             }`}
           >
+            <span className="material-symbols-outlined text-[16px]">schedule</span>
             {cat.time}
           </button>
           <Toggle
@@ -58,6 +62,7 @@ export function NotificationCategoriesEditor({ categories }: NotificationCategor
         <TimePickerSheet
           isOpen={Boolean(editing)}
           initialTime={editing.time}
+          categoryLabel={editing.title}
           onSave={(time) => {
             editing.onTimeChange(time)
             setEditingId(null)
