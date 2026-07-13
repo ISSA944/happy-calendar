@@ -163,7 +163,7 @@ export function SettingsPage() {
 
         {/* 🆕 Мои цели за год (ТЗ п. 4.5) */}
         <section className="bg-white rounded-[1.5rem] p-6 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] landscape:mb-0 landscape:col-span-2 landscape:row-start-3">
-          <div className="flex items-baseline justify-between mb-4 px-1">
+          <div className="flex items-center justify-between mb-4 px-1">
             <h2 className="text-sm font-bold text-on-surface uppercase tracking-wider opacity-60">Мои цели за год</h2>
             <button
               onClick={goalsEditor.open}

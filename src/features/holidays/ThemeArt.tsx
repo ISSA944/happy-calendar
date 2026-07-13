@@ -93,7 +93,12 @@ function motif(themeKey: string) {
         </g>
       )
     case 'Спорт и движение':
-      return <path d="M6,-42 L-20,6 L-2,6 L-8,42 L22,-8 L2,-8 Z" fill={w} />
+      return (
+        <g>
+          <circle cx="0" cy="0" r="38" fill="rgba(255,255,255,0.16)" />
+          <path d="M6,-32 L-16,6 L-1,6 L-6,32 L18,-6 L2,-6 Z" fill={w} />
+        </g>
+      )
     case 'Музыка, кино и искусство':
       return (
         <g fill={w}>

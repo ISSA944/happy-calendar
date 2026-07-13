@@ -12,7 +12,7 @@ export function GoalsProgressBlock() {
 
   return (
     <section>
-      <div className="flex items-baseline justify-between mb-3 px-1">
+      <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="font-headline text-lg font-bold text-on-surface">Твои цели</h2>
         <button
           onClick={goalsEditor.open}

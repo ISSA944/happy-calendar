@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { useAppStore } from '../../store'
-import type { MilestoneHit } from '../../store/app.store'
 import { ThemeArt } from './ThemeArt'
 import { HolidayListSheet } from './HolidayListSheet'
 import { PersonalCareSheet } from '../personal-care/PersonalCareSheet'
-import { MilestoneCelebrationSheet } from '../personal-care/MilestoneCelebrationSheet'
 
 /** «Праздники сегодня» — 2 карточки: календарный праздник + персональный день заботы (ТЗ п. 4.3). */
 export function HolidaysTodayBlock() {
@@ -13,7 +11,6 @@ export function HolidaysTodayBlock() {
 
   const [isListOpen, setIsListOpen] = useState(false)
   const [isCareOpen, setIsCareOpen] = useState(false)
-  const [milestoneHits, setMilestoneHits] = useState<MilestoneHit[]>([])
 
   const main = todayHolidays[0]
   const extra = todayHolidays.length - 1
@@ -73,12 +70,7 @@ export function HolidaysTodayBlock() {
       </button>
 
       <HolidayListSheet isOpen={isListOpen} onClose={() => setIsListOpen(false)} holidays={todayHolidays} />
-      <PersonalCareSheet
-        isOpen={isCareOpen}
-        onClose={() => setIsCareOpen(false)}
-        onMilestones={setMilestoneHits}
-      />
-      <MilestoneCelebrationSheet hits={milestoneHits} onClose={() => setMilestoneHits([])} />
+      <PersonalCareSheet isOpen={isCareOpen} onClose={() => setIsCareOpen(false)} />
     </section>
   )
 }
