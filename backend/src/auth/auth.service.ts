@@ -31,7 +31,10 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly OTP_TTL_MIN = 15;
   private readonly BCRYPT_ROUNDS = 10;
-  // Тестовый аккаунт с обходом OTP — активен ТОЛЬКО в dev (см. isTestAccount ниже).
+  // Тестовый аккаунт с обходом OTP (код всегда 1111) — по явному запросу владельца
+  // продукта активен ВО ВСЕХ окружениях, включая прод. Осознанный риск: кто угодно,
+  // знающий этот email, может войти в аккаунт без реального кода. Жёстко ограничено
+  // ровно одним email ниже — не расширять на другие адреса.
   private readonly TEST_EMAIL = 'mukaniskander01@gmail.com';
 
   private readonly smtpTransport: Transporter | null;
@@ -88,9 +91,8 @@ export class AuthService {
   async register(email: string, name?: string, consents?: boolean, marketing?: boolean) {
     const normalizedEmail = email.trim().toLowerCase();
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';
-    // Тест-аккаунт (авто-сброс + OTP 1111) разрешён ТОЛЬКО в dev. В проде этот email
-    // ведёт себя как обычный — без обхода OTP и без затирания данных (иначе это бэкдор).
-    const isTestAccount = isDev && normalizedEmail === this.TEST_EMAIL;
+    // Тест-аккаунт (авто-сброс + OTP 1111) — активен во всех окружениях, см. TEST_EMAIL выше.
+    const isTestAccount = normalizedEmail === this.TEST_EMAIL;
 
     if (isTestAccount) {
       // Test account in dev: auto-wipe on every registration so re-registration always works cleanly
@@ -155,7 +157,8 @@ export class AuthService {
     }
 
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';
-    const isTestAccount = isDev && normalizedEmail === this.TEST_EMAIL;
+    // Тест-аккаунт (OTP 1111) — активен во всех окружениях, см. TEST_EMAIL выше.
+    const isTestAccount = normalizedEmail === this.TEST_EMAIL;
     const code = isTestAccount ? '1111' : randomInt(1000, 10_000).toString();
 
     if (!isTestAccount) {
