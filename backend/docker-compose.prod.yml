@@ -56,7 +56,7 @@ services:
       - "4000:4000"
     # Runs pending migrations on every deploy, then starts the server.
     # Safe: prisma migrate deploy is idempotent (skips already-applied migrations).
-    command: sh -c "npx prisma migrate deploy && node dist/main.js"
+    command: sh -c "npx prisma migrate deploy && node dist/src/main.js"
     deploy:
       resources:
         limits:

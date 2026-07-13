@@ -15,7 +15,11 @@ import * as path from 'path';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const DATA_DIR = path.resolve(__dirname, 'seed-data');
+// process.cwd()-relative, не __dirname: этот скрипт компилируется в dist/prisma/seed.js
+// (зеркалит src-структуру), но seed-data/*.json лежит только в исходном prisma/ —
+// __dirname после компиляции указывал бы на dist/prisma, а не на настоящий prisma/.
+// Запуск всегда ожидается из корня backend/ (и локально, и в контейнере — /app).
+const DATA_DIR = path.resolve(process.cwd(), 'prisma', 'seed-data');
 
 function readJson<T>(file: string): T | null {
   const p = path.join(DATA_DIR, file);
