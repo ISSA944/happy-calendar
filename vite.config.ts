@@ -16,6 +16,7 @@ export default defineConfig(() => {
       chunkSizeWarningLimit: 800,
     },
     server: {
+      host: true, // слушать 0.0.0.0 — чтобы открыть с телефона по LAN-IP
       proxy: {
         '/api': {
           target: 'http://localhost:4000',
