@@ -243,16 +243,29 @@ model UserGoal {
 
 // ─────────────────────────────────────────────────────────────
 // PERSONAL CARE: справочник дней заботы (ТЗ п. 6.2) — общий на всех.
-// Импортируется из таблицы клиента; пока сид из прототипа.
+// Импортируется из клиентской таблицы «Личные праздники» (scripts/import-personal-care.ts).
 // ─────────────────────────────────────────────────────────────
+// dayOfYear: 1..365, адресует день по номеру года (реальный клиентский контент, xlsx «Личные праздники»).
+// NULL — только у legacy-строк из старого прототипного сида, которые больше не выбираются в getToday(),
+// но остаются в таблице ради FK-целостности старых PersonalCareCompletion (RESTRICT, не удаляем).
+// На каждую цель — свой task/advice (а не общий task+affirmation с тегами, как раньше): контент от
+// клиента различается по цели, поэтому 4 отдельные пары полей вместо goalTags.
 model PersonalCareDay {
-  id          String   @id @default(uuid())
-  title       String
-  task        String // содержит {имя}
-  affirmation String
-  goalTags    String[] @map("goal_tags") // ['calm','hear']
-  themeKey    String   @map("theme_key") // одна из 19 тем п. 7.4
-  createdAt   DateTime @default(now()) @map("created_at")
+  id        String @id @default(uuid())
+  dayOfYear Int?   @unique @map("day_of_year")
+  title     String
+  themeKey  String @map("theme_key") // одна из 19 тем п. 7.4
+
+  calmTask   String @map("calm_task")
+  calmAdvice String @map("calm_advice")
+  hearTask   String @map("hear_task")
+  hearAdvice String @map("hear_advice")
+  foodTask   String @map("food_task")
+  foodAdvice String @map("food_advice")
+  moveTask   String @map("move_task")
+  moveAdvice String @map("move_advice")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   completions PersonalCareCompletion[]
 
@@ -269,6 +282,7 @@ model PersonalCareCompletion {
   user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   personalCareDayId String          @map("personal_care_day_id")
   personalCareDay   PersonalCareDay @relation(fields: [personalCareDayId], references: [id])
+  goalId            String          @map("goal_id") // какая из 4 целей была показана/засчитана в этот день
   date              String // DD.MM.YYYY, локальная дата юзера
   completedAt       DateTime        @default(now()) @map("completed_at")
 

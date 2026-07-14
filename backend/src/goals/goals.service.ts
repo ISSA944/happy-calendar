@@ -18,13 +18,12 @@ export class GoalsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Прогресс цели = число выполненных дней заботы, тег которых включает этот goalId.
+   * Прогресс цели = число выполненных дней заботы, засчитанных именно за эту цель
+   * (personalCareCompletion.goalId — какая цель была показана в тот день, ТЗ п. 6.1).
    * Считается независимо от статуса active (ТЗ п. 4.5: прогресс сохраняется при отключении).
    */
   async progressFor(userId: string, goalId: string): Promise<number> {
-    return this.prisma.personalCareCompletion.count({
-      where: { userId, personalCareDay: { goalTags: { has: goalId } } },
-    });
+    return this.prisma.personalCareCompletion.count({ where: { userId, goalId } });
   }
 
   /** Список 4 целей с флагом active и прогрессом. Неактивные с прогрессом тоже возвращаются. */

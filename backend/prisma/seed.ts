@@ -6,7 +6,7 @@
  * Источники (генерируются импорт-скриптами из backend/data/*.xlsx):
  *   - prisma/seed-data/holidays.json          ← scripts/import-holidays.ts
  *   - prisma/seed-data/push-milestones.json   ← scripts/import-push-milestones.ts
- *   - prisma/seed-data/personal-care-days.json (пока из прототипа, ТЗ п. 6.2 «будет позже»)
+ *   - prisma/seed-data/personal-care-days.json ← scripts/import-personal-care.ts
  *
  * Порядок: сначала запусти оба import-*.ts, потом этот seed.
  */
@@ -58,18 +58,27 @@ async function seedMilestones() {
 }
 
 async function seedPersonalCareDays() {
-  type P = { title: string; task: string; affirmation: string; goalTags: string[]; themeKey: string };
+  type P = {
+    dayOfYear: number;
+    title: string;
+    themeKey: string;
+    calmTask: string;
+    calmAdvice: string;
+    hearTask: string;
+    hearAdvice: string;
+    foodTask: string;
+    foodAdvice: string;
+    moveTask: string;
+    moveAdvice: string;
+  };
   const data = readJson<P[]>('personal-care-days.json');
   if (!data) return;
-  // Дни заботы ссылаются completions (FK RESTRICT) — не удаляем при повторном сиде.
-  // Заливаем только если таблица пуста; реальный import клиентской таблицы придёт позже.
-  const existing = await prisma.personalCareDay.count();
-  if (existing > 0) {
-    console.log(`↷ personal_care_days: уже ${existing} записей — пропускаю сид.`);
-    return;
+  // Upsert по dayOfYear — идемпотентно, и никогда не трогает legacy-строки старого прототипного
+  // сида (у них dayOfYear = NULL, они на completions FK RESTRICT, поэтому не удаляются вовсе).
+  for (const d of data) {
+    await prisma.personalCareDay.upsert({ where: { dayOfYear: d.dayOfYear }, update: d, create: d });
   }
-  await prisma.personalCareDay.createMany({ data });
-  console.log(`✅ personal_care_days: ${data.length}`);
+  console.log(`✅ personal_care_days (по dayOfYear): ${data.length}`);
 }
 
 async function main() {

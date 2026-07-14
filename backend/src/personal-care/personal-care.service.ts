@@ -1,10 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { GoalsService } from '../goals';
-import { goalTitle } from '../goals';
+import { GOAL_IDS, goalTitle } from '../goals';
 import { WebPushService } from '../push/web-push.service';
 import { todayDdMm, todayDdMmYyyy, dayOfYear } from '../common/date.util';
 import { fillName } from '../common/name.util';
+import type { PersonalCareDay } from '@prisma/client';
 
 export interface PersonalCareView {
   id: string;
@@ -15,6 +16,27 @@ export interface PersonalCareView {
   themeKey: string;
   imageUrl: string | null;
   doneToday: boolean;
+}
+
+// Поля задание/совет на PersonalCareDay для каждой из 4 целей (ТЗ: контент от клиента различается
+// по цели — xlsx «Личные праздники» даёт отдельную пару task/advice на каждую из calm/hear/food/move).
+const VARIANT_FIELDS: Record<string, { task: keyof PersonalCareDay; advice: keyof PersonalCareDay }> = {
+  calm: { task: 'calmTask', advice: 'calmAdvice' },
+  hear: { task: 'hearTask', advice: 'hearAdvice' },
+  food: { task: 'foodTask', advice: 'foodAdvice' },
+  move: { task: 'moveTask', advice: 'moveAdvice' },
+};
+
+/**
+ * Какую из целей юзера показать в этот день года: детерминированная ротация по dayOfYear среди
+ * его активных целей (в стабильном порядке GOAL_IDS, не порядке из БД), чтобы за несколько дней
+ * подряд юзер с несколькими целями увидел контент по каждой из них по очереди. Если активных целей
+ * нет — дефолт на первую цель (calm), чтобы блок не пустовал.
+ */
+function pickGoalId(doy: number, activeGoals: string[]): string {
+  const ordered = GOAL_IDS.filter((id) => activeGoals.includes(id));
+  const pool = ordered.length ? ordered : [GOAL_IDS[0]];
+  return pool[doy % pool.length];
 }
 
 export interface MilestoneHit {
@@ -53,26 +75,26 @@ export class PersonalCareService {
   }
 
   /**
-   * Сегодняшний день заботы: ротация по дню года, с приоритетом дней, тегированных
-   * активными целями пользователя (ТЗ п. 6.1, логика prototype personalFor()).
+   * Сегодняшний день заботы: адресуется строго по дню года (реальный клиентский контент, xlsx
+   * «Личные праздники» — 365 дней). Если для номера дня строки нет (366-й день високосного года) —
+   * фолбэк на день 1, чтобы блок никогда не пустовал. Цель выбирается ротацией среди активных
+   * целей юзера, см. pickGoalId().
    */
   async getToday(userId: string): Promise<PersonalCareView | null> {
-    const [prefs, user, activeGoals, allDays] = await Promise.all([
+    const [prefs, user, activeGoals] = await Promise.all([
       this.prisma.prefs.findUnique({ where: { userId } }),
       this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
       this.goals.activeGoalIds(userId),
-      this.prisma.personalCareDay.findMany({ orderBy: { id: 'asc' } }),
     ]);
 
-    if (allDays.length === 0) return null;
+    const doy = dayOfYear(prefs?.timezone);
+    const day =
+      (await this.prisma.personalCareDay.findUnique({ where: { dayOfYear: doy } })) ??
+      (await this.prisma.personalCareDay.findUnique({ where: { dayOfYear: 1 } }));
+    if (!day) return null;
 
-    const matched = activeGoals.length
-      ? allDays.filter((d) => d.goalTags.some((t) => activeGoals.includes(t)))
-      : [];
-    const pool = matched.length ? matched : allDays;
-
-    const idx = dayOfYear(prefs?.timezone) % pool.length;
-    const day = pool[idx];
+    const goalId = pickGoalId(doy, activeGoals);
+    const { task: taskField, advice: adviceField } = VARIANT_FIELDS[goalId];
 
     const dateKey = todayDdMmYyyy(prefs?.timezone);
     const done = await this.prisma.personalCareCompletion.findUnique({
@@ -83,9 +105,9 @@ export class PersonalCareService {
     return {
       id: day.id,
       title: day.title,
-      task: fillName(day.task, user?.name),
-      affirmation: day.affirmation,
-      goalTags: day.goalTags,
+      task: fillName(day[taskField] as string, user?.name),
+      affirmation: day[adviceField] as string,
+      goalTags: [goalId],
       themeKey: day.themeKey,
       imageUrl: await this.resolveImageUrl(day.id, day.themeKey),
       doneToday: Boolean(done),
@@ -97,10 +119,11 @@ export class PersonalCareService {
    * считает попадания в вехи по активным целям и шлёт пуш(и) по правилу группировки (ТЗ п. 3).
    */
   async complete(userId: string, careDayId: string): Promise<CompleteResult> {
-    const [prefs, user, careDay] = await Promise.all([
+    const [prefs, user, careDay, activeGoals] = await Promise.all([
       this.prisma.prefs.findUnique({ where: { userId } }),
       this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
       this.prisma.personalCareDay.findUnique({ where: { id: careDayId } }),
+      this.goals.activeGoalIds(userId),
     ]);
     if (!careDay) throw new NotFoundException('Personal care day not found');
 
@@ -115,22 +138,20 @@ export class PersonalCareService {
       return { alreadyDone: true, milestoneHits: [] };
     }
 
+    // Та же цель, что была показана в getToday() — пересчитываем тем же детерминированным
+    // правилом (не доверяем клиенту передавать её отдельным параметром).
+    const doy = dayOfYear(prefs?.timezone);
+    const goalId = pickGoalId(doy, activeGoals);
+
     await this.prisma.personalCareCompletion.create({
-      data: { userId, personalCareDayId: careDayId, date: dateKey },
+      data: { userId, personalCareDayId: careDayId, date: dateKey, goalId },
     });
 
-    // Вехи — только по активным целям, чьи теги есть у выполненного дня (ТЗ п. 6.4).
-    const activeGoals = await this.goals.activeGoalIds(userId);
-    const relevantGoals = careDay.goalTags.filter((t) => activeGoals.includes(t));
-
-    const hits: MilestoneHit[] = [];
-    for (const goalId of relevantGoals) {
-      const count = await this.goals.progressFor(userId, goalId); // уже включает свежий зачёт
-      const template = await this.prisma.pushMilestoneTemplate.findUnique({ where: { milestone: count } });
-      if (template) {
-        hits.push({ goalId, goalTitle: goalTitle(goalId), count, emoji: template.emoji });
-      }
-    }
+    const count = await this.goals.progressFor(userId, goalId); // уже включает свежий зачёт
+    const template = await this.prisma.pushMilestoneTemplate.findUnique({ where: { milestone: count } });
+    const hits: MilestoneHit[] = template
+      ? [{ goalId, goalTitle: goalTitle(goalId), count, emoji: template.emoji }]
+      : [];
 
     if (hits.length) {
       await this.sendMilestonePushes(userId, user?.name ?? null, hits);
