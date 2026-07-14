@@ -93,7 +93,7 @@ export class AuthService {
     const isTestAccount = isDev && normalizedEmail === this.TEST_EMAIL;
 
     if (isTestAccount) {
-      // Test account: auto-wipe on every registration so re-registration always works cleanly
+      // Test account in dev: auto-wipe on every registration so re-registration always works cleanly
       await this.prisma.user.deleteMany({ where: { email: normalizedEmail } });
     } else {
       const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
