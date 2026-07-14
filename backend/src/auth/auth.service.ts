@@ -91,15 +91,27 @@ export class AuthService {
   async register(email: string, name?: string, consents?: boolean, marketing?: boolean) {
     const normalizedEmail = email.trim().toLowerCase();
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';
-    // Тест-аккаунт (авто-сброс + OTP 1111) — активен во всех окружениях, см. TEST_EMAIL выше.
+    // OTP-бэкдор (код всегда 1111) — активен во всех окружениях, см. TEST_EMAIL выше.
+    // Авто-сброс профиля при повторной регистрации — ТОЛЬКО в dev (чисто удобство при локальной
+    // разработке). В проде этот же email используется владельцем как реальный аккаунт — вайп
+    // при каждом register() уничтожал его настоящий профиль/прогресс при любой потере сессии.
     const isTestAccount = normalizedEmail === this.TEST_EMAIL;
 
-    if (isTestAccount) {
+    if (isTestAccount && isDev) {
       // Test account in dev: auto-wipe on every registration so re-registration always works cleanly
       await this.prisma.user.deleteMany({ where: { email: normalizedEmail } });
     } else {
       const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
       if (existing) {
+        if (isTestAccount) {
+          if (name?.trim()) {
+            await this.prisma.user.update({
+              where: { id: existing.id },
+              data: { name: name.trim() },
+            });
+          }
+          return this.login(normalizedEmail);
+        }
         throw new ConflictException('Email already registered');
       }
     }
