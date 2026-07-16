@@ -73,6 +73,9 @@ export function BookmarksPage() {
                 </button>
               )
             })}
+            {/* Распорка: без неё последнему табу физически не хватает места прокрутки, чтобы
+                долистаться до snap-start и не остаться обрезанным у правого края. */}
+            <div className="flex-shrink-0 w-[300px]" aria-hidden="true" />
           </div>
           {/* Fade по обеим сторонам — подсказка, что список табов скроллится */}
           <div className="pointer-events-none absolute top-0 left-0 h-full w-6 bg-gradient-to-r from-background to-transparent" />

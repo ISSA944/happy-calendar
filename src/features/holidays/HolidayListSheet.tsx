@@ -58,7 +58,9 @@ export function HolidayListSheet({ isOpen, onClose, holidays }: HolidayListSheet
         )
       }
     >
-      <div className="relative overflow-hidden">
+      {/* layout: высота контейнера меняется вместе со слайдом (список короче/длиннее открытки),
+          без него высота скачет мгновенно, а слайд идёт отдельно — ощущается дёргано. */}
+      <motion.div layout className="relative overflow-hidden">
         {selected ? (
           <motion.div
             key={`card-${selected.id}`}
@@ -101,7 +103,7 @@ export function HolidayListSheet({ isOpen, onClose, holidays }: HolidayListSheet
             ))}
           </motion.div>
         )}
-      </div>
+      </motion.div>
     </BottomSheet>
   )
 }

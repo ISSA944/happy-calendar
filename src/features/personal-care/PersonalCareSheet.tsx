@@ -77,7 +77,9 @@ export function PersonalCareSheet({ isOpen, onClose }: PersonalCareSheetProps) {
       title={milestoneHits.length ? undefined : 'Персональный день'}
       hideDragIndicator={milestoneHits.length > 0}
     >
-      <div className="relative overflow-hidden">
+      {/* layout: высота контейнера меняется вместе со слайдом (задание короче/длиннее поздравления),
+          без него высота скачет мгновенно, а слайд идёт отдельно — ощущается дёргано. */}
+      <motion.div layout className="relative overflow-hidden">
         {milestoneHits.length ? (
           <motion.div
             key="celebration"
@@ -153,7 +155,7 @@ export function PersonalCareSheet({ isOpen, onClose }: PersonalCareSheetProps) {
             </div>
           </motion.div>
         )}
-      </div>
+      </motion.div>
     </BottomSheet>
   )
 }

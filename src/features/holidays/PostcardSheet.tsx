@@ -90,8 +90,10 @@ export function PostcardContent({ holiday }: PostcardContentProps) {
         ))}
       </div>
 
-      <motion.div layout className="rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-        {/* Картинка/тема не зависит от тона — не должна дёргаться при переключении Милая/С юмором/Циничная */}
+      <div className="rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+        {/* Картинка/тема не зависит от тона — не должна дёргаться при переключении Милая/С юмором/Циничная.
+            layout — только на текстовом блоке ниже, НЕ на этом внешнем контейнере: layout на родителе
+            анимирует transform всего блока целиком при смене высоты, задевая и картинку тоже. */}
         <div className="h-40 overflow-hidden">
           {card?.imageUrl
             ? <img src={card.imageUrl} alt="" className="block w-full h-full object-cover" />
@@ -109,7 +111,7 @@ export function PostcardContent({ holiday }: PostcardContentProps) {
             {isLoading ? '…' : card?.text}
           </motion.p>
         </motion.div>
-      </motion.div>
+      </div>
 
       {!showChannels ? (
         <div className="flex gap-3">

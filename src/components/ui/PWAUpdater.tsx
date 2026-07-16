@@ -1,13 +1,17 @@
+import { useEffect, useRef } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
 export function PWAUpdater() {
+  const registrationRef = useRef<ServiceWorkerRegistration | null>(null)
+
   const {
     needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(r) {
       if (r) {
-        // Проверяем наличие обновлений каждый час
+        registrationRef.current = r
+        // Проверяем наличие обновлений каждый час...
         setInterval(() => r.update(), 60 * 60 * 1000)
       }
     },
@@ -15,6 +19,18 @@ export function PWAUpdater() {
       console.error('SW registration error', error)
     },
   })
+
+  useEffect(() => {
+    // ...и ещё сразу, как только приложение возвращается на передний план — иначе после деплоя
+    // юзер может часами сидеть на закэшированной версии, просто не заметив тост «Обновить».
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void registrationRef.current?.update()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
 
   if (!needRefresh) return null
 
