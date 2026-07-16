@@ -107,11 +107,10 @@ export class AuthService {
       const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
       if (existing) {
         if (isTestAccount) {
+          // login() не принимает name — без этого имя, введённое на экране регистрации,
+          // молча терялось при каждом повторном "регистрируюсь" на уже существующий аккаунт.
           if (name?.trim()) {
-            await this.prisma.user.update({
-              where: { id: existing.id },
-              data: { name: name.trim() },
-            });
+            await this.prisma.user.update({ where: { id: existing.id }, data: { name: name.trim() } });
           }
           return this.login(normalizedEmail);
         }
