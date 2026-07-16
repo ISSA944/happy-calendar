@@ -15,9 +15,11 @@ interface HolidayListSheetProps {
 // choreography (сначала дождаться exit, потом mount) виснет, если requestAnimationFrame не
 // тикает (свёрнутая/неактивная вкладка бросает анимацию на первом кадре). Простой keyed remount
 // надёжнее кросс-контекстно и всё равно даёт нужный slide-in при каждой смене экрана.
+// Без scale: у родителя ниже стоит layout="size" (тоже анимирует через transform) — scale на
+// ребёнке поверх layout-transform родителя даёт составной, визуально "рваный" эффект.
 const slideVariants: Variants = {
-  enter: { x: 36, opacity: 0, scale: 0.98 },
-  center: { x: 0, opacity: 1, scale: 1 },
+  enter: { x: 36, opacity: 0 },
+  center: { x: 0, opacity: 1 },
 }
 const SLIDE_TRANSITION = { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }
 
@@ -58,9 +60,11 @@ export function HolidayListSheet({ isOpen, onClose, holidays }: HolidayListSheet
         )
       }
     >
-      {/* layout: высота контейнера меняется вместе со слайдом (список короче/длиннее открытки),
-          без него высота скачет мгновенно, а слайд идёт отдельно — ощущается дёргано. */}
-      <motion.div layout className="relative overflow-hidden">
+      {/* layout="size": высота контейнера меняется вместе со слайдом (список короче/длиннее
+          открытки), без него высота скачет мгновенно, а слайд идёт отдельно — ощущается дёргано.
+          Именно "size", не голый layout — тот анимирует ещё и позицию через transform, что
+          вместе со slideVariants ребёнка (тоже transform) даёт составной, дёрганый эффект. */}
+      <motion.div layout="size" className="relative overflow-hidden">
         {selected ? (
           <motion.div
             key={`card-${selected.id}`}

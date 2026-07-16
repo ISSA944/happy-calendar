@@ -100,7 +100,7 @@ export function PostcardContent({ holiday }: PostcardContentProps) {
             : <ThemeArt themeKey={holiday.themeKey} className="w-full h-full" />
           }
         </div>
-        <motion.div layout className="bg-white p-5 min-h-[64px]">
+        <motion.div layout="size" className="bg-white p-5 min-h-[64px]">
           <motion.p
             key={isLoading ? 'loading' : tone}
             initial={{ opacity: 0 }}

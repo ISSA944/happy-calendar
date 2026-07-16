@@ -16,9 +16,11 @@ interface PersonalCareSheetProps {
 // Без AnimatePresence/mode="wait" — та же ловушка, что уже чинили на HomePage и
 // HolidayListSheet: двухфазная choreography (ждать exit, потом mount) виснет, если
 // requestAnimationFrame не тикает. Простой keyed remount надёжнее.
+// Без scale: у родителя ниже стоит layout="size" (тоже анимирует через transform) — scale на
+// ребёнке поверх layout-transform родителя даёт составной, визуально "рваный" эффект.
 const slideVariants: Variants = {
-  enter: { x: 36, opacity: 0, scale: 0.98 },
-  center: { x: 0, opacity: 1, scale: 1 },
+  enter: { x: 36, opacity: 0 },
+  center: { x: 0, opacity: 1 },
 }
 const SLIDE_TRANSITION = { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }
 
@@ -77,9 +79,9 @@ export function PersonalCareSheet({ isOpen, onClose }: PersonalCareSheetProps) {
       title={milestoneHits.length ? undefined : 'Персональный день'}
       hideDragIndicator={milestoneHits.length > 0}
     >
-      {/* layout: высота контейнера меняется вместе со слайдом (задание короче/длиннее поздравления),
-          без него высота скачет мгновенно, а слайд идёт отдельно — ощущается дёргано. */}
-      <motion.div layout className="relative overflow-hidden">
+      {/* layout="size": высота контейнера меняется вместе со слайдом (задание короче/длиннее
+          поздравления), см. HolidayListSheet.tsx для деталей, почему именно "size", не голый layout. */}
+      <motion.div layout="size" className="relative overflow-hidden">
         {milestoneHits.length ? (
           <motion.div
             key="celebration"
