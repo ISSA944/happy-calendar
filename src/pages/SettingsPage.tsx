@@ -136,7 +136,7 @@ export function SettingsPage() {
                 <span className="text-on-surface-variant text-sm min-w-0 flex-1 truncate">{email || '—'}</span>
                 <button
                   onClick={() => setIsEmailConfirmOpen(true)}
-                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors flex-shrink-0"
+                  className="w-8 h-8 flex items-center justify-center text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors flex-shrink-0"
                   aria-label="Поменять электронную почту"
                 >
                   <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -151,7 +151,7 @@ export function SettingsPage() {
                 <span className="text-on-surface text-sm min-w-0 flex-1 truncate">{birthDate || '—'}</span>
                 <button
                   onClick={openCalendar}
-                  className="text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors flex-shrink-0"
+                  className="w-8 h-8 flex items-center justify-center text-on-surface-variant/50 active:text-primary active:scale-90 transition-colors flex-shrink-0"
                 >
                   <span className="material-symbols-outlined text-[18px]">edit</span>
                 </button>

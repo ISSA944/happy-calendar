@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useAppStore } from '../../store'
 import type { HolidayCard, HolidayCardWithText, Tone } from '../../store/app.store'
 import { ThemeArt } from './ThemeArt'
@@ -89,19 +90,26 @@ export function PostcardContent({ holiday }: PostcardContentProps) {
         ))}
       </div>
 
-      <div className="rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+      <motion.div layout className="rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+        {/* Картинка/тема не зависит от тона — не должна дёргаться при переключении Милая/С юмором/Циничная */}
         <div className="h-40 overflow-hidden">
           {card?.imageUrl
-            ? <img src={card.imageUrl} alt="" className="w-full h-full object-cover" />
+            ? <img src={card.imageUrl} alt="" className="block w-full h-full object-cover" />
             : <ThemeArt themeKey={holiday.themeKey} className="w-full h-full" />
           }
         </div>
-        <div className="bg-white p-5 min-h-[64px]">
-          <p className="text-[15px] leading-relaxed text-on-surface">
+        <motion.div layout className="bg-white p-5 min-h-[64px]">
+          <motion.p
+            key={isLoading ? 'loading' : tone}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
+            className="text-[15px] leading-relaxed text-on-surface"
+          >
             {isLoading ? '…' : card?.text}
-          </p>
-        </div>
-      </div>
+          </motion.p>
+        </motion.div>
+      </motion.div>
 
       {!showChannels ? (
         <div className="flex gap-3">

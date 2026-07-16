@@ -101,7 +101,7 @@ export function PersonalCareSheet({ isOpen, onClose }: PersonalCareSheetProps) {
           >
             <div className="h-36 rounded-3xl overflow-hidden">
               {care.imageUrl
-                ? <img src={care.imageUrl} alt="" className="w-full h-full object-cover" />
+                ? <img src={care.imageUrl} alt="" className="block w-full h-full object-cover" />
                 : <ThemeArt themeKey={care.themeKey} className="w-full h-full" />
               }
             </div>

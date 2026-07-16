@@ -25,7 +25,7 @@ export function HolidaysTodayBlock() {
       >
         <div className="h-20 overflow-hidden">
           {main?.imageUrl
-            ? <img src={main.imageUrl} alt="" className="w-full h-full object-cover" />
+            ? <img src={main.imageUrl} alt="" className="block w-full h-full object-cover" />
             : <ThemeArt themeKey={main?.themeKey ?? 'Уютные пустяки и радости'} className="w-full h-full" />
           }
         </div>
@@ -51,7 +51,7 @@ export function HolidaysTodayBlock() {
       >
         <div className="h-20 overflow-hidden relative">
           {care?.imageUrl
-            ? <img src={care.imageUrl} alt="" className="w-full h-full object-cover" />
+            ? <img src={care.imageUrl} alt="" className="block w-full h-full object-cover" />
             : <ThemeArt themeKey={care?.themeKey ?? 'Забота о себе и спокойствие'} className="w-full h-full" />
           }
           {care?.doneToday && (

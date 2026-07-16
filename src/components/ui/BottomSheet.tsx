@@ -52,7 +52,7 @@ export function BottomSheet({
             
             {(title || headerRight) && (
               <div className="flex justify-between items-center mt-1">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   {typeof title === 'string' ? (
                     <Drawer.Title className="font-headline text-lg font-bold text-on-surface">
                       {title}

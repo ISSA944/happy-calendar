@@ -188,7 +188,7 @@ export function ThemeArt({ themeKey, className }: ThemeArtProps) {
 
   return (
     <svg
-      className={className}
+      className={`block${className ? ` ${className}` : ''}`}
       viewBox="0 0 400 200"
       preserveAspectRatio="xMidYMid slice"
       xmlns="http://www.w3.org/2000/svg"

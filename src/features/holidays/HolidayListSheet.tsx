@@ -43,11 +43,15 @@ export function HolidayListSheet({ isOpen, onClose, holidays }: HolidayListSheet
       onClose={handleClose}
       title={
         selected ? (
-          <div className="flex items-center gap-2">
-            <button onClick={goBackToList} className="text-primary active:opacity-60 -ml-1 mr-1" aria-label="Назад">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={goBackToList}
+              className="w-8 h-8 -ml-1 mr-1 flex items-center justify-center text-primary active:opacity-60 flex-shrink-0"
+              aria-label="Назад"
+            >
               <span className="material-symbols-outlined text-[22px]">chevron_left</span>
             </button>
-            <h2 className="font-headline text-lg font-bold text-on-surface truncate">{selected.title}</h2>
+            <h2 className="font-headline text-lg font-bold text-on-surface truncate min-w-0">{selected.title}</h2>
           </div>
         ) : (
           'Праздники сегодня'
