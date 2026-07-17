@@ -1,6 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
+// Раньше юзер должен был сам тапнуть тост «Обновить» — если не замечал его, приложение молча
+// зависало на закэшированном service worker'ом бандле после каждого деплоя (источник большинства
+// "баг всё ещё не пофикшен" репортов, хотя код на сервере уже был верным). Теперь при обнаружении
+// новой версии applyем её сами, без участия юзера.
+const AUTO_RELOAD_DELAY_MS = 1500
+
 export function PWAUpdater() {
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null)
 
@@ -22,7 +28,7 @@ export function PWAUpdater() {
 
   useEffect(() => {
     // ...и ещё сразу, как только приложение возвращается на передний план — иначе после деплоя
-    // юзер может часами сидеть на закэшированной версии, просто не заметив тост «Обновить».
+    // юзер может часами сидеть на закэшированной версии.
     const onVisible = () => {
       if (document.visibilityState === 'visible') {
         void registrationRef.current?.update()
@@ -32,21 +38,18 @@ export function PWAUpdater() {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
+  useEffect(() => {
+    if (!needRefresh) return
+    const timer = setTimeout(() => void updateServiceWorker(true), AUTO_RELOAD_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [needRefresh, updateServiceWorker])
+
   if (!needRefresh) return null
 
   return (
     <div className="fixed bottom-24 inset-x-4 z-[9999] flex justify-center pointer-events-none">
-      <div className="bg-surface-container-high border border-primary/20 shadow-xl rounded-2xl p-4 w-full max-w-sm flex items-center justify-between gap-4 pointer-events-auto">
-        <div className="flex flex-col">
-          <p className="font-headline font-bold text-sm text-on-surface">Доступно обновление</p>
-          <p className="font-body text-xs text-on-surface-variant">Приложение будет перезагружено</p>
-        </div>
-        <button
-          onClick={() => updateServiceWorker(true)}
-          className="bg-primary text-on-primary px-4 py-2 rounded-full font-bold text-sm shadow-md active:scale-95 transition-transform"
-        >
-          Обновить
-        </button>
+      <div className="bg-surface-container-high border border-primary/20 shadow-xl rounded-2xl p-4 w-full max-w-sm flex items-center gap-3 pointer-events-none">
+        <p className="font-headline font-bold text-sm text-on-surface">Обновляем приложение…</p>
       </div>
     </div>
   )
