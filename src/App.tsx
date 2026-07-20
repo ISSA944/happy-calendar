@@ -16,7 +16,7 @@ import { getAccessToken } from './auth/token-storage'
 import { PWAUpdater } from './components/ui/PWAUpdater'
 
 // All pages eagerly loaded — no Suspense flashes on first navigation.
-import { WelcomePage } from './pages/WelcomePage'
+import { LandingPage } from './pages/LandingPage'
 import { HomePage } from './pages/HomePage'
 import { RegistrationPage } from './pages/RegistrationPage'
 import { LoginPage } from './pages/LoginPage'
@@ -54,7 +54,7 @@ function RootGuard() {
     return () => { cancelled = true }
   }, [needsProfileCheck, syncProfile])
 
-  if (!hasToken) return <WelcomePage />
+  if (!hasToken) return <LandingPage />
   if (needsProfileCheck) return <PageFallback />
   return hasCompletedOnboarding ? <Navigate to="/home" replace /> : <Navigate to="/profile-setup" replace />
 }

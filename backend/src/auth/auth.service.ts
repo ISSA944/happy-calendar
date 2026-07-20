@@ -597,7 +597,16 @@ export class AuthService {
             </td>
           </tr>
           <tr>
-            <td style="padding:32px 40px 40px">
+            <td style="padding:8px 40px 24px">
+              <div style="background:#f0ede9;border-radius:20px;padding:20px 24px">
+                <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#006a65">🎁 Подарок за регистрацию</p>
+                <p style="margin:0 0 6px;font-size:14px;line-height:1.5;color:#2a3f3e"><b>Трекер привычек на месяц</b> — даёт структуру и опору.</p>
+                <p style="margin:0;font-size:14px;line-height:1.5;color:#2a3f3e"><b>Чек-лист «30 дней заботы о себе»</b> — маленький ритуал на каждый день.</p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 40px 40px">
               <div style="border-top:1px solid #e8e3db;padding-top:24px">
                 <p style="margin:0;font-size:12px;line-height:1.5;color:#8a9998;text-align:center">
                   С любовью, команда YoYoJoy Day
