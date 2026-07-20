@@ -4,8 +4,8 @@ import { GOALS } from '../goals/goals.constant'
 // Мокап прогресса — тот же визуальный паттерн, что в реальном GoalsProgress.tsx
 // (иконка в bg-primary/10, прогресс-бар bg-primary на surface-container-high).
 const DEMO_GOALS = [
-  { id: GOALS[0].id, title: GOALS[0].title, icon: GOALS[0].icon, days: 10, pct: 65, note: '10 дней позади — забота о себе становится привычкой 💛' },
-  { id: GOALS[1].id, title: GOALS[1].title, icon: GOALS[1].icon, days: 7, pct: 40, note: 'Целых 5 дней заботы! Ты готова к переменам 🌿' },
+  { id: GOALS[0].id, title: GOALS[0].title, icon: GOALS[0].icon, days: 10, pct: 65, note: '10 дней позади — забота о себе становится привычкой.' },
+  { id: GOALS[1].id, title: GOALS[1].title, icon: GOALS[1].icon, days: 7, pct: 40, note: 'Целых 5 дней заботы! Ты готова к переменам.' },
 ]
 
 /** Твои цели — мокап прогресса + вехи (ТЗ п.2.6, п.5). */
@@ -41,10 +41,12 @@ export function LandingGoals() {
         </div>
 
         <div className="flex items-center gap-4 bg-accent/10 rounded-3xl p-5 border border-accent/20 landing-fade-in-scroll">
-          <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm">🌿</div>
+          <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm shrink-0">
+            <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>celebration</span>
+          </div>
           <div>
             <p className="text-[13px] font-bold text-on-surface">Поздравляем на каждой вехе</p>
-            <p className="text-[12px] text-on-surface-variant leading-snug">5, 10, 15, 20 дней… — push с тёплыми словами и наградой.</p>
+            <p className="text-[12px] text-on-surface-variant leading-snug">5, 10, 15, 20 дней… — уведомление с тёплыми словами и наградой.</p>
           </div>
         </div>
 

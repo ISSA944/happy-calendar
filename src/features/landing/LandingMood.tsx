@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { getMoodImage } from '../../services/content.service'
 import { SectionEyebrow, GiftCtaBlock } from './LandingShared'
 
@@ -10,8 +11,18 @@ const MOODS = [
   { id: 'Грустна', icon: 'water_drop' },
 ]
 
+// Демо-цикл «Другая фраза» — без сервера (до регистрации нет знака/настроения пользователя),
+// но реально кликабельно, в отличие от остальных демо-кнопок.
+const DEMO_PHRASES = [
+  'Я рядом, и тебе не нужно сейчас быть сильной на сто процентов. Достаточно пройти этот день шаг за шагом — с заботой о себе.',
+  'Тишина внутри — лучший советчик. Сегодня можно просто быть, без лишних усилий.',
+  'Ты уже делаешь достаточно. Позволь себе немного покоя — он тоже часть пути.',
+]
+
 /** Настроение — лента реальных карточек настроений + демо «Поддержка на сегодня» (ТЗ п.2.7, п.5). */
 export function LandingMood() {
+  const [phraseIdx, setPhraseIdx] = useState(0)
+
   return (
     <section className="bg-surface-container-low relative overflow-hidden py-24 space-y-12">
       <div className="max-w-sm mx-auto text-center space-y-5 px-6 landing-fade-in-scroll">
@@ -32,9 +43,14 @@ export function LandingMood() {
               className="snap-center shrink-0 w-44 aspect-[3/4] relative rounded-[2.5rem] overflow-hidden shadow-xl shadow-black/5"
             >
               <img src={getMoodImage(m.id)} alt="" className="absolute inset-0 w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-              <span className="absolute top-5 left-5 material-symbols-outlined text-white text-3xl drop-shadow">{m.icon}</span>
-              <span className="absolute bottom-5 left-5 text-[13px] font-bold text-white uppercase tracking-widest drop-shadow">{m.id}</span>
+              {/* Лёгкий оверлей, как на реальном баннере настроения (HomePage.tsx) — не тёмная плашка. */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+              <div className="absolute top-4 left-4 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow-sm">
+                <span className="material-symbols-outlined text-primary text-base">{m.icon}</span>
+              </div>
+              <span className="absolute bottom-4 left-4 bg-white/90 text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                {m.id}
+              </span>
             </div>
           ))}
         </div>
@@ -49,11 +65,15 @@ export function LandingMood() {
             </div>
           </div>
           <p className="text-lg text-on-surface-variant leading-relaxed italic font-light">
-            Я рядом, и тебе не нужно сейчас быть сильной на сто процентов. Достаточно пройти этот день шаг
-            за шагом — с заботой о себе.
+            {DEMO_PHRASES[phraseIdx]}
           </p>
           <div className="flex gap-3">
-            <button className="flex-1 landing-cta-gradient text-white py-4 rounded-full font-bold text-sm shadow-lg pointer-events-none">Другая фраза</button>
+            <button
+              onClick={() => setPhraseIdx((i) => (i + 1) % DEMO_PHRASES.length)}
+              className="flex-1 landing-cta-gradient text-white py-4 rounded-full font-bold text-sm shadow-lg active:scale-95 transition-transform"
+            >
+              Другая фраза
+            </button>
             <button className="flex-1 bg-surface-container text-on-surface py-4 rounded-full font-bold text-sm pointer-events-none">Сохранить</button>
           </div>
         </div>

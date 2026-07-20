@@ -1,26 +1,18 @@
 import { useNavigate } from 'react-router-dom'
 
-/** Trust — соц. доказательство + финальный CTA (ТЗ п.2.8, п.5). Фон — градиент вместо фото
- * (внешние ссылки на фото из прототипа мёртвые, см. план), тот же приём, что в Hero. */
+/** Trust — соц. доказательство + финальный CTA (ТЗ п.2.8, п.5). Флэт-карточка и hero-gradient
+ * фон — тот же приём, что в Hero, без стекла/блюра. */
 export function LandingTrust() {
   const navigate = useNavigate()
   return (
-    <section className="relative min-h-[100svh] w-full flex flex-col items-center justify-center overflow-hidden py-20 px-6" id="trust-screen">
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div
-          className="absolute inset-0 w-full h-full scale-105 animate-landing-sea-breathe opacity-80"
-          style={{ background: 'radial-gradient(circle at 70% 30%, #2FA7A044 0%, transparent 55%), radial-gradient(circle at 20% 80%, #00393608 0%, transparent 60%), #fcf9f4' }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent" />
-      </div>
-
+    <section className="relative min-h-[100svh] w-full flex flex-col items-center justify-center overflow-hidden py-20 px-6 hero-gradient" id="trust-screen">
       <div className="relative z-10 w-full max-w-sm flex flex-col items-center space-y-16">
-        <div className="w-full landing-glass-mirror-card rounded-[4rem] p-12 flex flex-col items-center space-y-10 text-center shadow-2xl shadow-black/5 landing-fade-in-scroll">
-          <div className="flex items-center gap-2">
-            <div className="w-12 h-12 rounded-full landing-cta-gradient flex items-center justify-center text-white">
-              <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>spa</span>
+        <div className="w-full bg-surface-container-lowest rounded-[2.5rem] p-10 flex flex-col items-center space-y-10 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] landing-fade-in-scroll">
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-full landing-cta-gradient flex items-center justify-center text-white">
+              <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>spa</span>
             </div>
-            <span className="font-headline text-2xl font-bold text-primary">YoYoJoy</span>
+            <span className="font-headline text-3xl font-bold text-primary">YoYoJoy</span>
           </div>
           <p className="text-on-surface/90 text-xl font-light leading-relaxed px-1">
             Уже более
@@ -39,9 +31,9 @@ export function LandingTrust() {
           <div className="w-full bg-accent/10 rounded-3xl p-4 border border-accent/20 text-left">
             <div className="flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-accent text-lg">redeem</span>
-              <p className="text-[12px] font-bold text-on-surface">Подарок за регистрацию — на почту 🎁</p>
+              <p className="text-[12px] font-bold text-on-surface">Подарок за регистрацию — на почту</p>
             </div>
-            <p className="text-[11px] text-on-surface-variant leading-snug">
+            <p className="text-[11px] text-on-surface-variant leading-snug [text-wrap:balance]">
               <b className="text-on-surface">Трекер привычек на месяц</b> и <b className="text-on-surface">чек-лист «30 дней заботы о себе»</b> —
               структура и тёплый ритуал на каждый день.
             </p>

@@ -14,7 +14,7 @@ import { LandingTrust } from '../features/landing/LandingTrust'
  *
  * #root/body у всего приложения — фиксированной высоты с overflow:hidden (SPA-шелл, см. src/index.css),
  * поэтому сам скролл длинной страницы обеспечивает этот компонент (overflow-y-auto), а не document —
- * parallax/sticky-header завязаны именно на этот контейнер, не на window.
+ * IntersectionObserver ниже привязан именно к этому контейнеру (root), не к window.
  */
 export function LandingPage() {
   const navigate = useNavigate()
@@ -23,6 +23,15 @@ export function LandingPage() {
   useEffect(() => {
     const root = scrollRef.current
     if (!root) return
+
+    // Память скролла: если ушли на /register по CTA и вернулись назад (не дошли до конца) —
+    // лендинг открывается там же, откуда ушли, а не сверху. Восстанавливаем ДО настройки
+    // IntersectionObserver ниже, чтобы уже проскроленные блоки сразу считались видимыми.
+    const savedScroll = sessionStorage.getItem('landing-scroll')
+    if (savedScroll) {
+      root.scrollTop = Number(savedScroll)
+      sessionStorage.removeItem('landing-scroll')
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -34,17 +43,19 @@ export function LandingPage() {
     )
     root.querySelectorAll('.landing-fade-in-scroll').forEach((el) => observer.observe(el))
 
+    let saveTimer: ReturnType<typeof setTimeout> | null = null
     const onScroll = () => {
-      const y = root.scrollTop
-      root.querySelectorAll<HTMLElement>('.landing-parallax-bg').forEach((bg) => {
-        bg.style.transform = `translateY(${y * 0.1}px)`
-      })
+      if (saveTimer) clearTimeout(saveTimer)
+      saveTimer = setTimeout(() => {
+        sessionStorage.setItem('landing-scroll', String(root.scrollTop))
+      }, 150)
     }
     root.addEventListener('scroll', onScroll, { passive: true })
 
     return () => {
       observer.disconnect()
       root.removeEventListener('scroll', onScroll)
+      if (saveTimer) clearTimeout(saveTimer)
     }
   }, [])
 
@@ -54,8 +65,8 @@ export function LandingPage() {
       className="relative h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none bg-surface"
     >
       {/* Header */}
-      <header className="sticky top-0 w-full z-50 bg-surface/85 backdrop-blur-xl border-b border-surface-container-high px-6 flex items-center justify-between py-3">
-        <img src="/logo.yoyo.svg" alt="YoYoJoy" className="h-7 w-auto" />
+      <header className="sticky top-0 w-full z-50 bg-surface border-b border-surface-container-high px-6 flex items-center justify-between py-3">
+        <img src="/logo.yoyo.svg" alt="YoYoJoy" className="h-9 w-auto" />
         <button
           onClick={() => navigate('/register')}
           className="landing-cta-gradient text-white px-6 py-2.5 rounded-full font-headline font-bold text-sm shadow-lg active:scale-95 transition-transform animate-landing-button-pulse whitespace-nowrap"
@@ -74,7 +85,7 @@ export function LandingPage() {
       </main>
 
       <footer className="bg-surface border-t border-surface-container py-14 px-6 text-center">
-        <img src="/logo.yoyo.svg" alt="YoYoJoy" className="h-6 w-auto mx-auto mb-6 opacity-40" />
+        <img src="/logo.yoyo.svg" alt="YoYoJoy" className="h-8 w-auto mx-auto mb-6 opacity-40" />
         <p className="text-[12px] text-on-surface-variant/50 font-medium tracking-wider uppercase">
           © {new Date().getFullYear()} YoYoJoy. Все права защищены.
         </p>

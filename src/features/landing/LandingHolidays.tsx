@@ -1,25 +1,42 @@
 import { useState } from 'react'
 import { SectionEyebrow, GiftCtaBlock } from './LandingShared'
+import { ThemeArt } from '../holidays/ThemeArt'
+import { nativeShare, shareViaChannel, type ShareChannel } from '../../utils/share'
 
 type Tone = 'cute' | 'humor' | 'cynical'
 
 const TONES: { id: Tone; label: string }[] = [
-  { id: 'cute', label: '🤍 Милая' },
-  { id: 'humor', label: '😄 С юмором' },
-  { id: 'cynical', label: '🙃 Циничная' },
+  { id: 'cute', label: 'Милая' },
+  { id: 'humor', label: 'С юмором' },
+  { id: 'cynical', label: 'Циничная' },
 ]
 
-// Демо-текст для мокапа открытки — тот же приём тона, что в реальной PostcardSheet (см. src/features/holidays/PostcardSheet.tsx).
-const POSTCARD_DEMO: Record<Tone, { text: string; gradient: string }> = {
-  cute: { text: '«С Днём пикника! Пусть этот день будет тёплым, лёгким и вкусным, как плед на зелёной траве 🧺»', gradient: 'linear-gradient(135deg,#2FA7A044,#2FA7A0)' },
-  humor: { text: '«День пикника! Муравьи приходят без приглашения, но ведут себя приличнее некоторых гостей 🐜»', gradient: 'linear-gradient(135deg,#FBE3A1,#F2C14E)' },
-  cynical: { text: '«Идеальный день для пикника. На улице, конечно, дождь — значит, плед, чай и окно тоже считается ☔»', gradient: 'linear-gradient(135deg,#CBD3D0,#97A39E)' },
+// Демо-текст для мокапа открытки — та же логика тона, что в реальной PostcardSheet
+// (см. src/features/holidays/PostcardSheet.tsx): картинка не зависит от тона, меняется только текст.
+const POSTCARD_DEMO: Record<Tone, string> = {
+  cute: '«С Днём пикника! Пусть этот день будет тёплым, лёгким и вкусным, как плед на зелёной траве.»',
+  humor: '«День пикника! Муравьи приходят без приглашения, но ведут себя приличнее некоторых гостей.»',
+  cynical: '«Идеальный день для пикника. На улице, конечно, дождь — значит, плед, чай и окно тоже считается.»',
 }
 
-/** Праздники — календарные (открытка+тон) и дни заботы о себе (ТЗ п.2.5, п.4 интерактив). */
+// Подмножество SHARE_CHANNELS для строки-демо на лендинге — те же 4, что в ТЗ (без «Копировать»).
+const LANDING_SHARE_CHANNELS: { id: ShareChannel['id']; label: string }[] = [
+  { id: 'telegram', label: 'Телеграм' },
+  { id: 'whatsapp', label: 'Вотсап' },
+  { id: 'max', label: 'МАКС' },
+  { id: 'email', label: 'Почта' },
+]
+
+/** Праздники — календарные (открытка+тон) и дни заботы о себе (ТЗ п.2.5, п.4 интерактив).
+ * Иллюстрации — реальный ThemeArt, как в PostcardSheet/PersonalCareSheet, не эмодзи. */
 export function LandingHolidays() {
   const [tone, setTone] = useState<Tone>('humor')
-  const demo = POSTCARD_DEMO[tone]
+
+  // Реальный шеринг демо-открытки: иконка — системный Web Share (если поддерживается),
+  // клик по названию конкретного канала — сразу туда, как в реальной PostcardSheet.
+  const shareTitle = 'YoYoJoy · День пикника'
+  const handleNativeShare = () => void nativeShare(shareTitle, POSTCARD_DEMO[tone])
+  const handleChannelShare = (channel: ShareChannel['id']) => shareViaChannel(channel, shareTitle, POSTCARD_DEMO[tone])
 
   return (
     <section className="bg-surface-container-low relative overflow-hidden py-24 px-6">
@@ -47,8 +64,8 @@ export function LandingHolidays() {
           </p>
 
           <div className="rounded-3xl overflow-hidden border border-surface-container-high">
-            <div className="h-24 flex items-center justify-center text-4xl transition-all" style={{ background: demo.gradient }}>🧺</div>
-            <div className="bg-white p-3"><p className="text-[12px] leading-snug text-on-surface">{demo.text}</p></div>
+            <div className="h-24"><ThemeArt themeKey="Еда и вкусности" className="w-full h-full" /></div>
+            <div className="bg-white p-3"><p className="text-[12px] leading-snug text-on-surface">{POSTCARD_DEMO[tone]}</p></div>
           </div>
 
           <div className="flex gap-2">
@@ -65,8 +82,23 @@ export function LandingHolidays() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 text-primary text-[12px] font-bold pt-1">
-            <span className="material-symbols-outlined text-base">ios_share</span> Поделиться: Телеграм · Вотсап · МАКС · Почта
+          <div className="flex items-center flex-wrap gap-x-1.5 gap-y-1 text-primary text-[12px] font-bold pt-1">
+            <button
+              onClick={handleNativeShare}
+              aria-label="Поделиться"
+              className="w-8 h-8 -ml-1 flex items-center justify-center rounded-full active:scale-90 transition-transform"
+            >
+              <span className="material-symbols-outlined text-2xl">ios_share</span>
+            </button>
+            Поделиться:
+            {LANDING_SHARE_CHANNELS.map((c, i) => (
+              <span key={c.id} className="contents">
+                <button onClick={() => handleChannelShare(c.id)} className="underline decoration-primary/30 active:opacity-60">
+                  {c.label}
+                </button>
+                {i < LANDING_SHARE_CHANNELS.length - 1 && <span className="text-on-surface-variant font-normal">·</span>}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -83,13 +115,16 @@ export function LandingHolidays() {
             становится спокойнее.
           </p>
           <div className="rounded-3xl bg-accent/10 p-4 border border-accent/20 space-y-2">
-            <div className="h-16 rounded-2xl bg-gradient-to-br from-primary/40 to-primary flex items-center justify-center text-3xl">🌿</div>
+            <div className="h-16 rounded-2xl overflow-hidden"><ThemeArt themeKey="Забота о себе и спокойствие" className="w-full h-full" /></div>
             <p className="text-[13px] font-bold text-on-surface">Твой личный день спокойствия</p>
             <p className="text-[12px] text-on-surface-variant leading-snug">
               «Сегодня выдели 5 минут, чтобы замедлиться и почувствовать своё тело — как спокойствие мягко
               разливается внутри.»
             </p>
-            <span className="inline-block landing-cta-gradient text-white text-[11px] font-bold px-4 py-2 rounded-full">Я сделала это 🤍</span>
+            <span className="inline-flex items-center gap-1 landing-cta-gradient text-white text-[11px] font-bold px-4 py-2 rounded-full">
+              <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+              Я сделала это
+            </span>
           </div>
         </div>
 

@@ -102,26 +102,21 @@
     opacity: 0.25;
   }
 
-  /* Лендинг (LandingPage) — декоративные бесконечные анимации.
+  /* Лендинг (LandingPage) — декоративные бесконечные анимации, см. src/features/landing.
      Глобальный prefers-reduced-motion:reduce override выше (строка 7) уже гасит их все —
      отдельно оборачивать каждый keyframe в no-preference не нужно. */
-  @keyframes landing-sea-breathe { 0%, 100% { transform: scale(1.05) translateY(0); } 50% { transform: scale(1.12) translateY(-1%); } }
-  .animate-landing-sea-breathe { animation: landing-sea-breathe 25s ease-in-out infinite; }
-
-  @keyframes landing-fog-drift { 0% { transform: translateX(-10%) translateY(0); opacity: .3; } 50% { transform: translateX(10%) translateY(-15px); opacity: .5; } 100% { transform: translateX(-10%) translateY(0); opacity: .3; } }
-  .animate-landing-fog-drift { animation: landing-fog-drift 45s ease-in-out infinite; }
-
-  @keyframes landing-orb-ring { 0% { transform: scale(.8); opacity: 0; } 50% { opacity: .2; } 100% { transform: scale(2.2); opacity: 0; } }
-  .animate-landing-orb-ring { animation: landing-orb-ring 5s cubic-bezier(.4,0,.2,1) infinite; }
-
   @keyframes landing-slow-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: .9; } }
   .animate-landing-slow-pulse { animation: landing-slow-pulse 4s ease-in-out infinite; }
 
-  @keyframes landing-float-slow { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-12px) rotate(1deg); } }
-  .animate-landing-float-slow { animation: landing-float-slow 8s ease-in-out infinite; }
+  /* Мягкое «дыхание» декоративного пятна за карточкой Hero. */
+  @keyframes landing-breathe { 0%, 100% { transform: scale(1) translateY(0); opacity: .7; } 50% { transform: scale(1.15) translateY(-2%); opacity: 1; } }
+  .animate-landing-breathe { animation: landing-breathe 10s ease-in-out infinite; }
 
   @keyframes landing-button-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(0,106,101,.15); } 50% { transform: scale(1.03); box-shadow: 0 8px 25px rgba(0,106,101,.25), 0 0 15px rgba(47,167,160,.15); } }
   .animate-landing-button-pulse { animation: landing-button-pulse 4s infinite ease-in-out; }
+
+  @keyframes landing-float-slow { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-12px) rotate(1deg); } }
+  .animate-landing-float-slow { animation: landing-float-slow 8s ease-in-out infinite; }
 
   @keyframes landing-soft-glow-text { 0%, 100% { text-shadow: 0 0 0 rgba(47,167,160,0); } 50% { text-shadow: 0 0 15px rgba(47,167,160,.35); } }
   .animate-landing-soft-glow-text { animation: landing-soft-glow-text 3s infinite ease-in-out; }
@@ -130,6 +125,7 @@
   .landing-fade-in-scroll.landing-visible { opacity: 1; transform: translateY(0); }
 
   .landing-cta-gradient { background: linear-gradient(135deg, #2FA7A0 0%, #006a65 100%); box-shadow: 0 12px 28px -6px rgba(0,106,101,.4); }
+
   .landing-glass-panel { background: rgba(255,255,255,.7); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,.5); }
   .landing-glass-card { background: rgba(255,255,255,.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,.4); }
   .landing-glass-mirror-card { background: rgba(255,255,255,.82); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,.5); }
