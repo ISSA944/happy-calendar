@@ -89,6 +89,7 @@ export class WebPushService {
           data: payload.data ?? {},
         }),
       );
+      this.logger.log(`Web Push sent OK (title="${payload.title}", endpoint=...${subscription.endpoint.slice(-40)})`);
       return true;
     } catch (error: any) {
       const statusCode = error?.statusCode as number | undefined;
