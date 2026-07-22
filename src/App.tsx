@@ -14,7 +14,6 @@ import { PageLoader } from './components/ui/PageLoader'
 import { useAppStore } from './store'
 import { getAccessToken } from './auth/token-storage'
 import { PWAUpdater } from './components/ui/PWAUpdater'
-import { InstallBanner } from './components/InstallBanner'
 
 // All pages eagerly loaded — no Suspense flashes on first navigation.
 import { LandingPage } from './pages/LandingPage'

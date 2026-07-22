@@ -200,6 +200,10 @@ export class AuthService {
 
   async verifyOtp(email: string, code: string) {
     const normalizedEmail = email.trim().toLowerCase();
+    // Тест-аккаунт (см. TEST_EMAIL выше) — по явному запросу владельца письмо с подарком
+    // должно приходить заново при каждом входе, а не один раз за жизнь аккаунта, чтобы можно
+    // было гонять полный флоу регистрации сколько угодно раз для проверки.
+    const isTestAccount = normalizedEmail === this.TEST_EMAIL;
 
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -250,10 +254,11 @@ export class AuthService {
       create: { userId: user.id },
     });
 
-    // Приветственное письмо — один раз за всю жизнь аккаунта (флаг welcomeEmailSentAt).
+    // Приветственное письмо — один раз за всю жизнь аккаунта (флаг welcomeEmailSentAt), КРОМЕ
+    // тест-аккаунта — тому шлём заново при каждом verifyOtp(), см. isTestAccount выше.
     // verifyOtp() — общая точка входа для регистрации И логина, поэтому завязываемся на флаг,
     // а не на тип запроса. Best-effort: письмо НИКОГДА не блокирует вход — любая ошибка гасится.
-    if (!user.welcomeEmailSentAt) {
+    if (isTestAccount || !user.welcomeEmailSentAt) {
       try {
         await this.sendWelcomeEmail(normalizedEmail, user.name);
         await this.prisma.user.update({
@@ -584,6 +589,11 @@ export class AuthService {
   // из public/email-assets/*.png (deploy.sh копирует dist/ целиком, public/ уже часть сборки).
   private readonly telegramLogoUrl = 'https://yoyojoy.online/email-assets/telegram.png';
   private readonly maxLogoUrl = 'https://yoyojoy.online/email-assets/max.png';
+  // Иконки подарков — Material Symbols Outlined (та же семья, что material-symbols-outlined
+  // по всему приложению), отрисованы в PNG через sharp вместо эмодзи 📅/✅ (не рендерятся
+  // консистентно в Gmail/Outlook), заливка Zen-Emerald #006a65.
+  private readonly giftTrackerIconUrl = 'https://yoyojoy.online/email-assets/gift-tracker.png';
+  private readonly giftChecklistIconUrl = 'https://yoyojoy.online/email-assets/gift-checklist.png';
 
   private renderWelcomeEmailHtml(name: string | null): string {
     const greeting = name && name.trim() ? `Привет, ${name.trim()}!` : 'Привет!';
@@ -652,7 +662,7 @@ export class AuthService {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#E9F3EF;border-radius:16px;margin:0 0 14px;">
                 <tr>
                   <td width="64" style="padding:18px 0 18px 18px;vertical-align:top;">
-                    <div style="width:46px;height:46px;background:#ffffff;border-radius:12px;text-align:center;line-height:46px;font-size:22px;">📅</div>
+                    <div style="width:46px;height:46px;background:#ffffff;border-radius:12px;text-align:center;line-height:46px;"><img src="${this.giftTrackerIconUrl}" width="24" height="24" alt="" style="vertical-align:middle;border:0;"></div>
                   </td>
                   <td style="padding:18px 18px 18px 14px;vertical-align:top;">
                     <div style="font-size:16px;font-weight:bold;color:#23302b;">Трекер привычек на месяц</div>
@@ -664,7 +674,7 @@ export class AuthService {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#E9F3EF;border-radius:16px;margin:0 0 26px;">
                 <tr>
                   <td width="64" style="padding:18px 0 18px 18px;vertical-align:top;">
-                    <div style="width:46px;height:46px;background:#ffffff;border-radius:12px;text-align:center;line-height:46px;font-size:22px;">✅</div>
+                    <div style="width:46px;height:46px;background:#ffffff;border-radius:12px;text-align:center;line-height:46px;"><img src="${this.giftChecklistIconUrl}" width="24" height="24" alt="" style="vertical-align:middle;border:0;"></div>
                   </td>
                   <td style="padding:18px 18px 18px 14px;vertical-align:top;">
                     <div style="font-size:16px;font-weight:bold;color:#23302b;">Чек-лист «30 дней заботы о себе»</div>

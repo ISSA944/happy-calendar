@@ -123,6 +123,11 @@
   @keyframes landing-tree-sway { 0%, 100% { transform: rotate(-1.4deg); } 50% { transform: rotate(1.4deg); } }
   .animate-landing-tree-sway { animation: landing-tree-sway 6s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
 
+  /* Прогресс-заливка активного сегмента карусели настроения (как сторис в Instagram/Кинопоиске) —
+     animation-duration задаётся инлайном в LandingMood.tsx, чтобы совпадать с интервалом автопрокрутки. */
+  @keyframes landing-story-fill { from { width: 0%; } to { width: 100%; } }
+  .animate-landing-story-fill { animation-name: landing-story-fill; animation-timing-function: linear; animation-fill-mode: forwards; }
+
   @keyframes landing-soft-glow-text { 0%, 100% { text-shadow: 0 0 0 rgba(47,167,160,0); } 50% { text-shadow: 0 0 15px rgba(47,167,160,.35); } }
   .animate-landing-soft-glow-text { animation: landing-soft-glow-text 3s infinite ease-in-out; }
 

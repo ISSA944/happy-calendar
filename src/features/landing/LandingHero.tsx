@@ -8,39 +8,55 @@ const FEATURES = [
   { icon: 'target', label: 'Твои цели и мягкий прогресс' },
 ]
 
-// Силуэты леса на фоне hero — простые круглые кроны на стволе (flat-стиль, тон в тон с
-// Zen-Emerald), каждое дерево качается независимо через animate-landing-tree-sway + свою
-// animationDelay/Duration ниже, чтобы не выглядело одним синхронным блоком.
-const FOREST_TREES = [
-  { x: 40, scale: 0.8, tone: 'rgba(0,106,101,0.10)', delay: '0s', duration: '7s' },
-  { x: 95, scale: 1.1, tone: 'rgba(47,167,160,0.16)', delay: '-2.4s', duration: '5.5s' },
-  { x: 340, scale: 0.9, tone: 'rgba(0,106,101,0.11)', delay: '-4s', duration: '6.5s' },
-  { x: 300, scale: 1.25, tone: 'rgba(47,167,160,0.17)', delay: '-1.2s', duration: '5s' },
-  { x: 15, scale: 0.55, tone: 'rgba(0,106,101,0.08)', delay: '-3.2s', duration: '7.5s' },
-  { x: 375, scale: 0.6, tone: 'rgba(0,106,101,0.08)', delay: '-5.1s', duration: '6.8s' },
+// Силуэты леса на фоне hero — каждое дерево своя маленькая абсолютно позиционированная SVG
+// (НЕ общий viewBox на всю секцию — на мобильном карточка занимает почти всю ширину экрана,
+// общий viewBox с preserveAspectRatio="slice" обреза́л деревья по бокам за пределы кадра).
+// Деревья стоят в двух полосах — над карточкой и под ней, где на мобильном реально есть
+// пустое место (карточка вертикально центрирована в min-h-[100svh]).
+interface TreeSpec {
+  leftPct: number
+  size: number
+  tone: string
+  delay: string
+  duration: string
+  band: 'top' | 'bottom'
+}
+
+const FOREST_TREES: TreeSpec[] = [
+  { leftPct: 4, size: 56, tone: 'rgba(0,106,101,0.4)', delay: '0s', duration: '7s', band: 'top' },
+  { leftPct: 24, size: 78, tone: 'rgba(47,167,160,0.55)', delay: '-2.4s', duration: '5.5s', band: 'top' },
+  { leftPct: 58, size: 64, tone: 'rgba(0,106,101,0.42)', delay: '-1s', duration: '6.2s', band: 'top' },
+  { leftPct: 84, size: 58, tone: 'rgba(0,106,101,0.4)', delay: '-4s', duration: '6.5s', band: 'top' },
+
+  { leftPct: 8, size: 66, tone: 'rgba(0,106,101,0.42)', delay: '-3.2s', duration: '7.5s', band: 'bottom' },
+  { leftPct: 32, size: 84, tone: 'rgba(47,167,160,0.55)', delay: '-1.2s', duration: '5s', band: 'bottom' },
+  { leftPct: 62, size: 58, tone: 'rgba(0,106,101,0.38)', delay: '-5.1s', duration: '6.8s', band: 'bottom' },
+  { leftPct: 86, size: 70, tone: 'rgba(0,106,101,0.42)', delay: '-2s', duration: '7.2s', band: 'bottom' },
 ]
 
-/** Одно дерево: ствол + круглая крона, качается от корня (transform-origin: bottom). */
-function ForestTree({ x, scale, tone, delay, duration }: (typeof FOREST_TREES)[number]) {
+/** Одно дерево: ствол + круглая крона, качается от корня (transform-origin: bottom, см. index.css). */
+function ForestTree({ leftPct, size, tone, delay, duration, band }: TreeSpec) {
   return (
-    <g
-      className="animate-landing-tree-sway"
-      style={{ transformOrigin: `${x}px 400px`, animationDelay: delay, animationDuration: duration }}
-      transform={`translate(${x}, ${400 - 130 * scale}) scale(${scale})`}
+    <div
+      className={`absolute animate-landing-tree-sway pointer-events-none ${band === 'top' ? 'top-2' : 'bottom-2'}`}
+      style={{ left: `${leftPct}%`, width: size, height: size, animationDelay: delay, animationDuration: duration }}
+      aria-hidden="true"
     >
-      <rect x="-4" y="60" width="8" height="70" rx="3" fill={tone} />
-      <circle cx="0" cy="35" r="42" fill={tone} />
-      <circle cx="-24" cy="55" r="26" fill={tone} />
-      <circle cx="24" cy="55" r="26" fill={tone} />
-    </g>
+      <svg viewBox="0 0 80 100" className="w-full h-full">
+        <rect x="36" y="60" width="8" height="35" rx="3" fill={tone} />
+        <circle cx="40" cy="38" r="34" fill={tone} />
+        <circle cx="16" cy="55" r="20" fill={tone} />
+        <circle cx="64" cy="55" r="20" fill={tone} />
+      </svg>
+    </div>
   )
 }
 
 /**
  * Hero — «Здесь можно выдохнуть». Орб и фон — те же, что были на старом WelcomePage
  * (см. историю src/pages/WelcomePage.tsx): сплошной градиентный круг с welcome-orb.webp
- * поверх mix-blend-overlay + белая иконка spa, фон — hero-gradient (index.css). За карточкой —
- * лёгкий лес (силуэты деревьев, покачивающиеся от ветерка), см. FOREST_TREES выше.
+ * поверх mix-blend-overlay + белая иконка spa, фон — hero-gradient (index.css). Над и под
+ * карточкой — лёгкий лес (силуэты деревьев, покачивающиеся от ветерка), см. FOREST_TREES выше.
  */
 export function LandingHero() {
   return (
@@ -48,18 +64,9 @@ export function LandingHero() {
       className="relative min-h-[100svh] flex flex-col items-center justify-center overflow-hidden px-6 hero-gradient"
       id="hero"
     >
-      {/* Лес на фоне — за дышащим пятном и карточкой, viewBox 0 0 400 400 привязан к низу
-          секции (xMidYMax slice), чтобы деревья всегда стояли на "земле" независимо от высоты. */}
-      <svg
-        className="absolute inset-0 w-full h-full pointer-events-none z-0"
-        viewBox="0 0 400 400"
-        preserveAspectRatio="xMidYMax slice"
-        aria-hidden="true"
-      >
-        {FOREST_TREES.map((t, i) => (
-          <ForestTree key={i} {...t} />
-        ))}
-      </svg>
+      {FOREST_TREES.map((t, i) => (
+        <ForestTree key={i} {...t} />
+      ))}
 
       {/* Дышащее пятно за карточкой — декоративное движение фона, без стекла на самой карточке. */}
       <div

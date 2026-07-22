@@ -1,5 +1,6 @@
 import { SectionEyebrow, GiftCtaBlock } from './LandingShared'
 import { ThemeArt } from '../holidays/ThemeArt'
+import { getGreeting, getTodayFormatted, getMoodImage } from '../../services/content.service'
 
 const FEATURES = [
   { icon: 'stars', title: 'Гороскоп', text: 'Прогноз по твоему знаку — кратко и по делу.', pos: 'top-4 -left-6', delay: '0s' },
@@ -46,41 +47,79 @@ export function LandingAbout() {
         {/* Телефон-мокап — корпус iPhone 14/15 Pro Max, контур из Figma (node 15:70), 477x972 */}
         <div className="relative z-10 w-64 aspect-[477/972] drop-shadow-2xl">
           <div className="absolute inset-[2.06%_5.03%_2.06%_4.82%] rounded-[30px] overflow-hidden bg-surface">
-            <div className="pt-8 px-3 space-y-2.5 text-left">
-              <p className="text-[9px] text-center text-on-surface-variant">Сегодня — 17 июня</p>
-              <h3 className="text-lg font-bold text-primary leading-none font-headline">Добрый день</h3>
-              <div className="flex flex-wrap gap-1">
-                <span className="text-[7px] font-bold bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded-full">♐ Стрелец</span>
-                <span className="text-[7px] font-bold bg-accent/10 text-primary px-1.5 py-0.5 rounded-full">Спокойна</span>
+            {/* Мини-копия реального HomePage.tsx — тот же порядок блоков и стили (просто в масштабе),
+                не абстрактное приближение: шапка (аватар/дата/колокольчик) → приветствие+знак →
+                Праздники сегодня (2 карточки) → Твои цели → баннер настроения. */}
+            <div className="pt-7 px-3 pb-3 space-y-2.5 text-left">
+              {/* Шапка — HomePage.tsx: аватар слева, дата по центру, колокольчик справа */}
+              <div className="flex items-center justify-between">
+                <div className="w-5 h-5 rounded-full bg-surface-container-high flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-outline-variant" style={{ fontSize: '11px' }}>person</span>
+                </div>
+                <span className="text-[6px] font-semibold text-on-surface-variant font-headline">Сегодня — {getTodayFormatted()}</span>
+                <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '11px' }}>notifications</span>
               </div>
-              <div className="flex flex-col gap-1.5">
-                <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm">
-                  <div className="h-8"><ThemeArt themeKey="Уютные пустяки и радости" className="w-full h-full" /></div>
-                  <div className="p-1.5">
-                    <p className="text-[7px] font-bold text-primary uppercase">Праздник</p>
-                    <p className="text-[8px] font-bold leading-tight text-on-surface">Открытки сегодня</p>
+
+              {/* Приветствие + знак зодиака */}
+              <div className="space-y-1">
+                <h3 className="text-[15px] font-extrabold text-on-surface leading-none font-headline tracking-tight">{getGreeting()}</h3>
+                <span className="inline-flex items-center px-1.5 py-0.5 bg-surface-container rounded-full text-[6px] font-medium text-on-surface-variant">
+                  Твой знак: Стрелец
+                </span>
+              </div>
+
+              {/* Праздники сегодня — 2 карточки в ряд, как HolidaysTodayBlock.tsx */}
+              <div>
+                <p className="text-[7px] font-bold text-on-surface mb-1 font-headline">Праздники сегодня</p>
+                <div className="grid grid-cols-2 gap-1">
+                  <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+                    <div className="h-6"><ThemeArt themeKey="Уютные пустяки и радости" className="w-full h-full" /></div>
+                    <div className="p-1">
+                      <p className="text-[5px] font-bold text-primary uppercase tracking-wide">Праздник дня</p>
+                      <p className="text-[6px] font-bold leading-tight text-on-surface">Открытки сегодня</p>
+                    </div>
+                  </div>
+                  <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+                    <div className="h-6"><ThemeArt themeKey="Забота о себе и спокойствие" className="w-full h-full" /></div>
+                    <div className="p-1">
+                      <p className="text-[5px] font-bold text-primary uppercase tracking-wide">Забота о себе</p>
+                      <p className="text-[6px] font-bold leading-tight text-on-surface">День спокойствия</p>
+                    </div>
                   </div>
                 </div>
-                <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm">
-                  <div className="h-8"><ThemeArt themeKey="Забота о себе и спокойствие" className="w-full h-full" /></div>
-                  <div className="p-1.5">
-                    <p className="text-[7px] font-bold text-primary uppercase">Забота</p>
-                    <p className="text-[8px] font-bold leading-tight text-on-surface">День спокойствия</p>
+              </div>
+
+              {/* Твои цели — заголовок+«Изменить» пилюля, потом карточка с рядами, как GoalsProgressBlock/GoalsProgress */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[7px] font-bold text-on-surface font-headline">Твои цели</p>
+                  <span className="text-[5px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">Изменить</span>
+                </div>
+                <div className="bg-surface-container-lowest rounded-xl p-1.5 shadow-sm space-y-1.5">
+                  <div>
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <span className="material-symbols-outlined text-primary" style={{ fontSize: '7px' }}>spa</span>
+                      <span className="flex-1 text-[6px] font-semibold text-on-surface truncate">Стать спокойнее</span>
+                      <span className="text-[5px] font-semibold text-on-surface-variant whitespace-nowrap">11 дней</span>
+                    </div>
+                    <div className="h-1 rounded-full bg-surface-container-high overflow-hidden"><div className="h-full bg-primary" style={{ width: '60%' }} /></div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <span className="material-symbols-outlined text-primary" style={{ fontSize: '7px' }}>favorite</span>
+                      <span className="flex-1 text-[6px] font-semibold text-on-surface truncate">Научиться слышать себя</span>
+                      <span className="text-[5px] font-semibold text-on-surface-variant whitespace-nowrap">7 дней</span>
+                    </div>
+                    <div className="h-1 rounded-full bg-surface-container-high overflow-hidden"><div className="h-full bg-primary" style={{ width: '40%' }} /></div>
                   </div>
                 </div>
               </div>
-              <div className="bg-surface-container-lowest rounded-2xl p-2 shadow-sm">
-                <p className="text-[8px] font-bold mb-1 text-on-surface">Твои цели</p>
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="material-symbols-outlined text-primary" style={{ fontSize: '8px' }}>spa</span>
-                  <div className="flex-1 h-1 rounded-full bg-surface-container-high overflow-hidden"><div className="h-full bg-primary" style={{ width: '60%' }} /></div>
-                  <span className="text-[7px] text-on-surface-variant">11</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-primary" style={{ fontSize: '8px' }}>favorite</span>
-                  <div className="flex-1 h-1 rounded-full bg-surface-container-high overflow-hidden"><div className="h-full bg-primary" style={{ width: '40%' }} /></div>
-                  <span className="text-[7px] text-on-surface-variant">7</span>
-                </div>
+
+              {/* Баннер настроения — как в HomePage.tsx (картинка + бейдж настроения в углу) */}
+              <div className="rounded-xl overflow-hidden relative h-8">
+                <img src={getMoodImage('Спокойна')} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                <span className="absolute top-1 right-1 bg-white/90 text-primary px-1.5 py-0.5 rounded-full text-[5px] font-bold uppercase tracking-wide">Спокойна</span>
               </div>
             </div>
           </div>
