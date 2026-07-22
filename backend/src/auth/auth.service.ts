@@ -553,8 +553,10 @@ export class AuthService {
   // Вложения (PDF-подарки) — best-effort: если файлов нет, письмо уходит без них.
   private async sendWelcomeEmail(to: string, name: string | null) {
     const subject = 'Добро пожаловать в YoYoJoy Day 🌿';
-    const html = this.renderWelcomeEmailHtml(name);
     const gifts = this.loadGiftAttachments();
+    const trackerFile = gifts.find((g) => g.filename.toLowerCase().includes('tracker'))?.filename ?? null;
+    const checklistFile = gifts.find((g) => g.filename.toLowerCase().includes('checklist'))?.filename ?? null;
+    const html = this.renderWelcomeEmailHtml(name, trackerFile, checklistFile);
     const giftNote = gifts.length ? ` (+${gifts.length} PDF)` : ' (без вложений — файлов подарков пока нет)';
 
     if (this.provider === 'smtp' && this.smtpTransport) {
@@ -595,7 +597,11 @@ export class AuthService {
   private readonly giftTrackerIconUrl = 'https://yoyojoy.online/email-assets/gift-tracker.png';
   private readonly giftChecklistIconUrl = 'https://yoyojoy.online/email-assets/gift-checklist.png';
 
-  private renderWelcomeEmailHtml(name: string | null): string {
+  private renderWelcomeEmailHtml(
+    name: string | null,
+    trackerFile: string | null,
+    checklistFile: string | null,
+  ): string {
     const greeting = name && name.trim() ? `Привет, ${name.trim()}!` : 'Привет!';
     const telegramUrl = this.config.get<string>('TELEGRAM_CHANNEL_URL');
     const maxUrl = this.config.get<string>('MAX_CHANNEL_URL');
@@ -638,9 +644,11 @@ export class AuthService {
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="x-apple-disable-message-reformatting"/>
 <title>YoYoJoy Day</title>
 </head>
 <body style="margin:0;padding:32px 16px;background:#F0EBE1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Держи подарки за регистрацию 🎁 Трекер привычек и чек-лист «30 дней заботы о себе» — внутри.</div>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
     <tr>
       <td align="center">
@@ -667,6 +675,7 @@ export class AuthService {
                   <td style="padding:18px 18px 18px 14px;vertical-align:top;">
                     <div style="font-size:16px;font-weight:bold;color:#23302b;">Трекер привычек на месяц</div>
                     <div style="font-size:14px;line-height:1.5;color:#54605b;margin-top:4px;">Простая структура, чтобы мягко закрепить полезные ритмы и видеть свой прогресс.</div>
+                    <div style="font-size:12px;color:#8B948F;margin-top:6px;">📎 ${trackerFile ?? 'Трекер-привычек.pdf'}</div>
                   </td>
                 </tr>
               </table>
@@ -679,6 +688,7 @@ export class AuthService {
                   <td style="padding:18px 18px 18px 14px;vertical-align:top;">
                     <div style="font-size:16px;font-weight:bold;color:#23302b;">Чек-лист «30 дней заботы о себе»</div>
                     <div style="font-size:14px;line-height:1.5;color:#54605b;margin-top:4px;">Тёплый микро-ритуал на каждый день: маленькие шаги, из которых складывается забота.</div>
+                    <div style="font-size:12px;color:#8B948F;margin-top:6px;">📎 ${checklistFile ?? '30-дней-заботы-о-себе.pdf'}</div>
                   </td>
                 </tr>
               </table>
