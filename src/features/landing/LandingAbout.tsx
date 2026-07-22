@@ -53,7 +53,10 @@ export function LandingAbout() {
           <div className="absolute inset-[2.06%_5.03%_2.06%_4.82%] rounded-[30px] overflow-hidden bg-surface">
             {/* Мини-копия реального HomePage.tsx — тот же порядок блоков и стили (просто в масштабе),
                 не абстрактное приближение: шапка (аватар/дата/колокольчик) → приветствие+знак →
-                Праздники сегодня (2 карточки) → Твои цели → баннер настроения. */}
+                Праздники сегодня (2 карточки) → Твои цели → баннер настроения → Поддержка на
+                сегодня → Гороскоп на сегодня. Контент выше aspect-[477/972] корпуса — низ прикрыт
+                fade-to-white градиентом (ниже), честно показывая «дальше скролл», как в реальном
+                приложении, а не обрезая блок на середине или сжимая текст обратно до нечитаемого. */}
             <div className="pt-8 px-3.5 pb-3.5 space-y-3 text-left">
               {/* Шапка — HomePage.tsx: аватар слева, дата по центру, колокольчик справа */}
               <div className="flex items-center justify-between">
@@ -125,7 +128,55 @@ export function LandingAbout() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
                 <span className="absolute top-1.5 right-1.5 bg-white/90 text-primary px-2 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-wide">Спокойна</span>
               </div>
+
+              {/* Поддержка на сегодня — как в HomePage.tsx: заголовок+чип настроения, курсивная
+                  фраза (та же демо-фраза «Спокойна», что в LandingMood.tsx — единообразие текста
+                  по всему лендингу), декоративные пилюли снизу. */}
+              <div className="bg-surface-container-low rounded-xl p-2.5 shadow-sm space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[9px] font-bold text-on-surface font-headline">Поддержка на сегодня</p>
+                  <span className="text-[6px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full uppercase tracking-wide shrink-0">Спокойна</span>
+                </div>
+                <p className="text-[8px] italic text-on-surface leading-relaxed">
+                  Тишина внутри — лучший советчик. Сегодня можно просто быть, без лишних усилий.
+                </p>
+                <div className="flex gap-1.5 pt-0.5">
+                  <div className="flex-1 h-5 rounded-lg bg-primary-container flex items-center justify-center text-white text-[6px] font-semibold">Другая фраза</div>
+                  <div className="flex-1 h-5 rounded-lg border border-outline-variant/40 flex items-center justify-center gap-0.5 text-on-surface-variant text-[6px] font-semibold">
+                    <span className="material-symbols-outlined" style={{ fontSize: '8px' }}>bookmark</span>
+                    Сохранить
+                  </div>
+                </div>
+              </div>
+
+              {/* Гороскоп на сегодня — заголовок+пилюля Сжато/Подробнее (декоративно, Сжато активна),
+                  Главное/Совет той же структуры, что HomePage.tsx. */}
+              <div className="bg-surface-container-lowest rounded-xl p-2.5 shadow-sm space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[9px] font-bold text-on-surface font-headline">Гороскоп на сегодня</p>
+                  <div className="flex bg-surface-container rounded-full p-0.5 shrink-0">
+                    <span className="px-1.5 py-0.5 rounded-full bg-white shadow-sm text-[6px] font-semibold text-primary">Сжато</span>
+                    <span className="px-1.5 py-0.5 text-[6px] font-semibold text-on-surface-variant">Подробнее</span>
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  <span className="material-symbols-outlined text-primary shrink-0" style={{ fontSize: '9px' }}>stars</span>
+                  <p className="text-[7.5px] leading-relaxed text-on-surface">
+                    <span className="font-bold">Главное:</span> Сегодня хороший день, чтобы довериться своей интуиции — важное решение даётся легче, чем кажется.
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  <span className="material-symbols-outlined text-primary shrink-0" style={{ fontSize: '9px' }}>lightbulb</span>
+                  <p className="text-[7.5px] leading-relaxed text-on-surface">
+                    <span className="font-bold">Совет:</span> Не торопи события — сегодня работает подход шаг за шагом.
+                  </p>
+                </div>
+              </div>
             </div>
+
+            {/* Fade-to-white — честно показывает «здесь есть ещё контент, дальше скролл», не
+                обрезая последний блок на середине. */}
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-surface to-transparent pointer-events-none" />
           </div>
 
           {/* Корпус — evenodd-контур: сплошная заливка только по рамке, центр (экран) прозрачный */}
