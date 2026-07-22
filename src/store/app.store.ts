@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { localTimeToUtc, utcToLocal } from '../lib/time'
 import { apiClient } from '../api'
 import { getAccessToken, clearAuthTokens } from '../auth/token-storage'
 import { getZodiac } from '../utils/zodiac'
@@ -352,7 +351,7 @@ export const useAppStore = create<AppState>()(
       setHoroscopeTime: (horoscopeTime) => {
         set({ horoscopeTime })
         if (getAccessToken()) {
-          apiClient.patch('profile', { horoscopeTime: localTimeToUtc(horoscopeTime) }).catch((err) => {
+          apiClient.patch('profile', { horoscopeTime }).catch((err) => {
             console.warn('[store] Failed to sync horoscopeTime with backend', err)
           })
         }
@@ -413,7 +412,7 @@ export const useAppStore = create<AppState>()(
       setSupportTime: (supportTime) => {
         set({ supportTime })
         if (getAccessToken()) {
-          apiClient.patch('profile', { supportTime: localTimeToUtc(supportTime) }).catch((err) => {
+          apiClient.patch('profile', { supportTime }).catch((err) => {
             console.warn('[store] Failed to sync supportTime with backend', err)
           })
         }
@@ -422,7 +421,7 @@ export const useAppStore = create<AppState>()(
       setHolidaysTime: (holidaysTime) => {
         set({ holidaysTime })
         if (getAccessToken()) {
-          apiClient.patch('profile', { holidaysTime: localTimeToUtc(holidaysTime) }).catch((err) => {
+          apiClient.patch('profile', { holidaysTime }).catch((err) => {
             console.warn('[store] Failed to sync holidaysTime with backend', err)
           })
         }
@@ -431,7 +430,7 @@ export const useAppStore = create<AppState>()(
       setPersonalCareTime: (personalCareTime) => {
         set({ personalCareTime })
         if (getAccessToken()) {
-          apiClient.patch('profile', { personalCareTime: localTimeToUtc(personalCareTime) }).catch((err) => {
+          apiClient.patch('profile', { personalCareTime }).catch((err) => {
             console.warn('[store] Failed to sync personalCareTime with backend', err)
           })
         }
@@ -538,15 +537,11 @@ export const useAppStore = create<AppState>()(
             profilePhoto: data.profile?.avatarUrl ?? get().profilePhoto,
             currentMood: data.profile?.currentMood ?? get().currentMood,
             horoscopeTime: data.prefs?.horoscopeTime
-              ? utcToLocal(data.prefs.horoscopeTime)
-              : data.prefs?.pushTime
-                ? utcToLocal(data.prefs.pushTime)
-                : get().horoscopeTime,
-            supportTime: data.prefs?.supportTime ? utcToLocal(data.prefs.supportTime) : get().supportTime,
-            holidaysTime: data.prefs?.holidaysTime ? utcToLocal(data.prefs.holidaysTime) : get().holidaysTime,
-            personalCareTime: data.prefs?.personalCareTime
-              ? utcToLocal(data.prefs.personalCareTime)
-              : get().personalCareTime,
+              ?? data.prefs?.pushTime
+              ?? get().horoscopeTime,
+            supportTime: data.prefs?.supportTime ?? get().supportTime,
+            holidaysTime: data.prefs?.holidaysTime ?? get().holidaysTime,
+            personalCareTime: data.prefs?.personalCareTime ?? get().personalCareTime,
             showHoroscope: data.prefs?.horoscopeEnabled ?? get().showHoroscope,
             showHolidays: data.prefs?.holidaysEnabled ?? get().showHolidays,
             showSupport: data.prefs?.supportEnabled ?? get().showSupport,
