@@ -72,12 +72,13 @@ export async function subscribeToPush(): Promise<PushResult> {
       }
       const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
+      // Reuse an existing browser subscription instead of unsubscribing + resubscribing on every
+      // call: unsubscribe()+subscribe() reliably mints a brand-new endpoint on iOS Safari, and
+      // since the backend was never told about the old endpoint being dropped, it kept sending to
+      // it forever (until it happened to 410). Onboarding running more than once (re-registration,
+      // repeated test logins) is exactly when this piled up dead rows in web_push_subscriptions.
       const existing = await registration.pushManager.getSubscription();
-      if (existing) {
-        await existing.unsubscribe();
-      }
-
-      const subscription = await registration.pushManager.subscribe({
+      const subscription = existing ?? await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey as BufferSource,
       });
