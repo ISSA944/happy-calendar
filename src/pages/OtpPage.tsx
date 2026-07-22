@@ -307,8 +307,9 @@ export function OtpPage() {
           </button>
 
           {showGiftSent ? (
-            <p className="text-center text-sm font-semibold text-primary">
-              Подарок отправлен на {email} 🎁
+            <p className="flex items-center justify-center gap-1.5 text-center text-sm font-semibold text-primary">
+              <span className="material-symbols-outlined text-lg">redeem</span>
+              Подарок отправлен на {email}
             </p>
           ) : submitError ? (
             <p className="text-center text-sm font-medium text-red-500">

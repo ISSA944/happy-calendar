@@ -70,11 +70,11 @@ export function LandingMood() {
             </div>
           ))}
         </div>
-        <div className="flex gap-1.5 mt-3">
+        <div className="flex justify-center gap-1.5 mt-3">
           {MOODS.map((m, i) => (
-            <div
+            <span
               key={m.id}
-              className={`flex-1 h-1 rounded-full transition-colors ${i === activeIdx ? 'bg-primary' : 'bg-primary/20'}`}
+              className={`h-1.5 rounded-full transition-all ${i === activeIdx ? 'w-5 bg-primary' : 'w-1.5 bg-primary/20'}`}
             />
           ))}
         </div>

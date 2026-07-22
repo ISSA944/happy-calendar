@@ -36,6 +36,8 @@ export function ProfileSetupPage() {
   const setShowOnboardingLoader = useAppStore((s) => s.setShowOnboardingLoader)
   const profilePhoto = useAppStore((s) => s.profilePhoto)
   const setProfilePhoto = useAppStore((s) => s.setProfilePhoto)
+  const userName = useAppStore((s) => s.userName)
+  const setUserName = useAppStore((s) => s.setUserName)
   const setGoals = useAppStore((s) => s.setGoals)
   const { subscribe } = useWebPush()
 
@@ -156,6 +158,20 @@ export function ProfileSetupPage() {
             </div>
           </button>
           <button onClick={handlePhotoClick} className="mt-3 text-sm font-semibold text-primary outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-full">Добавить фото</button>
+
+          {/* Имя — если уже ввели на регистрации, просто показываем; если пропустили, даём
+              короткое поле прямо тут. Необязательное, как и на регистрации — не влияет на isValid. */}
+          {userName ? (
+            <p className="mt-4 text-base font-bold text-on-surface">{userName}</p>
+          ) : (
+            <input
+              type="text"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              placeholder="Введите своё имя"
+              className="mt-4 w-full max-w-[240px] h-11 px-4 bg-surface-container-lowest border border-outline-variant rounded-full text-center text-sm font-medium text-on-surface placeholder:text-on-surface-variant/50 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none"
+            />
+          )}
 
           {/* Zodiac — shows in right col on landscape */}
           <div className="hidden landscape:flex mt-6 w-full bg-surface-container-lowest border border-outline-variant/30 rounded-[24px] p-4 items-center justify-between shadow-sm">

@@ -3,18 +3,18 @@ import { ThemeArt } from '../holidays/ThemeArt'
 import { getGreeting, getTodayFormatted, getMoodImage } from '../../services/content.service'
 
 const FEATURES = [
-  { icon: 'stars', title: 'Гороскоп', text: 'Прогноз по твоему знаку — кратко и по делу.', delay: '0s' },
-  { icon: 'favorite', title: 'Поддержка', text: 'Тёплые слова под твоё настроение.', delay: '-2s' },
-  { icon: 'celebration', title: 'Праздники', text: 'Готовые открытки-поздравления — выбирай и делись.', delay: '-4s' },
-  { icon: 'target', title: 'Цели', text: 'Прогресс к себе настоящей, шаг за шагом.', delay: '-6s' },
+  { icon: 'stars', title: 'Гороскоп', text: 'Прогноз по твоему знаку — кратко и по делу.', pos: 'top-4 -left-6', delay: '0s' },
+  { icon: 'favorite', title: 'Поддержка', text: 'Тёплые слова под твоё настроение.', pos: 'top-20 -right-4', delay: '-2s' },
+  { icon: 'celebration', title: 'Праздники', text: 'Готовые открытки-поздравления — выбирай и делись.', pos: 'bottom-24 -left-8', delay: '-4s' },
+  { icon: 'target', title: 'Цели', text: 'Прогресс к себе настоящей, шаг за шагом.', pos: 'bottom-10 -right-6', delay: '-6s' },
 ]
 
-/** О приложении — 2x2 сетка карточек-фичей НАД телефоном (не поверх него — на реальном узком
- * мобильном экране абсолютно позиционированные карточки вокруг телефона перекрывали его и делали
- * содержимое нечитаемым, см. историю правок) + телефон-мокап крупнее и с более крупным текстом
- * внутри, чем раньше — тоже ради читаемости на реальном устройстве. Корпус телефона — реальный
- * контур iPhone 14/15 Pro Max (Figma Community "Flat Design Device Mockups", node 15:70),
- * отрисован inline-SVG поверх экрана; мини-карточки внутри телефона — реальный ThemeArt. */
+/** О приложении — телефон-мокап + парящие «liquid glass» карточки-фичи внахлёст вокруг него
+ * (осознанно, по требованию — на узком мобильном экране это частично перекрывает текст внутри
+ * телефона, см. историю правок). Телефон крупнее и с более крупным текстом внутри, чем раньше —
+ * ради читаемости на реальном устройстве. Корпус телефона — реальный контур iPhone 14/15 Pro Max
+ * (Figma Community "Flat Design Device Mockups", node 15:70), отрисован inline-SVG поверх экрана;
+ * мини-карточки внутри телефона — реальный ThemeArt. */
 export function LandingAbout() {
   return (
     <section className="relative px-6 overflow-hidden bg-surface pt-8 pb-6">
@@ -29,27 +29,25 @@ export function LandingAbout() {
         </p>
       </div>
 
-      <div className="max-w-sm mx-auto grid grid-cols-2 gap-3 mb-10 landing-fade-in-scroll">
+      <div className="relative max-w-sm mx-auto h-[650px] flex items-center justify-center landing-fade-in-scroll">
         {FEATURES.map((f) => (
           <div
             key={f.title}
-            className="landing-glass-card p-3.5 rounded-2xl shadow-lg shadow-black/5 animate-landing-float-slow"
+            className={`absolute ${f.pos} z-30 w-44 landing-glass-card p-4 rounded-3xl shadow-xl shadow-black/5 animate-landing-float-slow`}
             style={{ animationDelay: f.delay }}
           >
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-3 mb-1.5">
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-primary text-base">{f.icon}</span>
               </div>
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-on-surface leading-tight">{f.title}</h4>
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-on-surface">{f.title}</h4>
             </div>
             <p className="text-[10px] text-on-surface-variant leading-normal">{f.text}</p>
           </div>
         ))}
-      </div>
 
-      <div className="flex justify-center landing-fade-in-scroll">
         {/* Телефон-мокап — корпус iPhone 14/15 Pro Max, контур из Figma (node 15:70), 477x972 */}
-        <div className="relative w-72 aspect-[477/972] drop-shadow-2xl">
+        <div className="relative z-10 w-72 aspect-[477/972] drop-shadow-2xl">
           <div className="absolute inset-[2.06%_5.03%_2.06%_4.82%] rounded-[30px] overflow-hidden bg-surface">
             {/* Мини-копия реального HomePage.tsx — тот же порядок блоков и стили (просто в масштабе),
                 не абстрактное приближение: шапка (аватар/дата/колокольчик) → приветствие+знак →
