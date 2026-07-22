@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMoodImage } from '../../services/content.service'
 import { SectionEyebrow, GiftCtaBlock } from './LandingShared'
@@ -22,13 +22,7 @@ const MOOD_PHRASES: Record<string, string> = {
   'Грустна': 'Грусть — тоже часть заботы о себе. Позволь себе прожить её, не торопясь.',
 }
 
-// Автопрокрутка карусели настроения — как «сторис» в Кинопоиске/Instagram: слайд сам сменяется
-// каждые AUTO_ADVANCE_MS, а активный сегмент внизу за это время заполняется слева направо
-// (см. .animate-landing-story-fill в index.css). Таймер завязан на activeIdx как на единственный
-// источник истины — рестартует что при автопрокрутке, что при ручном свайпе (handleScroll ниже).
-const AUTO_ADVANCE_MS = 5500
-
-/** Настроение — одна широкая карточка за раз (свайп/автопрокрутка), синхронизированная с блоком
+/** Настроение — одна широкая карточка за раз (свайп), синхронизированная с блоком
  * поддержки ниже (ТЗ п.2.7, п.5, гибридный мув настроения — см. CLAUDE.md). */
 export function LandingMood() {
   const navigate = useNavigate()
@@ -41,16 +35,6 @@ export function LandingMood() {
     const idx = Math.round(el.scrollLeft / el.clientWidth)
     setActiveIdx(Math.max(0, Math.min(MOODS.length - 1, idx)))
   }, [])
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const el = scrollRef.current
-      const next = (activeIdx + 1) % MOODS.length
-      if (el) el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' })
-      setActiveIdx(next)
-    }, AUTO_ADVANCE_MS)
-    return () => clearTimeout(timer)
-  }, [activeIdx])
 
   const activeMood = MOODS[activeIdx]
 
@@ -88,16 +72,10 @@ export function LandingMood() {
         </div>
         <div className="flex gap-1.5 mt-3">
           {MOODS.map((m, i) => (
-            <div key={m.id} className="flex-1 h-1 rounded-full bg-primary/20 overflow-hidden">
-              {i < activeIdx && <div className="h-full w-full bg-primary" />}
-              {i === activeIdx && (
-                <div
-                  key={activeIdx}
-                  className="h-full bg-primary animate-landing-story-fill"
-                  style={{ animationDuration: `${AUTO_ADVANCE_MS}ms` }}
-                />
-              )}
-            </div>
+            <div
+              key={m.id}
+              className={`flex-1 h-1 rounded-full transition-colors ${i === activeIdx ? 'bg-primary' : 'bg-primary/20'}`}
+            />
           ))}
         </div>
       </div>

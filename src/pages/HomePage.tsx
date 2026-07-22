@@ -47,6 +47,7 @@ export function HomePage() {
   const currentMood        = useAppStore(s => s.currentMood)
   const gender             = useAppStore(s => s.gender)
   const zodiacSign         = useAppStore(s => s.zodiacSign)
+  const userName           = useAppStore(s => s.userName)
   const dailyPack          = useAppStore(s => s.dailyPack)
   const initDailyPack      = useAppStore(s => s.initDailyPack)
   const refreshSupportPhrase = useAppStore(s => s.refreshSupportPhrase)
@@ -143,7 +144,9 @@ export function HomePage() {
 
           {/* ── Greeting ── */}
           <section className="space-y-1 landscape:col-start-1 landscape:row-start-2">
-            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface leading-tight">{getGreeting()}</h1>
+            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface leading-tight">
+              {getGreeting()}{(userName || zodiacSign) && `, ${userName || zodiacSign}`}
+            </h1>
             <div className="inline-flex items-center px-3 py-1 bg-surface-container rounded-full text-xs font-medium text-on-surface-variant gap-1.5">
               <span>Твой знак: {zodiacSign || '—'}</span>
             </div>

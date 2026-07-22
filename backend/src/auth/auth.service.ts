@@ -662,7 +662,7 @@ export class AuthService {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#E9F3EF;border-radius:16px;margin:0 0 14px;">
                 <tr>
                   <td width="64" style="padding:18px 0 18px 18px;vertical-align:top;">
-                    <div style="width:46px;height:46px;background:#ffffff;border-radius:12px;text-align:center;line-height:46px;"><img src="${this.giftTrackerIconUrl}" width="24" height="24" alt="" style="vertical-align:middle;border:0;"></div>
+                    <div style="width:46px;height:46px;background:rgba(0,106,101,0.10);border-radius:50%;text-align:center;line-height:46px;"><img src="${this.giftTrackerIconUrl}" width="22" height="22" alt="" style="vertical-align:middle;border:0;"></div>
                   </td>
                   <td style="padding:18px 18px 18px 14px;vertical-align:top;">
                     <div style="font-size:16px;font-weight:bold;color:#23302b;">Трекер привычек на месяц</div>
@@ -674,7 +674,7 @@ export class AuthService {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#E9F3EF;border-radius:16px;margin:0 0 26px;">
                 <tr>
                   <td width="64" style="padding:18px 0 18px 18px;vertical-align:top;">
-                    <div style="width:46px;height:46px;background:#ffffff;border-radius:12px;text-align:center;line-height:46px;"><img src="${this.giftChecklistIconUrl}" width="24" height="24" alt="" style="vertical-align:middle;border:0;"></div>
+                    <div style="width:46px;height:46px;background:rgba(0,106,101,0.10);border-radius:50%;text-align:center;line-height:46px;"><img src="${this.giftChecklistIconUrl}" width="22" height="22" alt="" style="vertical-align:middle;border:0;"></div>
                   </td>
                   <td style="padding:18px 18px 18px 14px;vertical-align:top;">
                     <div style="font-size:16px;font-weight:bold;color:#23302b;">Чек-лист «30 дней заботы о себе»</div>

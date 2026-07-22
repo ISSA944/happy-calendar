@@ -18,6 +18,7 @@ export function SettingsPage() {
 
   const {
     userName,
+    zodiacSign,
     email,
     birthDate, setBirthDate,
     profilePhoto, setProfilePhoto,
@@ -120,7 +121,7 @@ export function SettingsPage() {
           </button>
           <div className="flex flex-col gap-1">
             <span className="font-headline text-xl font-bold text-on-surface">
-              {userName || 'Профиль'}
+              {userName || zodiacSign || 'Профиль'}
             </span>
             <button
               onClick={handlePhotoClick}
