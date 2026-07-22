@@ -5,6 +5,7 @@ import { TodayService } from '../today/today.service';
 import { WebPushService } from '../push/web-push.service';
 import { HolidaysService } from '../holidays';
 import { PersonalCareService } from '../personal-care';
+import { currentTimeInTz } from '../common/date.util';
 
 type PushContent = {
   title: string;
@@ -25,19 +26,18 @@ export class NotificationCronService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCron() {
-    const currentTime = this.getCurrentTimeKey();
-    this.logger.log(`Push CRON tick: ${currentTime}`);
-
-    // Юзер попадает в выборку, если ХОТЯ БЫ у одной включённой категории время == текущему,
-    // и есть хотя бы одна активная подписка (ТЗ п. 8: у каждой категории своё время).
+    // Юзер попадает в выборку, если хотя бы одна категория включена и есть хотя бы одна активная
+    // push-подписка. Совпадение времени больше НЕ фильтруется в SQL (одного глобального "текущего
+    // времени" не существует — у каждого юзера своя timezone, см. prefs.timezone), а считается
+    // ниже в коде через currentTimeInTz() для каждого юзера по его таймзоне.
     const prefsList = await this.prisma.prefs.findMany({
       where: {
         user: { webPushSubscriptions: { some: {} } },
         OR: [
-          { horoscopeEnabled: true, horoscopeTime: currentTime },
-          { supportEnabled: true, supportTime: currentTime },
-          { holidaysEnabled: true, holidaysTime: currentTime },
-          { personalCareEnabled: true, personalCareTime: currentTime },
+          { horoscopeEnabled: true },
+          { supportEnabled: true },
+          { holidaysEnabled: true },
+          { personalCareEnabled: true },
         ],
       },
       select: {
@@ -50,22 +50,35 @@ export class NotificationCronService {
         supportTime: true,
         holidaysTime: true,
         personalCareTime: true,
+        timezone: true,
         user: { select: { webPushSubscriptions: true } },
       },
     });
 
-    if (!prefsList.length) {
-      this.logger.log(`No push recipients for ${currentTime}`);
-      return;
-    }
+    if (!prefsList.length) return;
+
+    // Локальное HH:mm считаем один раз на уникальную таймзону за тик, а не заново на каждого юзера.
+    const localTimeByTz = new Map<string, string>();
+    const localTimeFor = (tz: string): string => {
+      let time = localTimeByTz.get(tz);
+      if (!time) {
+        time = currentTimeInTz(tz);
+        localTimeByTz.set(tz, time);
+      }
+      return time;
+    };
 
     for (const prefs of prefsList) {
       try {
-        // Какие категории «стреляют» именно в эту минуту.
+        const currentTime = localTimeFor(prefs.timezone);
+
+        // Какие категории «стреляют» именно в эту минуту (в локальном времени юзера).
         const fireHoroscope = prefs.horoscopeEnabled && prefs.horoscopeTime === currentTime;
         const fireSupport = prefs.supportEnabled && prefs.supportTime === currentTime;
         const fireHolidays = prefs.holidaysEnabled && prefs.holidaysTime === currentTime;
         const firePersonalCare = prefs.personalCareEnabled && prefs.personalCareTime === currentTime;
+
+        if (!fireHoroscope && !fireSupport && !fireHolidays && !firePersonalCare) continue;
 
         const contents = await this.buildPushContents(prefs.userId, {
           fireHoroscope,
@@ -125,13 +138,6 @@ export class NotificationCronService {
     }
   }
 
-  private getCurrentTimeKey(): string {
-    const now = new Date();
-    const h = String(now.getUTCHours()).padStart(2, '0');
-    const m = String(now.getUTCMinutes()).padStart(2, '0');
-    return `${h}:${m}`;
-  }
-
   /**
    * Собирает контент только для «стреляющих» категорий. Тяжёлый getTodayPack (AI/кэш)
    * вызываем лишь если нужен гороскоп или поддержка.
@@ -167,9 +173,12 @@ export class NotificationCronService {
     }
 
     if (fire.firePersonalCare) {
-      const care = await this.personalCareService.getToday(userId);
-      if (care) {
-        contents.push({ title: care.title, body: care.affirmation, type: 'daily_personal_care' });
+      // При нескольких активных целях getToday() отдаёт карточку на каждую — в пуш идёт первая,
+      // остальные упоминаются числом (сама детализация — в приложении, см. HolidaysTodayBlock).
+      const [main, ...rest] = await this.personalCareService.getToday(userId);
+      if (main) {
+        const body = rest.length > 0 ? `${main.affirmation} И ещё ${rest.length} по другим целям.` : main.affirmation;
+        contents.push({ title: main.title, body, type: 'daily_personal_care' });
       }
     }
 

@@ -39,7 +39,7 @@ export function LandingHolidays() {
   const handleChannelShare = (channel: ShareChannel['id']) => shareViaChannel(channel, shareTitle, POSTCARD_DEMO[tone])
 
   return (
-    <section className="bg-surface-container-low relative overflow-hidden py-24 px-6">
+    <section className="bg-surface-container-low relative overflow-hidden pt-8 pb-6 px-6">
       <div className="max-w-sm mx-auto text-center space-y-5 mb-14 landing-fade-in-scroll">
         <SectionEyebrow>ПРАЗДНИКИ</SectionEyebrow>
         <h2 className="font-headline text-3xl font-bold text-primary leading-tight">
@@ -50,7 +50,7 @@ export function LandingHolidays() {
         </p>
       </div>
 
-      <div className="max-w-sm mx-auto space-y-6">
+      <div className="max-w-sm mx-auto space-y-4">
         {/* Календарные праздники + мокап открытки */}
         <div className="bg-surface rounded-[2.5rem] p-7 shadow-xl shadow-black/[0.04] border border-surface-container-high space-y-4 landing-fade-in-scroll">
           <div className="flex items-center gap-3">
@@ -90,7 +90,6 @@ export function LandingHolidays() {
             >
               <span className="material-symbols-outlined text-2xl">ios_share</span>
             </button>
-            Поделиться:
             {LANDING_SHARE_CHANNELS.map((c, i) => (
               <span key={c.id} className="contents">
                 <button onClick={() => handleChannelShare(c.id)} className="underline decoration-primary/30 active:opacity-60">
@@ -114,7 +113,7 @@ export function LandingHolidays() {
             Каждый день — простое, посильное задание заботы. Маленькие тёплые шаги, после которых на душе
             становится спокойнее.
           </p>
-          <div className="rounded-3xl bg-accent/10 p-4 border border-accent/20 space-y-2">
+          <div className="rounded-3xl bg-accent/10 p-4 space-y-2">
             <div className="h-16 rounded-2xl overflow-hidden"><ThemeArt themeKey="Забота о себе и спокойствие" className="w-full h-full" /></div>
             <p className="text-[13px] font-bold text-on-surface">Твой личный день спокойствия</p>
             <p className="text-[12px] text-on-surface-variant leading-snug">

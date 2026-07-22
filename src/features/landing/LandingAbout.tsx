@@ -14,7 +14,7 @@ const FEATURES = [
  * отрисован inline-SVG поверх экрана; мини-карточки внутри телефона — реальный ThemeArt. */
 export function LandingAbout() {
   return (
-    <section className="relative px-6 overflow-hidden bg-surface py-24">
+    <section className="relative px-6 overflow-hidden bg-surface pt-8 pb-6">
       <div className="max-w-sm mx-auto text-center space-y-6 mb-14 landing-fade-in-scroll">
         <SectionEyebrow>О ПРИЛОЖЕНИИ</SectionEyebrow>
         <h2 className="font-headline text-3xl font-bold text-primary leading-tight">
@@ -53,7 +53,7 @@ export function LandingAbout() {
                 <span className="text-[7px] font-bold bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded-full">♐ Стрелец</span>
                 <span className="text-[7px] font-bold bg-accent/10 text-primary px-1.5 py-0.5 rounded-full">Спокойна</span>
               </div>
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm">
                   <div className="h-8"><ThemeArt themeKey="Уютные пустяки и радости" className="w-full h-full" /></div>
                   <div className="p-1.5">

@@ -166,10 +166,10 @@ type AppState = {
   fetchHolidaysToday: () => Promise<void>
   getHolidayCard: (id: string, tone: Tone) => Promise<HolidayCardWithText>
 
-  // Personal care day (ТЗ п. 6.1)
-  personalCareToday: PersonalCareView | null
+  // Personal care day (ТЗ п. 6.1) — карточка на каждую активную цель юзера (1-4), не одна ротируемая.
+  personalCareToday: PersonalCareView[]
   fetchPersonalCareToday: () => Promise<void>
-  completePersonalCare: () => Promise<MilestoneHit[]>
+  completePersonalCare: (goalId: string) => Promise<MilestoneHit[]>
 
   // Bookmarks (sync с бэком)
   bookmarks: Bookmark[]
@@ -472,24 +472,28 @@ export const useAppStore = create<AppState>()(
         return data
       },
 
-      personalCareToday: null,
+      personalCareToday: [],
       fetchPersonalCareToday: async () => {
         if (!getAccessToken()) return
         try {
-          const { data } = await apiClient.get<PersonalCareView | null>('personal-care/today')
+          const { data } = await apiClient.get<PersonalCareView[]>('personal-care/today')
           set({ personalCareToday: data })
         } catch (err) {
           console.warn('[store] Failed to fetch /personal-care/today', err)
         }
       },
-      completePersonalCare: async () => {
-        const care = get().personalCareToday
-        if (!care || !getAccessToken()) return []
+      completePersonalCare: async (goalId: string) => {
+        const items = get().personalCareToday
+        const item = items.find((c) => c.goalTags.includes(goalId))
+        if (!item || !getAccessToken()) return []
         try {
           const { data } = await apiClient.post<{ alreadyDone: boolean; milestoneHits: MilestoneHit[] }>(
-            `personal-care/${care.id}/complete`,
+            `personal-care/${item.id}/complete`,
+            { goalId },
           )
-          set({ personalCareToday: { ...care, doneToday: true } })
+          set({
+            personalCareToday: items.map((c) => (c.goalTags.includes(goalId) ? { ...c, doneToday: true } : c)),
+          })
           void get().fetchGoals()
           return data.milestoneHits
         } catch (err) {
@@ -674,7 +678,7 @@ export const useAppStore = create<AppState>()(
           installBannerDismissCount: 0,
           goals: [],
           todayHolidays: [],
-          personalCareToday: null,
+          personalCareToday: [],
         })
       },
     }),

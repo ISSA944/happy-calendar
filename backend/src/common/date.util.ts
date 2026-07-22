@@ -45,3 +45,26 @@ export function dayOfYear(timezone?: string | null): number {
   const start = new Date(Date.UTC(Number(year), 0, 0));
   return Math.floor((d.getTime() - start.getTime()) / 86_400_000);
 }
+
+/** "HH:mm" в часовом поясе пользователя — для сравнения с prefs.horoscopeTime/supportTime/
+ * holidaysTime/personalCareTime, которые юзер выбирает как обычное локальное время
+ * (TimePickerSheet ничего не знает про таймзоны). Невалидная IANA-таймзона — фолбэк на UTC. */
+export function currentTimeInTz(timezone?: string | null): string {
+  const now = new Date();
+  if (timezone) {
+    try {
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: timezone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+      }).formatToParts(now);
+      const hour = parts.find((p) => p.type === 'hour')?.value;
+      const minute = parts.find((p) => p.type === 'minute')?.value;
+      if (hour && minute) return `${hour}:${minute}`;
+    } catch {
+      /* invalid IANA tz — fall through to UTC */
+    }
+  }
+  return `${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}`;
+}

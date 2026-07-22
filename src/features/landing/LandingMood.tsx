@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getMoodImage } from '../../services/content.service'
 import { SectionEyebrow, GiftCtaBlock } from './LandingShared'
 
@@ -11,20 +12,34 @@ const MOODS = [
   { id: 'Грустна', icon: 'water_drop' },
 ]
 
-// Демо-цикл «Другая фраза» — без сервера (до регистрации нет знака/настроения пользователя),
-// но реально кликабельно, в отличие от остальных демо-кнопок.
-const DEMO_PHRASES = [
-  'Я рядом, и тебе не нужно сейчас быть сильной на сто процентов. Достаточно пройти этот день шаг за шагом — с заботой о себе.',
-  'Тишина внутри — лучший советчик. Сегодня можно просто быть, без лишних усилий.',
-  'Ты уже делаешь достаточно. Позволь себе немного покоя — он тоже часть пути.',
-]
+// Демо-текст поддержки на каждое настроение — без сервера (до регистрации нет знака/настроения
+// пользователя), но меняется вместе со свайпом карточки настроения, как в реальном приложении.
+const MOOD_PHRASES: Record<string, string> = {
+  'Спокойна': 'Тишина внутри — лучший советчик. Сегодня можно просто быть, без лишних усилий.',
+  'Нормально': 'Обычный день — тоже хороший день. Не всё должно быть особенным, чтобы иметь значение.',
+  'Устала': 'Я рядом, и тебе не нужно сейчас быть сильной на сто процентов. Достаточно пройти этот день шаг за шагом — с заботой о себе.',
+  'Тревожна': 'Дыши медленнее — тревога проходит быстрее, чем кажется. Ты уже в безопасности.',
+  'Грустна': 'Грусть — тоже часть заботы о себе. Позволь себе прожить её, не торопясь.',
+}
 
-/** Настроение — лента реальных карточек настроений + демо «Поддержка на сегодня» (ТЗ п.2.7, п.5). */
+/** Настроение — одна широкая карточка за раз (свайп), синхронизированная с блоком поддержки
+ * ниже (ТЗ п.2.7, п.5, гибридный мув настроения — см. CLAUDE.md). */
 export function LandingMood() {
-  const [phraseIdx, setPhraseIdx] = useState(0)
+  const navigate = useNavigate()
+  const [activeIdx, setActiveIdx] = useState(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const idx = Math.round(el.scrollLeft / el.clientWidth)
+    setActiveIdx(Math.max(0, Math.min(MOODS.length - 1, idx)))
+  }, [])
+
+  const activeMood = MOODS[activeIdx]
 
   return (
-    <section className="bg-surface-container-low relative overflow-hidden py-24 space-y-12">
+    <section className="bg-surface-container-low relative overflow-hidden pt-8 pb-6 space-y-10">
       <div className="max-w-sm mx-auto text-center space-y-5 px-6 landing-fade-in-scroll">
         <SectionEyebrow>КАК ТЫ СЕГОДНЯ?</SectionEyebrow>
         <h2 className="font-headline text-3xl font-bold text-primary leading-tight">
@@ -35,13 +50,14 @@ export function LandingMood() {
         </p>
       </div>
 
-      <div className="relative w-full overflow-hidden landing-fade-in-scroll">
-        <div className="flex overflow-x-auto no-scrollbar gap-4 px-8 snap-x snap-mandatory">
+      <div className="max-w-sm mx-auto px-6 landing-fade-in-scroll">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory rounded-[2.5rem] shadow-xl shadow-black/5"
+        >
           {MOODS.map((m) => (
-            <div
-              key={m.id}
-              className="snap-center shrink-0 w-44 aspect-[3/4] relative rounded-[2.5rem] overflow-hidden shadow-xl shadow-black/5"
-            >
+            <div key={m.id} className="snap-center shrink-0 w-full aspect-[16/10] relative overflow-hidden">
               <img src={getMoodImage(m.id)} alt="" className="absolute inset-0 w-full h-full object-cover" />
               {/* Лёгкий оверлей, как на реальном баннере настроения (HomePage.tsx) — не тёмная плашка. */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
@@ -54,6 +70,14 @@ export function LandingMood() {
             </div>
           ))}
         </div>
+        <div className="flex justify-center gap-1.5 mt-3">
+          {MOODS.map((m, i) => (
+            <span
+              key={m.id}
+              className={`h-1.5 rounded-full transition-all ${i === activeIdx ? 'w-5 bg-primary' : 'w-1.5 bg-primary/20'}`}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="px-6 max-w-sm mx-auto landing-fade-in-scroll">
@@ -61,21 +85,18 @@ export function LandingMood() {
           <div className="flex justify-between items-start">
             <h3 className="font-headline text-2xl font-bold text-on-surface">Поддержка на сегодня</h3>
             <div className="bg-accent/10 px-4 py-1.5 rounded-full border border-accent/20">
-              <span className="text-[11px] font-bold text-primary uppercase tracking-widest">Спокойна</span>
+              <span className="text-[11px] font-bold text-primary uppercase tracking-widest">{activeMood.id}</span>
             </div>
           </div>
           <p className="text-lg text-on-surface-variant leading-relaxed italic font-light">
-            {DEMO_PHRASES[phraseIdx]}
+            {MOOD_PHRASES[activeMood.id]}
           </p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setPhraseIdx((i) => (i + 1) % DEMO_PHRASES.length)}
-              className="flex-1 landing-cta-gradient text-white py-4 rounded-full font-bold text-sm shadow-lg active:scale-95 transition-transform"
-            >
-              Другая фраза
-            </button>
-            <button className="flex-1 bg-surface-container text-on-surface py-4 rounded-full font-bold text-sm pointer-events-none">Сохранить</button>
-          </div>
+          <button
+            onClick={() => navigate('/register')}
+            className="w-full landing-cta-gradient text-white py-4 rounded-full font-bold text-sm shadow-lg active:scale-95 transition-transform"
+          >
+            Получить поддержку
+          </button>
         </div>
       </div>
 

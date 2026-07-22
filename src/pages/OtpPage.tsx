@@ -117,6 +117,7 @@ export function OtpPage() {
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isResending, setIsResending] = useState(false)
+  const [showGiftSent, setShowGiftSent] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // Stable ref callbacks — recreating these inline each render defeats OtpBox memo
@@ -189,7 +190,11 @@ export function OtpPage() {
         setShowOnboardingLoader(true)
         navigate('/')
       } else {
-        navigate('/notifications')
+        // Как и код чуть выше пришёл на почту — вторым письмом (после этого) уходит подарок
+        // (см. sendWelcomeEmail в auth.service.ts). Коротко подтверждаем это прямо тут же,
+        // тем же текстовым паттерном, что и подтверждение отправки кода.
+        setShowGiftSent(true)
+        setTimeout(() => navigate('/notifications'), 1400)
       }
     } catch (err: any) {
       const status = err?.response?.status
@@ -301,11 +306,15 @@ export function OtpPage() {
             {isSubmitting ? 'Проверяем...' : 'Продолжить'}
           </button>
 
-          {submitError && (
+          {showGiftSent ? (
+            <p className="text-center text-sm font-semibold text-primary">
+              Подарок отправлен на {email} 🎁
+            </p>
+          ) : submitError ? (
             <p className="text-center text-sm font-medium text-red-500">
               {submitError}
             </p>
-          )}
+          ) : null}
 
           <CountdownTimer
             key={resendKey}

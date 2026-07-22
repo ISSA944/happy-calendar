@@ -28,15 +28,13 @@ const VARIANT_FIELDS: Record<string, { task: keyof PersonalCareDay; advice: keyo
 };
 
 /**
- * Какую из целей юзера показать в этот день года: детерминированная ротация по dayOfYear среди
- * его активных целей (в стабильном порядке GOAL_IDS, не порядке из БД), чтобы за несколько дней
- * подряд юзер с несколькими целями увидел контент по каждой из них по очереди. Если активных целей
- * нет — дефолт на первую цель (calm), чтобы блок не пустовал.
+ * Все активные цели юзера, в стабильном порядке GOAL_IDS (не порядке из БД) — показываем КАЖДУЮ
+ * сразу отдельной карточкой (до 4), а не ротируем одну на день. Если активных целей нет —
+ * дефолт на первую цель (calm), чтобы блок не пустовал.
  */
-function pickGoalId(doy: number, activeGoals: string[]): string {
+function orderedGoalIds(activeGoals: string[]): string[] {
   const ordered = GOAL_IDS.filter((id) => activeGoals.includes(id));
-  const pool = ordered.length ? ordered : [GOAL_IDS[0]];
-  return pool[doy % pool.length];
+  return ordered.length ? ordered : [GOAL_IDS[0]];
 }
 
 export interface MilestoneHit {
@@ -77,10 +75,11 @@ export class PersonalCareService {
   /**
    * Сегодняшний день заботы: адресуется строго по дню года (реальный клиентский контент, xlsx
    * «Личные праздники» — 365 дней). Если для номера дня строки нет (366-й день високосного года) —
-   * фолбэк на день 1, чтобы блок никогда не пустовал. Цель выбирается ротацией среди активных
-   * целей юзера, см. pickGoalId().
+   * фолбэк на день 1, чтобы блок никогда не пустовал. Если у юзера активно несколько целей —
+   * возвращаем карточку НА КАЖДУЮ (до 4), а не одну ротируемую: title/themeKey/imageUrl общие на
+   * весь день, различаются только task/affirmation/goalTags/doneToday (см. VARIANT_FIELDS).
    */
-  async getToday(userId: string): Promise<PersonalCareView | null> {
+  async getToday(userId: string): Promise<PersonalCareView[]> {
     const [prefs, user, activeGoals] = await Promise.all([
       this.prisma.prefs.findUnique({ where: { userId } }),
       this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
@@ -91,57 +90,60 @@ export class PersonalCareService {
     const day =
       (await this.prisma.personalCareDay.findUnique({ where: { dayOfYear: doy } })) ??
       (await this.prisma.personalCareDay.findUnique({ where: { dayOfYear: 1 } }));
-    if (!day) return null;
+    if (!day) return [];
 
-    const goalId = pickGoalId(doy, activeGoals);
-    const { task: taskField, advice: adviceField } = VARIANT_FIELDS[goalId];
-
+    const goalIds = orderedGoalIds(activeGoals);
     const dateKey = todayDdMmYyyy(prefs?.timezone);
-    const done = await this.prisma.personalCareCompletion.findUnique({
-      where: { userId_date: { userId, date: dateKey } },
-      select: { id: true },
-    });
+    const imageUrl = await this.resolveImageUrl(day.id, day.themeKey);
 
-    return {
-      id: day.id,
-      title: day.title,
-      task: fillName(day[taskField] as string, user?.name),
-      affirmation: day[adviceField] as string,
-      goalTags: [goalId],
-      themeKey: day.themeKey,
-      imageUrl: await this.resolveImageUrl(day.id, day.themeKey),
-      doneToday: Boolean(done),
-    };
+    const completions = await this.prisma.personalCareCompletion.findMany({
+      where: { userId, date: dateKey, goalId: { in: goalIds } },
+      select: { goalId: true },
+    });
+    const doneGoalIds = new Set(completions.map((c) => c.goalId));
+
+    return goalIds.map((goalId) => {
+      const { task: taskField, advice: adviceField } = VARIANT_FIELDS[goalId];
+      return {
+        id: day.id,
+        title: day.title,
+        task: fillName(day[taskField] as string, user?.name),
+        affirmation: day[adviceField] as string,
+        goalTags: [goalId],
+        themeKey: day.themeKey,
+        imageUrl,
+        doneToday: doneGoalIds.has(goalId),
+      };
+    });
   }
 
   /**
-   * «Я сделала это»: засчитывает день заботы (идемпотентно — один зачёт в сутки),
-   * считает попадания в вехи по активным целям и шлёт пуш(и) по правилу группировки (ТЗ п. 3).
+   * «Я сделала это»: засчитывает день заботы для КОНКРЕТНОЙ цели (идемпотентно — один зачёт
+   * на пару (день, цель); при нескольких активных целях каждая карточка засчитывается
+   * независимо своей кнопкой), считает попадания в вехи и шлёт пуш(и) по правилу группировки
+   * (ТЗ п. 3). goalId приходит от клиента — он же был показан на конкретной карточке в
+   * getToday(), проверяем только, что это один из 4 известных id (защита от мусорных значений).
    */
-  async complete(userId: string, careDayId: string): Promise<CompleteResult> {
-    const [prefs, user, careDay, activeGoals] = await Promise.all([
+  async complete(userId: string, careDayId: string, goalId: string): Promise<CompleteResult> {
+    if (!VARIANT_FIELDS[goalId]) throw new NotFoundException('Unknown goal id');
+
+    const [prefs, user, careDay] = await Promise.all([
       this.prisma.prefs.findUnique({ where: { userId } }),
       this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
       this.prisma.personalCareDay.findUnique({ where: { id: careDayId } }),
-      this.goals.activeGoalIds(userId),
     ]);
     if (!careDay) throw new NotFoundException('Personal care day not found');
 
     const dateKey = todayDdMmYyyy(prefs?.timezone);
 
-    // Идемпотентность: один зачёт в сутки, повторное нажатие не наращивает прогресс.
+    // Идемпотентность: один зачёт на (день, цель), повторное нажатие не наращивает прогресс.
     const existing = await this.prisma.personalCareCompletion.findUnique({
-      where: { userId_date: { userId, date: dateKey } },
+      where: { userId_date_goalId: { userId, date: dateKey, goalId } },
       select: { id: true },
     });
     if (existing) {
       return { alreadyDone: true, milestoneHits: [] };
     }
-
-    // Та же цель, что была показана в getToday() — пересчитываем тем же детерминированным
-    // правилом (не доверяем клиенту передавать её отдельным параметром).
-    const doy = dayOfYear(prefs?.timezone);
-    const goalId = pickGoalId(doy, activeGoals);
 
     await this.prisma.personalCareCompletion.create({
       data: { userId, personalCareDayId: careDayId, date: dateKey, goalId },

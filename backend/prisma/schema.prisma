@@ -70,7 +70,9 @@ model Prefs {
   holidaysEnabled     Boolean  @default(false) @map("holidays_enabled")
   supportEnabled      Boolean  @default(true) @map("support_enabled")
   personalCareEnabled Boolean  @default(true) @map("personal_care_enabled")
-  // Per-category push times (HH:MM UTC). horoscopeTime seeded from legacy pushTime in migration.
+  // Per-category push times (HH:MM, user's LOCAL wall-clock time — matched against
+  // `timezone` below in NotificationCronService, not raw UTC). horoscopeTime seeded from
+  // legacy pushTime in migration.
   horoscopeTime       String   @default("09:00") @map("horoscope_time")
   supportTime         String   @default("12:00") @map("support_time")
   holidaysTime        String   @default("10:00") @map("holidays_time")
@@ -282,11 +284,13 @@ model PersonalCareCompletion {
   user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   personalCareDayId String          @map("personal_care_day_id")
   personalCareDay   PersonalCareDay @relation(fields: [personalCareDayId], references: [id])
-  goalId            String          @map("goal_id") // какая из 4 целей была показана/засчитана в этот день
+  goalId            String          @map("goal_id") // какая из 4 целей засчитана в этот день — теперь
+  // засчитывается независимо на каждую активную цель юзера (см. PersonalCareService.getToday()),
+  // а не одна ротируемая цель на весь день, поэтому уникальность теперь тройная (userId, date, goalId).
   date              String // DD.MM.YYYY, локальная дата юзера
   completedAt       DateTime        @default(now()) @map("completed_at")
 
-  @@unique([userId, date])
+  @@unique([userId, date, goalId])
   @@index([userId])
   @@map("personal_care_completions")
 }

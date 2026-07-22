@@ -10,6 +10,7 @@ import { useGoalsEditor } from '../features/goals/useGoalsEditor'
 import { NotificationCategoriesEditor } from '../features/notifications/NotificationCategoriesEditor'
 import { useNotificationCategories } from '../features/notifications/useNotificationCategories'
 import { prepareAvatarDataUrl } from '../utils/image'
+import { InstallBanner } from '../components/InstallBanner'
 
 export function SettingsPage() {
   const navigate = useNavigate()
@@ -94,6 +95,10 @@ export function SettingsPage() {
           <h1 className="absolute left-1/2 -translate-x-1/2 font-headline font-bold text-lg tracking-tight text-primary">Настройки</h1>
         </div>
       </header>
+
+      <div className="w-full max-w-[430px] landscape:max-w-[860px] mx-auto px-6 pt-4">
+        <InstallBanner />
+      </div>
 
       <main className="w-full max-w-[430px] landscape:max-w-[860px] mx-auto px-6 pb-28 hide-scrollbar landscape:grid landscape:grid-cols-2 landscape:gap-x-6 landscape:gap-y-6 landscape:items-start">
         {/* Profile Block */}

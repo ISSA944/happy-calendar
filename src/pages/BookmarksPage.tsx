@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../store'
 import type { BookmarkType } from '../store/app.store'
+import { InstallBanner } from '../components/InstallBanner'
 
 // Лейблы типов закладок. Цвет тегов/иконок единый и лёгкий (primary) — по просьбе:
 // «должно быть один свет, очень лёгкий, как у всех», без разноцветья по типам.
@@ -50,6 +51,7 @@ export function BookmarksPage() {
       </header>
 
       <main className="flex-1 w-full max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-4 pb-24">
+        <InstallBanner />
         <div className="mb-6">
           <p className="text-on-surface-variant font-body text-sm leading-relaxed">
             Ваши сохраненные моменты и предсказания в одном безопасном месте.

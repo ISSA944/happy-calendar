@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store'
 import { getMoodImage } from '../services/content.service'
 import { apiClient } from '../api'
+import { InstallBanner } from '../components/InstallBanner'
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -113,6 +114,10 @@ export function NotificationsListPage() {
           <h1 className="font-headline font-bold text-lg tracking-tight text-primary truncate">Уведомления</h1>
         </div>
       </header>
+
+      <div className="w-full max-w-[430px] landscape:max-w-[860px] mx-auto px-5 pt-4">
+        <InstallBanner />
+      </div>
 
       <main className="flex-1 px-5 pb-28 w-full max-w-[430px] landscape:max-w-[860px] mx-auto landscape:grid landscape:grid-cols-2 landscape:gap-6 landscape:items-start landscape:pt-4">
 

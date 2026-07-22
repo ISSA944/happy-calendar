@@ -38,6 +38,11 @@ export const envSchema = z.object({
     .email()
     .default('onboarding@resend.dev'),
 
+  // Каналы для приветственного письма с подарком — кнопки Телеграм/МАКС рендерятся только
+  // если ссылка задана (пока клиент не прислал реальные — не шлём письмо с мёртвыми ссылками).
+  TELEGRAM_CHANNEL_URL: z.string().url().optional(),
+  MAX_CHANNEL_URL: z.string().url().optional(),
+
   // Web Push (VAPID)
   WEB_PUSH_PUBLIC_KEY: z.string().min(1, 'WEB_PUSH_PUBLIC_KEY is required'),
   WEB_PUSH_PRIVATE_KEY: z.string().min(1, 'WEB_PUSH_PRIVATE_KEY is required'),

@@ -580,8 +580,49 @@ export class AuthService {
     throw new Error('No email provider configured for welcome email');
   }
 
+  // Логотипы — PNG (не SVG: Gmail/Outlook режут SVG в письмах), хостятся на фронтенд-домене
+  // из public/email-assets/*.png (deploy.sh копирует dist/ целиком, public/ уже часть сборки).
+  private readonly telegramLogoUrl = 'https://yoyojoy.online/email-assets/telegram.png';
+  private readonly maxLogoUrl = 'https://yoyojoy.online/email-assets/max.png';
+
   private renderWelcomeEmailHtml(name: string | null): string {
     const greeting = name && name.trim() ? `Привет, ${name.trim()}!` : 'Привет!';
+    const telegramUrl = this.config.get<string>('TELEGRAM_CHANNEL_URL');
+    const maxUrl = this.config.get<string>('MAX_CHANNEL_URL');
+
+    // Кнопки каналов — только если ссылка реально настроена (см. env.validation.ts), чтобы
+    // никогда не отправить письмо с "мёртвой" ссылкой на канал.
+    const channelButtons = [
+      telegramUrl
+        ? `<td width="50%" style="padding:0 6px 0 0;">
+             <a href="${telegramUrl}" target="_blank" style="display:block;text-align:center;background:#0E6E62;color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold;padding:14px 0;border-radius:999px;">
+               <img src="${this.telegramLogoUrl}" width="22" height="22" alt="" style="vertical-align:middle;margin-right:8px;border:0;">Телеграм</a>
+           </td>`
+        : '',
+      maxUrl
+        ? `<td width="50%" style="padding:0 0 0 6px;">
+             <a href="${maxUrl}" target="_blank" style="display:block;text-align:center;background:#0E6E62;color:#ffffff;text-decoration:none;font-size:15px;font-weight:bold;padding:14px 0;border-radius:999px;">
+               <img src="${this.maxLogoUrl}" width="22" height="22" alt="" style="vertical-align:middle;margin-right:8px;border:0;">МАКС</a>
+           </td>`
+        : '',
+    ]
+      .filter(Boolean)
+      .join('');
+
+    const channelsSection = channelButtons
+      ? `<tr>
+           <td style="padding:4px 40px 2px;">
+             <p style="margin:0 0 2px;font-size:17px;font-weight:bold;color:#23302b;text-align:center;">Подписывайся на наши каналы 💚</p>
+             <p style="margin:6px 0 18px;font-size:14px;line-height:1.5;color:#54605b;text-align:center;">Там ещё больше тёплого, полезного и интересного — каждый день.</p>
+           </td>
+         </tr>
+         <tr>
+           <td style="padding:0 40px 22px;">
+             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>${channelButtons}</tr></table>
+           </td>
+         </tr>`
+      : '';
+
     return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -589,46 +630,58 @@ export class AuthService {
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>YoYoJoy Day</title>
 </head>
-<body style="margin:0;padding:32px 16px;background:#f5f2ed;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
+<body style="margin:0;padding:32px 16px;background:#F0EBE1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
     <tr>
       <td align="center">
-        <table role="presentation" width="480" cellspacing="0" cellpadding="0" border="0" style="max-width:480px;background:#fcf9f4;border-radius:24px;overflow:hidden">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background:#FAF6EF;border-radius:24px;overflow:hidden">
           <tr>
-            <td style="padding:40px 40px 28px;background:#006a65;text-align:center">
-              <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px">YoYoJoy Day 🌿</div>
-              <div style="color:#a4d8d5;font-size:13px;margin-top:6px">Твой персональный компаньон дня</div>
+            <td style="background:#0E6E62;padding:38px 24px;text-align:center;">
+              <div style="font-size:26px;font-weight:bold;color:#ffffff;letter-spacing:.2px;">YoYoJoy Day 🌿</div>
+              <div style="font-size:14px;color:#A9D6CE;margin-top:8px;">Твой персональный компаньон дня</div>
             </td>
           </tr>
           <tr>
-            <td style="padding:40px 40px 8px">
-              <p style="margin:0 0 16px;font-size:18px;font-weight:700;color:#006a65">${greeting}</p>
-              <p style="margin:0 0 20px;font-size:16px;line-height:1.55;color:#2a3f3e">
-                Спасибо, что ты с нами. Каждый день тебя будут ждать гороскоп, тёплая фраза поддержки и
-                праздники — всё подобрано лично для тебя.
+            <td style="padding:36px 40px 8px;color:#2C3A35;">
+              <p style="font-size:20px;font-weight:bold;margin:0 0 10px;">${greeting} Рады, что ты с нами 🌿</p>
+              <p style="font-size:16px;line-height:1.6;color:#54605b;margin:0 0 26px;">
+                Спасибо за регистрацию в YoYoJoy. Держи два маленьких подарка — чтобы заботиться о себе было ещё теплее и проще.
+                Оба файла уже <b>во вложении к этому письму</b> 🎁
               </p>
-              <p style="margin:0 0 8px;font-size:15px;line-height:1.55;color:#5a6968">
-                Загляни на главную прямо сейчас — там уже готов твой сегодняшний день. А в настройках можно
-                выбрать цели на год и время, когда тебе присылать заботу.
+
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#E9F3EF;border-radius:16px;margin:0 0 14px;">
+                <tr>
+                  <td width="64" style="padding:18px 0 18px 18px;vertical-align:top;">
+                    <div style="width:46px;height:46px;background:#ffffff;border-radius:12px;text-align:center;line-height:46px;font-size:22px;">📅</div>
+                  </td>
+                  <td style="padding:18px 18px 18px 14px;vertical-align:top;">
+                    <div style="font-size:16px;font-weight:bold;color:#23302b;">Трекер привычек на месяц</div>
+                    <div style="font-size:14px;line-height:1.5;color:#54605b;margin-top:4px;">Простая структура, чтобы мягко закрепить полезные ритмы и видеть свой прогресс.</div>
+                  </td>
+                </tr>
+              </table>
+
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#E9F3EF;border-radius:16px;margin:0 0 26px;">
+                <tr>
+                  <td width="64" style="padding:18px 0 18px 18px;vertical-align:top;">
+                    <div style="width:46px;height:46px;background:#ffffff;border-radius:12px;text-align:center;line-height:46px;font-size:22px;">✅</div>
+                  </td>
+                  <td style="padding:18px 18px 18px 14px;vertical-align:top;">
+                    <div style="font-size:16px;font-weight:bold;color:#23302b;">Чек-лист «30 дней заботы о себе»</div>
+                    <div style="font-size:14px;line-height:1.5;color:#54605b;margin-top:4px;">Тёплый микро-ритуал на каждый день: маленькие шаги, из которых складывается забота.</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ${channelsSection}
+          <tr>
+            <td style="padding:14px 40px 34px;">
+              <div style="border-top:1px solid #ECE3D4;margin:0 0 16px;"></div>
+              <p style="font-size:12px;line-height:1.6;color:#A7A296;margin:0;text-align:center;">
+                Ты получил(а) это письмо, потому что зарегистрировался(ась) в YoYoJoy.<br>
+                С заботой, команда YoYoJoy 🤍
               </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:8px 40px 24px">
-              <div style="background:#f0ede9;border-radius:20px;padding:20px 24px">
-                <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#006a65">🎁 Подарок за регистрацию</p>
-                <p style="margin:0 0 6px;font-size:14px;line-height:1.5;color:#2a3f3e"><b>Трекер привычек на месяц</b> — даёт структуру и опору.</p>
-                <p style="margin:0;font-size:14px;line-height:1.5;color:#2a3f3e"><b>Чек-лист «30 дней заботы о себе»</b> — маленький ритуал на каждый день.</p>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 40px 40px">
-              <div style="border-top:1px solid #e8e3db;padding-top:24px">
-                <p style="margin:0;font-size:12px;line-height:1.5;color:#8a9998;text-align:center">
-                  С любовью, команда YoYoJoy Day
-                </p>
-              </div>
             </td>
           </tr>
         </table>

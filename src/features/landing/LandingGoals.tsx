@@ -11,7 +11,7 @@ const DEMO_GOALS = [
 /** Твои цели — мокап прогресса + вехи (ТЗ п.2.6, п.5). */
 export function LandingGoals() {
   return (
-    <section className="bg-surface relative overflow-hidden py-24 px-6">
+    <section className="bg-surface relative overflow-hidden pt-8 pb-6 px-6">
       <div className="max-w-sm mx-auto text-center space-y-5 mb-14 landing-fade-in-scroll">
         <SectionEyebrow>ТВОИ ЦЕЛИ</SectionEyebrow>
         <h2 className="font-headline text-3xl font-bold text-primary leading-tight">Мягкий прогресс к себе настоящей</h2>

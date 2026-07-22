@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 export function LandingTrust() {
   const navigate = useNavigate()
   return (
-    <section className="relative min-h-[100svh] w-full flex flex-col items-center justify-center overflow-hidden py-20 px-6 hero-gradient" id="trust-screen">
+    <section className="relative min-h-[100svh] w-full flex flex-col items-center justify-center overflow-hidden pt-8 pb-10 px-6 hero-gradient" id="trust-screen">
       <div className="relative z-10 w-full max-w-sm flex flex-col items-center space-y-16">
         <div className="w-full bg-surface-container-lowest rounded-[2.5rem] p-10 flex flex-col items-center space-y-10 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] landing-fade-in-scroll">
           <div className="flex items-center gap-3">
@@ -40,7 +40,7 @@ export function LandingTrust() {
           </div>
         </div>
 
-        <div className="landing-fade-in-scroll text-center py-8" style={{ transitionDelay: '0.3s' }}>
+        <div className="landing-fade-in-scroll text-center py-4" style={{ transitionDelay: '0.3s' }}>
           <p className="text-on-surface/60 text-xl font-light italic leading-relaxed">
             Иногда достаточно просто<br />
             <span className="text-4xl mt-6 block font-normal tracking-[0.2em] text-on-surface uppercase not-italic">выдохнуть.</span>

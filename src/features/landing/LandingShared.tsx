@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 export function GiftCtaBlock() {
   const navigate = useNavigate()
   return (
-    <div className="mt-14 landing-fade-in-scroll">
+    <div className="mt-8 landing-fade-in-scroll">
       <button
         onClick={() => navigate('/register')}
         className="w-full landing-cta-gradient text-white py-5 rounded-full font-headline font-bold text-lg shadow-xl active:scale-95 hover:scale-[1.02] transition-transform animate-landing-button-pulse"
