@@ -264,7 +264,7 @@ export class AiService {
         const completion = await this.openai.chat.completions.create({
           model: LLM_MODEL,
           temperature: 0.3,
-          max_tokens: 700,
+          max_completion_tokens: 700,
           response_format: DAILY_PACK_SCHEMA,
           messages: [
             {
@@ -378,7 +378,7 @@ export class AiService {
         const completion = await this.openai.chat.completions.create({
           model: LLM_MODEL,
           temperature: 0.7,
-          max_tokens: 150,
+          max_completion_tokens: 150,
           response_format: SUPPORT_PHRASE_SCHEMA,
           messages: [
             {
@@ -447,7 +447,7 @@ export class AiService {
         const completion = await this.openai.chat.completions.create({
           model: LLM_MODEL,
           temperature: 0.9,
-          max_tokens: 500,
+          max_completion_tokens: 500,
           response_format: SUPPORT_PHRASES_BATCH_SCHEMA,
           messages: [
             {

@@ -19,19 +19,15 @@ export function HolidaysTodayBlock() {
   const careExtra = careItems.length - 1
 
   return (
-    <section className="grid grid-cols-2 gap-3">
-      {/* Тип 1: календарный праздник.
-          flex flex-col: карточки в гриде разной естественной высоты (у праздника есть третья
-          строка "Ещё N", у заботы — нет), grid тянет обе кнопки под высоту более высокой. Без
-          явного flex контент внутри более короткой кнопки центрируется по вертикали своим блоком
-          (дефолт для <button>), из-за чего сверху появляется видимая полоса фона кнопки поверх
-          картинки — flex-col с чем контент прижат к началу, вся лишняя высота уходит вниз. */}
+    <section className="flex flex-col gap-3">
+      {/* Тип 1: календарный праздник. Карточки друг под другом на полную ширину — рядом (grid-cols-2)
+          картинка и подписи были слишком мелкими и тесными на мобильном экране. */}
       <button
         onClick={() => main && setIsListOpen(true)}
         disabled={!main}
         className="flex flex-col text-left bg-surface-container-lowest rounded-[1.5rem] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] active:scale-[0.98] transition-transform disabled:active:scale-100"
       >
-        <div className="h-20 overflow-hidden shrink-0">
+        <div className="h-32 overflow-hidden shrink-0">
           {main?.imageUrl
             ? <img src={main.imageUrl} alt="" className="block w-full h-full object-cover" />
             : <ThemeArt themeKey={main?.themeKey ?? 'Уютные пустяки и радости'} className="w-full h-full" />
@@ -58,7 +54,7 @@ export function HolidaysTodayBlock() {
         disabled={!careMain}
         className="flex flex-col text-left bg-surface-container-lowest rounded-[1.5rem] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] active:scale-[0.98] transition-transform relative disabled:active:scale-100"
       >
-        <div className="h-20 overflow-hidden relative shrink-0">
+        <div className="h-32 overflow-hidden relative shrink-0">
           {careMain?.imageUrl
             ? <img src={careMain.imageUrl} alt="" className="block w-full h-full object-cover" />
             : <ThemeArt themeKey={careMain?.themeKey ?? 'Забота о себе и спокойствие'} className="w-full h-full" />
