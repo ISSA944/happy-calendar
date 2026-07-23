@@ -55,7 +55,11 @@ export function LandingAbout() {
                 сегодня → Гороскоп на сегодня. Контент выше aspect-[477/972] корпуса — низ прикрыт
                 fade-to-white градиентом (ниже), честно показывая «дальше скролл», как в реальном
                 приложении, а не обрезая блок на середине или сжимая текст обратно до нечитаемого. */}
-            <div className="pt-8 px-3.5 pb-3.5 space-y-3 text-left">
+            {/* WebkitTextSizeAdjust/textSizeAdjust: мобильные браузеры (в первую очередь iOS Safari)
+                по умолчанию автоувеличивают экстремально мелкий текст (тут 7-9px) для читаемости —
+                в devtools-эмуляции это не воспроизводится, а на реальном телефоне раздувает текст
+                за пределы посчитанной под 8px ширины карточек, обрезая начало строки. Отключаем. */}
+            <div className="pt-8 px-3.5 pb-3.5 space-y-3 text-left" style={{ WebkitTextSizeAdjust: '100%', textSizeAdjust: '100%' } as React.CSSProperties}>
               {/* Шапка — HomePage.tsx: аватар слева, дата по центру, колокольчик справа */}
               <div className="flex items-center justify-between">
                 <div className="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center shrink-0">
@@ -79,14 +83,14 @@ export function LandingAbout() {
                 <div className="flex flex-col gap-1.5">
                   <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
                     <div className="h-16"><ThemeArt themeKey="Уютные пустяки и радости" className="w-full h-full" /></div>
-                    <div className="p-1.5">
+                    <div className="p-2">
                       <p className="text-[7px] font-bold text-primary uppercase tracking-wide">Праздник дня</p>
                       <p className="text-[8px] font-bold leading-tight text-on-surface truncate">Международный день открыток</p>
                     </div>
                   </div>
                   <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
                     <div className="h-16"><ThemeArt themeKey="Забота о себе и спокойствие" className="w-full h-full" /></div>
-                    <div className="p-1.5">
+                    <div className="p-2">
                       <p className="text-[7px] font-bold text-primary uppercase tracking-wide">Забота о себе</p>
                       <p className="text-[8px] font-bold leading-tight text-on-surface truncate">Твой день бережного спокойствия</p>
                     </div>
