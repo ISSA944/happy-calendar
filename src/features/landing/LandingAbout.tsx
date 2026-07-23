@@ -5,7 +5,7 @@ import { getGreeting, getTodayFormatted, getMoodImage } from '../../services/con
 const FEATURES = [
   { icon: 'stars', title: 'Гороскоп', text: 'Прогноз по твоему знаку — кратко и по делу.', pos: 'top-4 -left-6', delay: '0s' },
   { icon: 'favorite', title: 'Поддержка', text: 'Тёплые слова под твоё настроение.', pos: 'top-20 -right-4', delay: '-2s' },
-  { icon: 'celebration', title: 'Праздники', text: 'Готовые открытки-поздравления — выбирай и делись.', pos: 'bottom-24 -left-8', delay: '-4s' },
+  { icon: 'celebration', title: 'Праздники', text: 'Готовые открытки-поздравления — выбирай и делись.', pos: 'bottom-8 -left-8', delay: '-4s' },
   { icon: 'target', title: 'Цели', text: 'Прогресс к себе настоящей, шаг за шагом.', pos: 'bottom-10 -right-6', delay: '-6s' },
 ]
 
@@ -81,14 +81,14 @@ export function LandingAbout() {
                     <div className="h-16"><ThemeArt themeKey="Уютные пустяки и радости" className="w-full h-full" /></div>
                     <div className="p-1.5">
                       <p className="text-[7px] font-bold text-primary uppercase tracking-wide">Праздник дня</p>
-                      <p className="text-[8px] font-bold leading-tight text-on-surface line-clamp-2">Международный день открыток и тёплых пожеланий</p>
+                      <p className="text-[8px] font-bold leading-tight text-on-surface truncate">Международный день открыток</p>
                     </div>
                   </div>
                   <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
                     <div className="h-16"><ThemeArt themeKey="Забота о себе и спокойствие" className="w-full h-full" /></div>
                     <div className="p-1.5">
                       <p className="text-[7px] font-bold text-primary uppercase tracking-wide">Забота о себе</p>
-                      <p className="text-[8px] font-bold leading-tight text-on-surface line-clamp-2">Твой день бережного спокойствия и тишины</p>
+                      <p className="text-[8px] font-bold leading-tight text-on-surface truncate">Твой день бережного спокойствия</p>
                     </div>
                   </div>
                 </div>
