@@ -81,14 +81,22 @@ export function LandingAbout() {
               <div>
                 <p className="text-[9px] font-bold text-on-surface mb-1 font-headline">Праздники сегодня</p>
                 <div className="flex flex-col gap-1.5">
-                  <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+                  {/* rounded-md (6px), НЕ rounded-xl: в этом проекте tailwind.config.js переопределяет
+                      xl=48px для больших "мягких" карточек — на мини-карточке высотой ~100px такой
+                      радиус реально заезжает в текст нижней строки (проверено геометрией: угол
+                      клипует контент внутри своей кривой), отсюда и обрезанные первые буквы. */}
+                  <div className="bg-surface-container-lowest rounded-md overflow-hidden shadow-sm">
                     <div className="h-16"><ThemeArt themeKey="Уютные пустяки и радости" className="w-full h-full" /></div>
                     <div className="p-2">
                       <p className="text-[7px] font-bold text-primary uppercase tracking-wide">Праздник дня</p>
                       <p className="text-[8px] font-bold leading-tight text-on-surface truncate">Международный день открыток</p>
                     </div>
                   </div>
-                  <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+                  {/* rounded-md (6px), НЕ rounded-xl: в этом проекте tailwind.config.js переопределяет
+                      xl=48px для больших "мягких" карточек — на мини-карточке высотой ~100px такой
+                      радиус реально заезжает в текст нижней строки (проверено геометрией: угол
+                      клипует контент внутри своей кривой), отсюда и обрезанные первые буквы. */}
+                  <div className="bg-surface-container-lowest rounded-md overflow-hidden shadow-sm">
                     <div className="h-16"><ThemeArt themeKey="Забота о себе и спокойствие" className="w-full h-full" /></div>
                     <div className="p-2">
                       <p className="text-[7px] font-bold text-primary uppercase tracking-wide">Забота о себе</p>
