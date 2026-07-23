@@ -112,7 +112,7 @@ export function LandingAbout() {
                   <p className="text-[9px] font-bold text-on-surface font-headline">Твои цели</p>
                   <span className="text-[7px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Изменить</span>
                 </div>
-                <div className="bg-surface-container-lowest rounded-xl p-2 shadow-sm space-y-2">
+                <div className="bg-surface-container-lowest rounded-md p-2 shadow-sm space-y-2">
                   <div>
                     <div className="flex items-center gap-1 mb-0.5">
                       <span className="material-symbols-outlined text-primary" style={{ fontSize: '9px' }}>spa</span>
@@ -135,16 +135,16 @@ export function LandingAbout() {
               {/* Баннер настроения — как в HomePage.tsx (картинка + бейдж настроения в углу).
                   Высота пропорциональна реальному h-[200px]/390px ширины экрана (HomePage.tsx:167),
                   не произвольно сжата — иначе баннер выглядит полоской, а не полноценной секцией. */}
-              <div className="rounded-xl overflow-hidden relative h-28">
+              <div className="rounded-md overflow-hidden relative h-28">
                 <img src={getMoodImage('Спокойна')} alt="" className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-                <span className="absolute top-1.5 right-1.5 bg-white/90 text-primary px-2 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-wide">Спокойна</span>
+                <span className="absolute top-2.5 right-2.5 bg-white/90 text-primary px-2 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-wide">Спокойна</span>
               </div>
 
               {/* Поддержка на сегодня — как в HomePage.tsx: заголовок+чип настроения, курсивная
                   фраза (та же демо-фраза «Спокойна», что в LandingMood.tsx — единообразие текста
                   по всему лендингу), декоративные пилюли снизу. */}
-              <div className="bg-surface-container-low rounded-xl p-2.5 shadow-sm space-y-1.5">
+              <div className="bg-surface-container-low rounded-md p-2.5 shadow-sm space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[9px] font-bold text-on-surface font-headline">Поддержка на сегодня</p>
                   <span className="text-[6px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full uppercase tracking-wide shrink-0">Спокойна</span>
@@ -163,7 +163,7 @@ export function LandingAbout() {
 
               {/* Гороскоп на сегодня — заголовок+пилюля Сжато/Подробнее (декоративно, Сжато активна),
                   Главное/Совет той же структуры, что HomePage.tsx. */}
-              <div className="bg-surface-container-lowest rounded-xl p-2.5 shadow-sm space-y-1.5">
+              <div className="bg-surface-container-lowest rounded-md p-2.5 shadow-sm space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[9px] font-bold text-on-surface font-headline">Гороскоп на сегодня</p>
                   <div className="flex bg-surface-container rounded-full p-0.5 shrink-0">
