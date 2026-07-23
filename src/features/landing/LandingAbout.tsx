@@ -73,22 +73,22 @@ export function LandingAbout() {
                 </span>
               </div>
 
-              {/* Праздники сегодня — 2 карточки в ряд, как HolidaysTodayBlock.tsx */}
+              {/* Праздники сегодня — карточки друг под другом, как HolidaysTodayBlock.tsx (M20) */}
               <div>
                 <p className="text-[9px] font-bold text-on-surface mb-1 font-headline">Праздники сегодня</p>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="flex flex-col gap-1.5">
                   <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
-                    <div className="h-8"><ThemeArt themeKey="Уютные пустяки и радости" className="w-full h-full" /></div>
+                    <div className="h-16"><ThemeArt themeKey="Уютные пустяки и радости" className="w-full h-full" /></div>
                     <div className="p-1.5">
                       <p className="text-[7px] font-bold text-primary uppercase tracking-wide">Праздник дня</p>
-                      <p className="text-[8px] font-bold leading-tight text-on-surface">Открытки сегодня</p>
+                      <p className="text-[8px] font-bold leading-tight text-on-surface line-clamp-2">Международный день открыток и тёплых пожеланий</p>
                     </div>
                   </div>
                   <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
-                    <div className="h-8"><ThemeArt themeKey="Забота о себе и спокойствие" className="w-full h-full" /></div>
+                    <div className="h-16"><ThemeArt themeKey="Забота о себе и спокойствие" className="w-full h-full" /></div>
                     <div className="p-1.5">
                       <p className="text-[7px] font-bold text-primary uppercase tracking-wide">Забота о себе</p>
-                      <p className="text-[8px] font-bold leading-tight text-on-surface">День спокойствия</p>
+                      <p className="text-[8px] font-bold leading-tight text-on-surface line-clamp-2">Твой день бережного спокойствия и тишины</p>
                     </div>
                   </div>
                 </div>
@@ -120,8 +120,10 @@ export function LandingAbout() {
                 </div>
               </div>
 
-              {/* Баннер настроения — как в HomePage.tsx (картинка + бейдж настроения в углу) */}
-              <div className="rounded-xl overflow-hidden relative h-10">
+              {/* Баннер настроения — как в HomePage.tsx (картинка + бейдж настроения в углу).
+                  Высота пропорциональна реальному h-[200px]/390px ширины экрана (HomePage.tsx:167),
+                  не произвольно сжата — иначе баннер выглядит полоской, а не полноценной секцией. */}
+              <div className="rounded-xl overflow-hidden relative h-28">
                 <img src={getMoodImage('Спокойна')} alt="" className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
                 <span className="absolute top-1.5 right-1.5 bg-white/90 text-primary px-2 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-wide">Спокойна</span>
