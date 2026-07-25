@@ -1,13 +1,15 @@
 import { useNavigate } from 'react-router-dom'
 
-/** Повторяется после секций «О приложении», «Праздники», «Цели», «Настроение» и в Trust (ТЗ п.2). */
-export function GiftCtaBlock() {
+/** Повторяется после секций «О приложении», «Праздники», «Цели», «Настроение» и в Trust (ТЗ п.2).
+ * className — чтобы каждая секция могла поставить блок в свою ячейку landscape-сетки
+ * (`landscape:col-span-2` и т.п.); без пропа поведение прежнее, портрет не меняется. */
+export function GiftCtaBlock({ className = '' }: { className?: string }) {
   const navigate = useNavigate()
   return (
-    <div className="mt-8 landing-fade-in-scroll">
+    <div className={`mt-8 landscape:mt-6 landing-fade-in-scroll ${className}`}>
       <button
         onClick={() => navigate('/register')}
-        className="w-full landing-cta-gradient text-white py-5 rounded-full font-headline font-bold text-lg shadow-xl active:scale-95 hover:scale-[1.02] transition-transform animate-landing-button-pulse"
+        className="w-full landing-cta-gradient text-white py-5 landscape:py-4 rounded-full font-headline font-bold text-lg shadow-xl active:scale-95 hover:scale-[1.02] transition-transform animate-landing-button-pulse"
       >
         Попробовать сейчас
       </button>
@@ -16,7 +18,8 @@ export function GiftCtaBlock() {
           <span className="material-symbols-outlined text-accent">redeem</span>
           <p className="text-[13px] font-bold text-on-surface">Подарок за регистрацию — пришлём на почту</p>
         </div>
-        <div className="space-y-3">
+        {/* В горизонтали два подарка встают рядом — блок вдвое ниже, что критично в низком вьюпорте. */}
+        <div className="space-y-3 landscape:space-y-0 landscape:grid landscape:grid-cols-2 landscape:gap-3">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
               <span className="material-symbols-outlined text-lg">calendar_month</span>

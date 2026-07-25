@@ -62,10 +62,10 @@ export function LandingPage() {
   return (
     <div
       ref={scrollRef}
-      className="relative h-[100dvh] w-full max-w-[430px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none bg-surface"
+      className="relative h-[100dvh] w-full max-w-[430px] landscape:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none bg-surface"
     >
       {/* Header */}
-      <header className="sticky top-0 w-full z-50 bg-surface border-b border-surface-container-high px-6 flex items-center justify-between py-3">
+      <header className="sticky top-0 w-full z-50 bg-surface border-b border-surface-container-high px-6 flex items-center justify-between py-3 landscape:py-2">
         <img src="/logo.yoyo.svg" alt="YoYoJoy" className="h-9 w-auto" />
         <button
           onClick={() => navigate('/register')}
@@ -84,7 +84,7 @@ export function LandingPage() {
         <LandingTrust />
       </main>
 
-      <footer className="bg-surface border-t border-surface-container py-14 px-6 text-center">
+      <footer className="bg-surface border-t border-surface-container py-14 landscape:py-8 px-6 text-center">
         <img src="/logo.yoyo.svg" alt="YoYoJoy" className="h-8 w-auto mx-auto mb-6 opacity-40" />
         <p className="text-[12px] text-on-surface-variant/50 font-medium tracking-wider uppercase">
           © {new Date().getFullYear()} YoYoJoy. Все права защищены.

@@ -17,8 +17,10 @@ const FEATURES = [
  * мини-карточки внутри телефона — реальный ThemeArt. */
 export function LandingAbout() {
   return (
-    <section className="relative px-6 overflow-hidden bg-surface pt-8 pb-6">
-      <div className="max-w-sm mx-auto text-center space-y-6 mb-10 landing-fade-in-scroll">
+    // В горизонтали секция сама становится сеткой 2×2: слева текст (ряд 1) и блок подарка (ряд 2),
+    // справа телефон-мокап на оба ряда. Обёртки не добавляю — структуру мокапа не трогаем.
+    <section className="relative px-6 overflow-hidden bg-surface pt-8 pb-6 landscape:max-w-[860px] landscape:mx-auto landscape:grid landscape:grid-cols-2 landscape:gap-x-8 landscape:items-center">
+      <div className="max-w-sm mx-auto text-center space-y-6 mb-10 landing-fade-in-scroll landscape:col-start-1 landscape:row-start-1 landscape:mb-0 landscape:text-left landscape:max-w-none landscape:mx-0 landscape:w-full">
         <SectionEyebrow>О ПРИЛОЖЕНИИ</SectionEyebrow>
         <h2 className="font-headline text-3xl font-bold text-primary leading-tight">
           Твой личный помощник для гармонии и заботы о себе
@@ -29,7 +31,9 @@ export function LandingAbout() {
         </p>
       </div>
 
-      <div className="relative max-w-sm mx-auto h-[650px] flex items-center justify-center landing-fade-in-scroll">
+      {/* landscape:mx-0 + w-full — иначе mx-auto на grid-элементе отключает stretch и сцена
+          сжимается до ширины телефона, ломая позиции парящих карточек вокруг него. */}
+      <div className="relative max-w-sm mx-auto h-[650px] landscape:h-[560px] flex items-center justify-center landing-fade-in-scroll landscape:col-start-2 landscape:row-start-1 landscape:row-span-2 landscape:max-w-none landscape:mx-0 landscape:w-full">
         {FEATURES.map((f) => (
           <div
             key={f.title}
@@ -47,7 +51,7 @@ export function LandingAbout() {
         ))}
 
         {/* Телефон-мокап — корпус iPhone 14/15 Pro Max, контур из Figma (node 15:70), 477x972 */}
-        <div className="relative z-10 w-72 aspect-[477/972] drop-shadow-2xl">
+        <div className="relative z-10 w-72 landscape:w-60 aspect-[477/972] drop-shadow-2xl">
           <div className="absolute inset-[2.06%_5.03%_2.06%_4.82%] rounded-[30px] overflow-hidden bg-surface">
             {/* Мини-копия реального HomePage.tsx — тот же порядок блоков и стили (просто в масштабе),
                 не абстрактное приближение: шапка (аватар/дата/колокольчик) → приветствие+знак →
@@ -217,7 +221,7 @@ export function LandingAbout() {
         </div>
       </div>
 
-      <div className="max-w-sm mx-auto mt-10">
+      <div className="max-w-sm mx-auto mt-10 landscape:col-start-1 landscape:row-start-2 landscape:mt-0 landscape:max-w-none landscape:mx-0 landscape:w-full">
         <GiftCtaBlock />
       </div>
     </section>

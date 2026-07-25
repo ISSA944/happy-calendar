@@ -11,8 +11,8 @@ const DEMO_GOALS = [
 /** Твои цели — мокап прогресса + вехи (ТЗ п.2.6, п.5). */
 export function LandingGoals() {
   return (
-    <section className="bg-surface relative overflow-hidden pt-8 pb-6 px-6">
-      <div className="max-w-sm mx-auto text-center space-y-5 mb-14 landing-fade-in-scroll">
+    <section className="bg-surface relative overflow-hidden pt-8 pb-6 px-6 landscape:max-w-[860px] landscape:mx-auto">
+      <div className="max-w-sm mx-auto text-center space-y-5 mb-14 landscape:mb-8 landing-fade-in-scroll">
         <SectionEyebrow>ТВОИ ЦЕЛИ</SectionEyebrow>
         <h2 className="font-headline text-3xl font-bold text-primary leading-tight">Мягкий прогресс к себе настоящей</h2>
         <p className="text-[15px] text-on-surface-variant leading-relaxed px-2">
@@ -21,8 +21,9 @@ export function LandingGoals() {
         </p>
       </div>
 
-      <div className="max-w-sm mx-auto space-y-6">
-        <div className="bg-surface-container-lowest rounded-[2.5rem] p-6 shadow-xl shadow-black/[0.04] border border-surface-container-high space-y-5 landing-fade-in-scroll">
+      {/* В горизонтали карточка прогресса и плашка вех встают рядом, подарок — на всю ширину под ними. */}
+      <div className="max-w-sm mx-auto space-y-6 landscape:max-w-none landscape:space-y-0 landscape:grid landscape:grid-cols-2 landscape:gap-5 landscape:items-start">
+        <div className="bg-surface-container-lowest rounded-[2.5rem] p-6 landscape:p-5 shadow-xl shadow-black/[0.04] border border-surface-container-high space-y-5 landing-fade-in-scroll">
           {DEMO_GOALS.map((g) => (
             <div key={g.id} className="space-y-2">
               <div className="flex items-center gap-3">
@@ -50,7 +51,7 @@ export function LandingGoals() {
           </div>
         </div>
 
-        <GiftCtaBlock />
+        <GiftCtaBlock className="landscape:col-span-2 landscape:max-w-sm landscape:mx-auto landscape:w-full" />
       </div>
     </section>
   )

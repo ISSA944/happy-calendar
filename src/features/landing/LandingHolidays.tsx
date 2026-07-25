@@ -39,8 +39,8 @@ export function LandingHolidays() {
   const handleChannelShare = (channel: ShareChannel['id']) => shareViaChannel(channel, shareTitle, POSTCARD_DEMO[tone])
 
   return (
-    <section className="bg-surface-container-low relative overflow-hidden pt-8 pb-6 px-6">
-      <div className="max-w-sm mx-auto text-center space-y-5 mb-14 landing-fade-in-scroll">
+    <section className="bg-surface-container-low relative overflow-hidden pt-8 pb-6 px-6 landscape:max-w-[860px] landscape:mx-auto">
+      <div className="max-w-sm mx-auto text-center space-y-5 mb-14 landscape:mb-8 landing-fade-in-scroll">
         <SectionEyebrow>ПРАЗДНИКИ</SectionEyebrow>
         <h2 className="font-headline text-3xl font-bold text-primary leading-tight">
           Два вида праздников — и тёплые открытки
@@ -50,9 +50,10 @@ export function LandingHolidays() {
         </p>
       </div>
 
-      <div className="max-w-sm mx-auto space-y-4">
+      {/* В горизонтали две крупные карточки встают рядом, блок подарка — на всю ширину под ними. */}
+      <div className="max-w-sm mx-auto space-y-4 landscape:max-w-none landscape:space-y-0 landscape:grid landscape:grid-cols-2 landscape:gap-5 landscape:items-start">
         {/* Календарные праздники + мокап открытки */}
-        <div className="bg-surface rounded-[2.5rem] p-7 shadow-xl shadow-black/[0.04] border border-surface-container-high space-y-4 landing-fade-in-scroll">
+        <div className="bg-surface rounded-[2.5rem] p-7 landscape:p-5 shadow-xl shadow-black/[0.04] border border-surface-container-high space-y-4 landing-fade-in-scroll">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
               <span className="material-symbols-outlined">celebration</span>
@@ -102,7 +103,7 @@ export function LandingHolidays() {
         </div>
 
         {/* Дни заботы о себе */}
-        <div className="bg-surface rounded-[2.5rem] p-7 shadow-xl shadow-black/[0.04] border border-surface-container-high space-y-4 landing-fade-in-scroll">
+        <div className="bg-surface rounded-[2.5rem] p-7 landscape:p-5 shadow-xl shadow-black/[0.04] border border-surface-container-high space-y-4 landing-fade-in-scroll">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
               <span className="material-symbols-outlined">self_improvement</span>
@@ -127,7 +128,7 @@ export function LandingHolidays() {
           </div>
         </div>
 
-        <GiftCtaBlock />
+        <GiftCtaBlock className="landscape:col-span-2 landscape:max-w-sm landscape:mx-auto landscape:w-full" />
       </div>
     </section>
   )

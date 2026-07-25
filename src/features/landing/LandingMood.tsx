@@ -39,8 +39,10 @@ export function LandingMood() {
   const activeMood = MOODS[activeIdx]
 
   return (
-    <section className="bg-surface-container-low relative overflow-hidden pt-8 pb-6 space-y-10">
-      <div className="max-w-sm mx-auto text-center space-y-5 px-6 landing-fade-in-scroll">
+    // В горизонтали: заголовок на всю ширину, ниже карусель слева и карточка поддержки справа —
+    // так виден сам «гибридный мув» настроения (свайп слева → текст справа) без прокрутки.
+    <section className="bg-surface-container-low relative overflow-hidden pt-8 pb-6 space-y-10 landscape:max-w-[860px] landscape:mx-auto landscape:px-6 landscape:space-y-0 landscape:grid landscape:grid-cols-2 landscape:gap-x-6 landscape:gap-y-6">
+      <div className="max-w-sm mx-auto text-center space-y-5 px-6 landscape:px-0 landscape:w-full landscape:col-span-2 landing-fade-in-scroll">
         <SectionEyebrow>КАК ТЫ СЕГОДНЯ?</SectionEyebrow>
         <h2 className="font-headline text-3xl font-bold text-primary leading-tight">
           Поддержка подстраивается под твоё состояние
@@ -50,7 +52,9 @@ export function LandingMood() {
         </p>
       </div>
 
-      <div className="max-w-sm mx-auto px-6 landing-fade-in-scroll">
+      {/* landscape:mx-0 обязателен: mx-auto на grid-элементе отключает stretch по колонке
+          (ширина считается по контенту), и карусель со слайдами w-full схлопывается. */}
+      <div className="max-w-sm mx-auto px-6 landing-fade-in-scroll landscape:px-0 landscape:max-w-none landscape:mx-0 landscape:w-full landscape:col-start-1 landscape:row-start-2">
         <div
           ref={scrollRef}
           onScroll={handleScroll}
@@ -80,8 +84,8 @@ export function LandingMood() {
         </div>
       </div>
 
-      <div className="px-6 max-w-sm mx-auto landing-fade-in-scroll">
-        <div className="bg-surface rounded-[3rem] p-9 shadow-2xl shadow-black/[0.04] border border-surface-container-high space-y-6">
+      <div className="px-6 max-w-sm mx-auto landing-fade-in-scroll landscape:px-0 landscape:max-w-none landscape:mx-0 landscape:w-full landscape:col-start-2 landscape:row-start-2">
+        <div className="bg-surface rounded-[3rem] p-9 landscape:p-6 shadow-2xl shadow-black/[0.04] border border-surface-container-high space-y-6 landscape:space-y-4">
           <div className="flex justify-between items-start">
             <h3 className="font-headline text-2xl font-bold text-on-surface">Поддержка на сегодня</h3>
             <div className="bg-accent/10 px-4 py-1.5 rounded-full border border-accent/20">
@@ -100,7 +104,7 @@ export function LandingMood() {
         </div>
       </div>
 
-      <div className="px-6 max-w-sm mx-auto -mt-2 landing-fade-in-scroll">
+      <div className="px-6 max-w-sm mx-auto -mt-2 landing-fade-in-scroll landscape:px-0 landscape:mt-0 landscape:w-full landscape:col-span-2 landscape:row-start-3">
         <GiftCtaBlock />
       </div>
     </section>

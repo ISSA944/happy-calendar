@@ -5,18 +5,19 @@ import { useNavigate } from 'react-router-dom'
 export function LandingTrust() {
   const navigate = useNavigate()
   return (
-    <section className="relative min-h-[100svh] w-full flex flex-col items-center justify-center overflow-hidden pt-8 pb-10 px-6 hero-gradient" id="trust-screen">
-      <div className="relative z-10 w-full max-w-sm flex flex-col items-center space-y-16">
-        <div className="w-full bg-surface-container-lowest rounded-[2.5rem] p-10 flex flex-col items-center space-y-10 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] landing-fade-in-scroll">
-          <div className="flex items-center gap-3">
+    <section className="relative min-h-[100svh] w-full flex flex-col items-center justify-center overflow-hidden pt-8 pb-10 landscape:py-8 px-6 hero-gradient" id="trust-screen">
+      <div className="relative z-10 w-full max-w-sm landscape:max-w-[760px] flex flex-col items-center space-y-16 landscape:space-y-8">
+        {/* В горизонтали: слева логотип и «3 500», справа кнопка и плашка подарка. */}
+        <div className="w-full bg-surface-container-lowest rounded-[2.5rem] p-10 landscape:p-8 flex flex-col items-center space-y-10 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] landing-fade-in-scroll landscape:space-y-0 landscape:grid landscape:grid-cols-2 landscape:gap-x-10 landscape:gap-y-5 landscape:items-center">
+          <div className="flex items-center gap-3 landscape:col-start-1 landscape:row-start-1 landscape:justify-center">
             <div className="w-14 h-14 rounded-full landing-cta-gradient flex items-center justify-center text-white">
               <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>spa</span>
             </div>
             <span className="font-headline text-3xl font-bold text-primary">YoYoJoy</span>
           </div>
-          <p className="text-on-surface/90 text-xl font-light leading-relaxed px-1">
+          <p className="text-on-surface/90 text-xl landscape:text-lg font-light leading-relaxed px-1 landscape:col-start-1 landscape:row-start-2">
             Уже более
-            <span className="block text-6xl font-bold text-primary my-4 animate-landing-soft-glow-text relative">
+            <span className="block text-6xl landscape:text-5xl font-bold text-primary my-4 animate-landing-soft-glow-text relative">
               3 500
               <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-24 h-2 bg-accent/20 rounded-full" />
             </span>
@@ -24,11 +25,11 @@ export function LandingTrust() {
           </p>
           <button
             onClick={() => navigate('/register')}
-            className="w-full landing-cta-gradient px-14 py-6 rounded-full text-white font-headline font-bold text-lg shadow-xl active:scale-95 transition-transform animate-landing-button-pulse"
+            className="w-full landing-cta-gradient px-14 py-6 landscape:py-5 rounded-full text-white font-headline font-bold text-lg shadow-xl active:scale-95 transition-transform animate-landing-button-pulse landscape:col-start-2 landscape:row-start-1"
           >
             Присоединиться
           </button>
-          <div className="w-full bg-accent/10 rounded-3xl p-4 border border-accent/20 text-left">
+          <div className="w-full bg-accent/10 rounded-3xl p-4 border border-accent/20 text-left landscape:col-start-2 landscape:row-start-2">
             <div className="flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-accent text-lg">redeem</span>
               <p className="text-[12px] font-bold text-on-surface">Подарок за регистрацию — на почту</p>
@@ -40,10 +41,10 @@ export function LandingTrust() {
           </div>
         </div>
 
-        <div className="landing-fade-in-scroll text-center py-4" style={{ transitionDelay: '0.3s' }}>
+        <div className="landing-fade-in-scroll text-center py-4 landscape:py-0" style={{ transitionDelay: '0.3s' }}>
           <p className="text-on-surface/60 text-xl font-light italic leading-relaxed">
             Иногда достаточно просто<br />
-            <span className="text-4xl mt-6 block font-normal tracking-[0.2em] text-on-surface uppercase not-italic">выдохнуть.</span>
+            <span className="text-4xl landscape:text-3xl mt-6 landscape:mt-3 block font-normal tracking-[0.2em] text-on-surface uppercase not-italic">выдохнуть.</span>
           </p>
         </div>
       </div>
