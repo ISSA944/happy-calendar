@@ -95,7 +95,7 @@ git merge feature/new-button         # слить ветку
 **Pull Request (PR)** — запрос на слияние веток. На GitHub можно обсудить изменения перед тем как принять их в main.
 
 ### В нашем проекте
-- Репозиторий: `github.com/ISSA994/happy-calendar`
+- Репозиторий: `github.com/ISSA944/happy-calendar`
 - Ветка: `main` — то что в продакшне
 - Каждое изменение коммитится с описанием что сделано
 - Второй репозиторий `github.com/yoyotech2026/yoyojoy-day` — для клиента, без истории разработки
