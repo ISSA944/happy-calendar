@@ -73,12 +73,22 @@ export class NotificationCronService {
         const currentTime = localTimeFor(prefs.timezone);
 
         // Какие категории «стреляют» именно в эту минуту (в локальном времени юзера).
-        const fireHoroscope = prefs.horoscopeEnabled && prefs.horoscopeTime === currentTime;
-        const fireSupport = prefs.supportEnabled && prefs.supportTime === currentTime;
-        const fireHolidays = prefs.holidaysEnabled && prefs.holidaysTime === currentTime;
-        const firePersonalCare = prefs.personalCareEnabled && prefs.personalCareTime === currentTime;
+        const fireHoroscope =
+          prefs.horoscopeEnabled && prefs.horoscopeTime === currentTime;
+        const fireSupport =
+          prefs.supportEnabled && prefs.supportTime === currentTime;
+        const fireHolidays =
+          prefs.holidaysEnabled && prefs.holidaysTime === currentTime;
+        const firePersonalCare =
+          prefs.personalCareEnabled && prefs.personalCareTime === currentTime;
 
-        if (!fireHoroscope && !fireSupport && !fireHolidays && !firePersonalCare) continue;
+        if (
+          !fireHoroscope &&
+          !fireSupport &&
+          !fireHolidays &&
+          !firePersonalCare
+        )
+          continue;
 
         const contents = await this.buildPushContents(prefs.userId, {
           fireHoroscope,
@@ -88,7 +98,9 @@ export class NotificationCronService {
         });
 
         if (!contents.length) {
-          this.logger.log(`No firing push content for userId=${prefs.userId} at ${currentTime}`);
+          this.logger.log(
+            `No firing push content for userId=${prefs.userId} at ${currentTime}`,
+          );
           continue;
         }
 
@@ -133,7 +145,10 @@ export class NotificationCronService {
           }
         }
       } catch (error) {
-        this.logger.error(`Failed to send scheduled push for userId=${prefs.userId}`, error);
+        this.logger.error(
+          `Failed to send scheduled push for userId=${prefs.userId}`,
+          error,
+        );
       }
     }
   }
@@ -144,7 +159,12 @@ export class NotificationCronService {
    */
   private async buildPushContents(
     userId: string,
-    fire: { fireHoroscope: boolean; fireSupport: boolean; fireHolidays: boolean; firePersonalCare: boolean },
+    fire: {
+      fireHoroscope: boolean;
+      fireSupport: boolean;
+      fireHolidays: boolean;
+      firePersonalCare: boolean;
+    },
   ): Promise<PushContent[]> {
     const contents: PushContent[] = [];
 
@@ -152,14 +172,24 @@ export class NotificationCronService {
       const pack = await this.todayService.getTodayPack(userId);
 
       if (fire.fireHoroscope && pack.horoscope?.main) {
-        contents.push({ title: 'Твой гороскоп на сегодня', body: pack.horoscope.main, type: 'daily_horoscope' });
+        contents.push({
+          title: 'Твой гороскоп на сегодня',
+          body: pack.horoscope.main,
+          type: 'daily_horoscope',
+        });
       }
 
       if (fire.fireSupport) {
         // Свежая фраза из пула, чтобы подряд идущие пуши отличались (как «Другая фраза»).
-        const freshPhrase = await this.todayService.getNextSupportPhrase(userId);
+        const freshPhrase =
+          await this.todayService.getNextSupportPhrase(userId);
         const text = freshPhrase ?? pack.support?.text;
-        if (text) contents.push({ title: 'Поддержка на сегодня', body: text, type: 'daily_support' });
+        if (text)
+          contents.push({
+            title: 'Поддержка на сегодня',
+            body: text,
+            type: 'daily_support',
+          });
       }
     }
 
@@ -167,7 +197,8 @@ export class NotificationCronService {
       const holidays = await this.holidaysService.getTodayHolidays(userId);
       if (holidays.length) {
         const extra = holidays.length - 1;
-        const body = extra > 0 ? `${holidays[0].title} и ещё ${extra}` : holidays[0].title;
+        const body =
+          extra > 0 ? `${holidays[0].title} и ещё ${extra}` : holidays[0].title;
         contents.push({ title: 'Праздник дня', body, type: 'daily_holiday' });
       }
     }
@@ -177,7 +208,10 @@ export class NotificationCronService {
       // остальные упоминаются числом (сама детализация — в приложении, см. HolidaysTodayBlock).
       const [main, ...rest] = await this.personalCareService.getToday(userId);
       if (main) {
-        const body = rest.length > 0 ? `${main.affirmation} И ещё ${rest.length} по другим целям.` : main.affirmation;
+        const body =
+          rest.length > 0
+            ? `${main.affirmation} И ещё ${rest.length} по другим целям.`
+            : main.affirmation;
         contents.push({ title: main.title, body, type: 'daily_personal_care' });
       }
     }

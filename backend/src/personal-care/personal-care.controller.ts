@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, HttpCode, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  HttpCode,
+  UseGuards,
+} from '@nestjs/common';
 import { IsIn } from 'class-validator';
 import { PersonalCareService } from './personal-care.service';
 import { GOAL_IDS } from '../goals';
@@ -23,7 +31,11 @@ export class PersonalCareController {
 
   @Post(':id/complete')
   @HttpCode(200)
-  async complete(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: CompletePersonalCareDto) {
+  async complete(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: CompletePersonalCareDto,
+  ) {
     return this.personalCareService.complete(user.sub, id, dto.goalId);
   }
 }

@@ -23,6 +23,10 @@ interface PostcardContentProps {
  * анимацией, а не закрытием одного sheet и открытием другого.
  */
 export function PostcardContent({ holiday }: PostcardContentProps) {
+  return <PostcardContentInner key={holiday.id} holiday={holiday} />
+}
+
+function PostcardContentInner({ holiday }: PostcardContentProps) {
   const getHolidayCard = useAppStore((s) => s.getHolidayCard)
   const addBookmark = useAppStore((s) => s.addBookmark)
   const removeBookmark = useAppStore((s) => s.removeBookmark)
@@ -30,18 +34,12 @@ export function PostcardContent({ holiday }: PostcardContentProps) {
 
   const [tone, setTone] = useState<Tone>('cute')
   const [card, setCard] = useState<HolidayCardWithText | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [showChannels, setShowChannels] = useState(false)
   const [copyFeedback, setCopyFeedback] = useState('')
 
   useEffect(() => {
-    setTone('cute')
-    setShowChannels(false)
-  }, [holiday])
-
-  useEffect(() => {
     let cancelled = false
-    setIsLoading(true)
     getHolidayCard(holiday.id, tone)
       .then((data) => { if (!cancelled) setCard(data) })
       .catch(() => { if (!cancelled) setCard(null) })
@@ -78,7 +76,10 @@ export function PostcardContent({ holiday }: PostcardContentProps) {
         {TONES.map((t) => (
           <button
             key={t.id}
-            onClick={() => setTone(t.id)}
+            onClick={() => {
+              setTone(t.id)
+              setIsLoading(true)
+            }}
             className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border transition-colors ${
               tone === t.id
                 ? 'bg-primary/10 border-primary/40 text-primary'

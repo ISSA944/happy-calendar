@@ -9,7 +9,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "eslint src",
+    "lint:frontend": "eslint src",
+    "test": "npm --prefix backend test -- --runInBand",
+    "check": "npm run build && npm run lint:frontend && npm --prefix backend run build && npm --prefix backend run lint && npm test",
     "preview": "vite preview"
   },
   "dependencies": {

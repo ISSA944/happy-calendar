@@ -56,19 +56,18 @@ export async function subscribeToPush(): Promise<PushResult> {
   }
 
   const TIMEOUT_MS = 10000;
-  
-  return new Promise(async (resolve) => {
-    const timeoutId = setTimeout(() => {
-      resolve({ success: false, errorType: 'timeout', error: 'Timeout' });
-    }, TIMEOUT_MS);
 
-    try {
-      const registration = await navigator.serviceWorker.ready;
+  try {
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<never>((_, reject) => {
+        window.setTimeout(() => reject(new Error('Timeout')), TIMEOUT_MS)
+      }),
+    ])
       
       const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY;
       if (!publicKey) {
-        clearTimeout(timeoutId);
-        return resolve({ success: false, errorType: 'subscribe_fail', error: 'VAPID key not configured' });
+        return { success: false, errorType: 'subscribe_fail', error: 'VAPID key not configured' };
       }
       const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
@@ -83,17 +82,17 @@ export async function subscribeToPush(): Promise<PushResult> {
         applicationServerKey: applicationServerKey as BufferSource,
       });
 
-      clearTimeout(timeoutId);
-      resolve({ success: true, subscription });
-    } catch (error: any) {
-      clearTimeout(timeoutId);
-      resolve({ 
-        success: false, 
-        errorType: 'subscribe_fail', 
-        error: error instanceof Error ? error.message : String(error) 
-      });
+      return { success: true, subscription };
+  } catch (error: unknown) {
+    const errorType = error instanceof Error && error.message === 'Timeout'
+      ? 'timeout'
+      : 'subscribe_fail'
+    return {
+      success: false,
+      errorType,
+      error: error instanceof Error ? error.message : String(error),
     }
-  });
+  }
 }
 
 /**

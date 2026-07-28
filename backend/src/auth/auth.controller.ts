@@ -6,7 +6,14 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { IsBoolean, IsEmail, IsOptional, IsString, Length, Matches } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+} from 'class-validator';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -55,7 +62,12 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 900_000 } })
   async register(@Body() dto: RegisterDto) {
     this.logger.log(`POST /api/auth/register email=${dto.email}`);
-    return this.authService.register(dto.email, dto.name, dto.consents, dto.marketing);
+    return this.authService.register(
+      dto.email,
+      dto.name,
+      dto.consents,
+      dto.marketing,
+    );
   }
 
   @Post('login')

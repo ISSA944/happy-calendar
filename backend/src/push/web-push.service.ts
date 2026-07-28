@@ -9,13 +9,24 @@ export type WebPushPayload = {
   data?: Record<string, string | number | boolean>;
 };
 
-type BrowserPushSubscription = {
+export type BrowserPushSubscription = {
   endpoint: string;
   keys: {
     p256dh: string;
     auth: string;
   };
 };
+
+type WebPushError = {
+  statusCode?: number;
+  message?: string;
+  body?: unknown;
+  headers?: unknown;
+};
+
+function asWebPushError(error: unknown): WebPushError {
+  return typeof error === 'object' && error !== null ? error : {};
+}
 
 @Injectable()
 export class WebPushService {
@@ -33,14 +44,28 @@ export class WebPushService {
     this.isConfigured = Boolean(publicKey && privateKey);
 
     if (this.isConfigured) {
-      webpush.setVapidDetails(subject ?? 'mailto:support@yoyojoy.online', publicKey!, privateKey!);
+      webpush.setVapidDetails(
+        subject ?? 'mailto:support@yoyojoy.online',
+        publicKey!,
+        privateKey!,
+      );
     } else {
-      this.logger.warn('WEB_PUSH_PUBLIC_KEY/WEB_PUSH_PRIVATE_KEY missing; Web Push fallback disabled.');
+      this.logger.warn(
+        'WEB_PUSH_PUBLIC_KEY/WEB_PUSH_PRIVATE_KEY missing; Web Push fallback disabled.',
+      );
     }
   }
 
-  async subscribe(userId: string, subscription: BrowserPushSubscription, userAgent?: string) {
-    if (!subscription.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
+  async subscribe(
+    userId: string,
+    subscription: BrowserPushSubscription,
+    userAgent?: string,
+  ) {
+    if (
+      !subscription.endpoint ||
+      !subscription.keys?.p256dh ||
+      !subscription.keys?.auth
+    ) {
       return { subscribed: false, reason: 'invalid-subscription' };
     }
 
@@ -89,19 +114,26 @@ export class WebPushService {
           data: payload.data ?? {},
         }),
       );
-      this.logger.log(`Web Push sent OK (title="${payload.title}", endpoint=...${subscription.endpoint.slice(-40)})`);
+      this.logger.log(
+        `Web Push sent OK (title="${payload.title}", endpoint=...${subscription.endpoint.slice(-40)})`,
+      );
       return true;
-    } catch (error: any) {
-      const statusCode = error?.statusCode as number | undefined;
+    } catch (error: unknown) {
+      const pushError = asWebPushError(error);
+      const statusCode = pushError.statusCode;
       if (statusCode === 410 || statusCode === 404) {
-        this.logger.warn(`Dead push subscription (${statusCode}), removing: ${subscription.endpoint.slice(0, 60)}...`);
-        await this.prisma.webPushSubscription.deleteMany({
-          where: { endpoint: subscription.endpoint },
-        }).catch(() => {});
+        this.logger.warn(
+          `Dead push subscription (${statusCode}), removing: ${subscription.endpoint.slice(0, 60)}...`,
+        );
+        await this.prisma.webPushSubscription
+          .deleteMany({
+            where: { endpoint: subscription.endpoint },
+          })
+          .catch(() => {});
       } else {
         this.logger.error(
-          `Web Push failed (status=${statusCode ?? 'n/a'}, endpoint=...${subscription.endpoint.slice(-40)}): ${error?.message ?? error}`,
-          JSON.stringify({ body: error?.body, headers: error?.headers }),
+          `Web Push failed (status=${statusCode ?? 'n/a'}, endpoint=...${subscription.endpoint.slice(-40)}): ${pushError.message ?? String(error)}`,
+          JSON.stringify({ body: pushError.body, headers: pushError.headers }),
         );
       }
       return false;

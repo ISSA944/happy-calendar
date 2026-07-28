@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { apiClient } from '../api'
 import { useEmailChangeDraft } from '../store'
 import { isValidEmail } from '../utils/validation'
+import { getHttpStatus } from '../utils/http'
 
 export function ChangeEmailPage() {
   const navigate = useNavigate()
@@ -31,10 +32,11 @@ export function ChangeEmailPage() {
         marketing,
       })
       navigate('/change-email-otp')
-    } catch (err: any) {
-      if (err.response?.status === 409) {
+    } catch (err: unknown) {
+      const status = getHttpStatus(err)
+      if (status === 409) {
         setSubmitError('Данная почта уже используется другим пользователем.')
-      } else if (err.response?.status === 400) {
+      } else if (status === 400) {
         setSubmitError('Вы ввели тот же адрес, который используете сейчас.')
       } else {
         setSubmitError('Не удалось отправить код. Проверьте почту и попробуйте ещё раз.')

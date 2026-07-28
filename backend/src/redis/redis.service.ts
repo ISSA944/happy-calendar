@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
@@ -12,12 +17,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     const redisUrl = this.config.get<string>('REDIS_URL');
     if (!redisUrl) {
-      this.logger.warn('REDIS_URL not set — AI pack caching disabled (no Redis)');
+      this.logger.warn(
+        'REDIS_URL not set — AI pack caching disabled (no Redis)',
+      );
       return;
     }
-    this.client = new Redis(redisUrl, { lazyConnect: false, maxRetriesPerRequest: 2 });
+    this.client = new Redis(redisUrl, {
+      lazyConnect: false,
+      maxRetriesPerRequest: 2,
+    });
     this.client.on('connect', () => this.logger.log('Redis connected'));
-    this.client.on('error', (err: Error) => this.logger.error('Redis error', err.message));
+    this.client.on('error', (err: Error) =>
+      this.logger.error('Redis error', err.message),
+    );
   }
 
   async onModuleDestroy() {
@@ -26,7 +38,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   async get(key: string): Promise<string | null> {
     try {
-      return await this.client?.get(key) ?? null;
+      return (await this.client?.get(key)) ?? null;
     } catch {
       return null;
     }
@@ -62,7 +74,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async lpush(key: string, values: string[], ttlSeconds: number): Promise<void> {
+  async lpush(
+    key: string,
+    values: string[],
+    ttlSeconds: number,
+  ): Promise<void> {
     try {
       if (!this.client || values.length === 0) return;
       await this.client.lpush(key, ...values);
@@ -74,7 +90,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   async rpop(key: string): Promise<string | null> {
     try {
-      return await this.client?.rpop(key) ?? null;
+      return (await this.client?.rpop(key)) ?? null;
     } catch {
       return null;
     }
@@ -82,7 +98,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   async llen(key: string): Promise<number> {
     try {
-      return await this.client?.llen(key) ?? 0;
+      return (await this.client?.llen(key)) ?? 0;
     } catch {
       return 0;
     }

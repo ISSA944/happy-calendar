@@ -23,7 +23,9 @@ export class GoalsService {
    * Считается независимо от статуса active (ТЗ п. 4.5: прогресс сохраняется при отключении).
    */
   async progressFor(userId: string, goalId: string): Promise<number> {
-    return this.prisma.personalCareCompletion.count({ where: { userId, goalId } });
+    return this.prisma.personalCareCompletion.count({
+      where: { userId, goalId },
+    });
   }
 
   /** Список 4 целей с флагом active и прогрессом. Неактивные с прогрессом тоже возвращаются. */
@@ -59,8 +61,12 @@ export class GoalsService {
    * Реактивация не обнуляет прогресс (он в completions). Игнорирует неизвестные id.
    */
   async setGoals(userId: string, selected: string[]): Promise<GoalView[]> {
-    const chosen = new Set(selected.filter((id) => GOAL_IDS.includes(id as never)));
-    this.logger.log(`setGoals user=${userId} selected=[${[...chosen].join(',')}]`);
+    const chosen = new Set(
+      selected.filter((id) => GOAL_IDS.includes(id as never)),
+    );
+    this.logger.log(
+      `setGoals user=${userId} selected=[${[...chosen].join(',')}]`,
+    );
 
     await Promise.all(
       GOAL_IDS.map((goalId) =>

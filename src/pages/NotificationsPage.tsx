@@ -15,7 +15,8 @@ export function NotificationsPage() {
   const [showIosInstruction, setShowIosInstruction] = useState(false)
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-  const isStandalone = (window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches
+  const iosNavigator = window.navigator as Navigator & { standalone?: boolean }
+  const isStandalone = iosNavigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches
 
   const handleAllow = async () => {
     if (isRequestingPush) return

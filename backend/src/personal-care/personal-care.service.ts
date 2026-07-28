@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma';
 import { GoalsService } from '../goals';
 import { GOAL_IDS, goalTitle } from '../goals';
 import { WebPushService } from '../push/web-push.service';
-import { todayDdMm, todayDdMmYyyy, dayOfYear } from '../common/date.util';
+import { todayDdMmYyyy, dayOfYear } from '../common/date.util';
 import { fillName } from '../common/name.util';
 import type { PersonalCareDay } from '@prisma/client';
 
@@ -20,7 +20,10 @@ export interface PersonalCareView {
 
 // Поля задание/совет на PersonalCareDay для каждой из 4 целей (ТЗ: контент от клиента различается
 // по цели — xlsx «Личные праздники» даёт отдельную пару task/advice на каждую из calm/hear/food/move).
-const VARIANT_FIELDS: Record<string, { task: keyof PersonalCareDay; advice: keyof PersonalCareDay }> = {
+const VARIANT_FIELDS: Record<
+  string,
+  { task: keyof PersonalCareDay; advice: keyof PersonalCareDay }
+> = {
   calm: { task: 'calmTask', advice: 'calmAdvice' },
   hear: { task: 'hearTask', advice: 'hearAdvice' },
   food: { task: 'foodTask', advice: 'foodAdvice' },
@@ -59,7 +62,10 @@ export class PersonalCareService {
     private readonly webPush: WebPushService,
   ) {}
 
-  private async resolveImageUrl(careDayId: string, themeKey: string): Promise<string | null> {
+  private async resolveImageUrl(
+    careDayId: string,
+    themeKey: string,
+  ): Promise<string | null> {
     const direct = await this.prisma.holidayImage.findFirst({
       where: { personalCareDayId: careDayId },
       select: { url: true },
@@ -82,14 +88,21 @@ export class PersonalCareService {
   async getToday(userId: string): Promise<PersonalCareView[]> {
     const [prefs, user, activeGoals] = await Promise.all([
       this.prisma.prefs.findUnique({ where: { userId } }),
-      this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      }),
       this.goals.activeGoalIds(userId),
     ]);
 
     const doy = dayOfYear(prefs?.timezone);
     const day =
-      (await this.prisma.personalCareDay.findUnique({ where: { dayOfYear: doy } })) ??
-      (await this.prisma.personalCareDay.findUnique({ where: { dayOfYear: 1 } }));
+      (await this.prisma.personalCareDay.findUnique({
+        where: { dayOfYear: doy },
+      })) ??
+      (await this.prisma.personalCareDay.findUnique({
+        where: { dayOfYear: 1 },
+      }));
     if (!day) return [];
 
     const goalIds = orderedGoalIds(activeGoals);
@@ -124,12 +137,19 @@ export class PersonalCareService {
    * (ТЗ п. 3). goalId приходит от клиента — он же был показан на конкретной карточке в
    * getToday(), проверяем только, что это один из 4 известных id (защита от мусорных значений).
    */
-  async complete(userId: string, careDayId: string, goalId: string): Promise<CompleteResult> {
+  async complete(
+    userId: string,
+    careDayId: string,
+    goalId: string,
+  ): Promise<CompleteResult> {
     if (!VARIANT_FIELDS[goalId]) throw new NotFoundException('Unknown goal id');
 
     const [prefs, user, careDay] = await Promise.all([
       this.prisma.prefs.findUnique({ where: { userId } }),
-      this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      }),
       this.prisma.personalCareDay.findUnique({ where: { id: careDayId } }),
     ]);
     if (!careDay) throw new NotFoundException('Personal care day not found');
@@ -150,7 +170,9 @@ export class PersonalCareService {
     });
 
     const count = await this.goals.progressFor(userId, goalId); // уже включает свежий зачёт
-    const template = await this.prisma.pushMilestoneTemplate.findUnique({ where: { milestone: count } });
+    const template = await this.prisma.pushMilestoneTemplate.findUnique({
+      where: { milestone: count },
+    });
     const hits: MilestoneHit[] = template
       ? [{ goalId, goalTitle: goalTitle(goalId), count, emoji: template.emoji }]
       : [];
@@ -166,8 +188,14 @@ export class PersonalCareService {
    * Правило группировки (ТЗ п. 3, лист «Как использовать»):
    * одна веха у нескольких целей → ОДИН пуш (цели перечислены); разные вехи → отдельные пуши.
    */
-  private async sendMilestonePushes(userId: string, name: string | null, hits: MilestoneHit[]) {
-    const subs = await this.prisma.webPushSubscription.findMany({ where: { userId } });
+  private async sendMilestonePushes(
+    userId: string,
+    name: string | null,
+    hits: MilestoneHit[],
+  ) {
+    const subs = await this.prisma.webPushSubscription.findMany({
+      where: { userId },
+    });
     if (!subs.length) return;
 
     // Группируем по номеру вехи.
@@ -179,7 +207,9 @@ export class PersonalCareService {
     }
 
     for (const [milestone, group] of byMilestone) {
-      const template = await this.prisma.pushMilestoneTemplate.findUnique({ where: { milestone } });
+      const template = await this.prisma.pushMilestoneTemplate.findUnique({
+        where: { milestone },
+      });
       if (!template) continue;
 
       let body = fillName(template.body, name);
@@ -192,8 +222,19 @@ export class PersonalCareService {
       let anySent = false;
       for (const sub of subs) {
         const ok = await this.webPush.send(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          { title, body, data: { type: 'goal_milestone', milestone, url: 'https://yoyojoy.online/home' } },
+          {
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth },
+          },
+          {
+            title,
+            body,
+            data: {
+              type: 'goal_milestone',
+              milestone,
+              url: 'https://yoyojoy.online/home',
+            },
+          },
         );
         if (ok) anySent = true;
       }

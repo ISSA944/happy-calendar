@@ -4,7 +4,7 @@ import { AiService, type AiDailyPack, type PromptContext } from '../ai';
 import { RedisService } from '../redis/redis.service';
 
 const CACHE_TTL_SECONDS = 129_600; // 36 hours (covers all RU timezones)
-const AI_LOCK_TTL       = 30;     // max seconds one AI call should take
+const AI_LOCK_TTL = 30; // max seconds one AI call should take
 
 @Injectable()
 export class TodayService {
@@ -21,14 +21,17 @@ export class TodayService {
     const [prefs, profile, user] = await Promise.all([
       this.prisma.prefs.findUnique({ where: { userId } }),
       this.prisma.profile.findUnique({ where: { userId } }),
-      this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      }),
     ]);
 
-    const today      = this.getTodayDateStr(prefs?.timezone ?? undefined);
-    const zodiacSign = profile?.zodiacSign  ?? '';
-    const mood       = profile?.currentMood ?? 'Нормально';
-    const gender     = profile?.gender      ?? 'UNKNOWN';
-    const name       = user?.name           ?? undefined;
+    const today = this.getTodayDateStr(prefs?.timezone ?? undefined);
+    const zodiacSign = profile?.zodiacSign ?? '';
+    const mood = profile?.currentMood ?? 'Нормально';
+    const gender = profile?.gender ?? 'UNKNOWN';
+    const name = user?.name ?? undefined;
 
     // ── 1. DailyFeed DB cache — must match current zodiac sign ────────────────
     const existingFeed = await this.prisma.dailyFeed.findUnique({
@@ -42,24 +45,31 @@ export class TodayService {
       existingFeed.horoscope.zodiacSign === zodiacSign
     ) {
       this.logger.log(`getTodayPack DB hit userId=${userId} date=${today}`);
-      return this.buildResponse(today, existingFeed.horoscope, existingFeed.supportPhrase, existingFeed.holiday);
+      return this.buildResponse(
+        today,
+        existingFeed.horoscope,
+        existingFeed.supportPhrase,
+        existingFeed.holiday,
+      );
     }
 
     // Stale or mismatched zodiac — delete so it rebuilds correctly.
     if (existingFeed) {
       this.logger.log(
         `getTodayPack invalidating stale feed userId=${userId} ` +
-        `(zodiac was="${existingFeed.horoscope?.zodiacSign ?? 'none'}", now="${zodiacSign}")`,
+          `(zodiac was="${existingFeed.horoscope?.zodiacSign ?? 'none'}", now="${zodiacSign}")`,
       );
-      await this.prisma.dailyFeed.delete({ where: { userId_date: { userId, date: today } } });
+      await this.prisma.dailyFeed.delete({
+        where: { userId_date: { userId, date: today } },
+      });
     }
 
     // ── 2. Redis cache (zodiacSign + mood + name + date) ───────────────────────
     // Включаем имя в ключ: AI обращается по имени, поэтому фразу нельзя шарить
     // между разными юзерами с одним знаком. Юзеры без имени делят anon-кэш.
-    const nameKey  = name ?? 'anon';
+    const nameKey = name ?? 'anon';
     const cacheKey = `pack:${zodiacSign}:${mood}:${nameKey}:${today}`;
-    const lockKey  = `lock:${cacheKey}`;
+    const lockKey = `lock:${cacheKey}`;
 
     let pack: AiDailyPack | null = null;
     const cached = await this.redis.get(cacheKey);
@@ -76,7 +86,7 @@ export class TodayService {
       if (!lockAcquired) {
         // Another request has the lock — wait briefly then re-check Redis.
         this.logger.log(`getTodayPack lock busy, waiting... key=${cacheKey}`);
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 1000));
         const retried = await this.redis.get(cacheKey);
         if (retried) {
           pack = JSON.parse(retried) as AiDailyPack;
@@ -88,11 +98,19 @@ export class TodayService {
         // Edge case without lock: two concurrent writes are idempotent (same data).
         try {
           this.logger.log(`getTodayPack calling AI key=${cacheKey}`);
-          const context: PromptContext = { zodiacSign, mood, gender, date: today, name };
+          const context: PromptContext = {
+            zodiacSign,
+            mood,
+            gender,
+            date: today,
+            name,
+          };
           pack = await this.ai.generateDailyPack(userId, context);
           const ttl = pack.isFallback ? 300 : CACHE_TTL_SECONDS;
           if (pack.isFallback) {
-            this.logger.warn(`Caching fallback response for 5 minutes (key=${cacheKey})`);
+            this.logger.warn(
+              `Caching fallback response for 5 minutes (key=${cacheKey})`,
+            );
           }
           await this.redis.set(cacheKey, JSON.stringify(pack), ttl);
         } finally {
@@ -111,11 +129,11 @@ export class TodayService {
       create: {
         date: today,
         zodiacSign,
-        main:     pack.horoscope,
+        main: pack.horoscope,
         detailed: pack.horoscopeDetailed,
-        advice:   pack.advice,
-        moon:     pack.moon,
-        aspect:   pack.aspect,
+        advice: pack.advice,
+        moon: pack.moon,
+        aspect: pack.aspect,
       },
     });
 
@@ -137,16 +155,16 @@ export class TodayService {
     await this.prisma.dailyFeed.upsert({
       where: { userId_date: { userId, date: today } },
       update: {
-        horoscopeId:     horoscope.id,
+        horoscopeId: horoscope.id,
         supportPhraseId: supportPhrase.id,
-        holidayId:       holiday?.id ?? null,
+        holidayId: holiday?.id ?? null,
       },
       create: {
         userId,
-        date:            today,
-        horoscopeId:     horoscope.id,
+        date: today,
+        horoscopeId: horoscope.id,
         supportPhraseId: supportPhrase.id,
-        holidayId:       holiday?.id ?? null,
+        holidayId: holiday?.id ?? null,
       },
     });
 
@@ -184,14 +202,17 @@ export class TodayService {
     const [profile, prefs, user] = await Promise.all([
       this.prisma.profile.findUnique({ where: { userId } }),
       this.prisma.prefs.findUnique({ where: { userId } }),
-      this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      }),
     ]);
 
-    const mood      = profile?.currentMood ?? 'Нормально';
-    const zodiac    = profile?.zodiacSign  ?? undefined;
-    const gender    = profile?.gender      ?? undefined;
-    const name      = user?.name           ?? undefined;
-    const today     = this.getTodayDateStr(prefs?.timezone ?? undefined);
+    const mood = profile?.currentMood ?? 'Нормально';
+    const zodiac = profile?.zodiacSign ?? undefined;
+    const gender = profile?.gender ?? undefined;
+    const name = user?.name ?? undefined;
+    const today = this.getTodayDateStr(prefs?.timezone ?? undefined);
 
     const poolKey = `support-pool:${mood}:${zodiac ?? 'unknown'}:${name ?? 'anon'}:${gender ?? 'u'}:${today}`;
 
@@ -231,18 +252,24 @@ export class TodayService {
 
   private buildResponse(
     date: string,
-    horoscope: { main: string; detailed: string | null; advice: string; moon: string; aspect: string },
+    horoscope: {
+      main: string;
+      detailed: string | null;
+      advice: string;
+      moon: string;
+      aspect: string;
+    },
     supportPhrase: { text: string },
     holiday: { title: string } | null,
   ) {
     return {
       date,
       horoscope: {
-        main:     horoscope.main,
+        main: horoscope.main,
         detailed: horoscope.detailed ?? horoscope.main,
-        advice:   horoscope.advice,
-        moon:     horoscope.moon,
-        aspect:   horoscope.aspect,
+        advice: horoscope.advice,
+        moon: horoscope.moon,
+        aspect: horoscope.aspect,
       },
       support: { text: supportPhrase.text },
       holiday: holiday ? { title: holiday.title } : null,
@@ -259,14 +286,14 @@ export class TodayService {
           day: '2-digit',
           month: '2-digit',
         }).formatToParts(now);
-        const day   = parts.find(p => p.type === 'day')?.value   ?? '';
-        const month = parts.find(p => p.type === 'month')?.value ?? '';
+        const day = parts.find((p) => p.type === 'day')?.value ?? '';
+        const month = parts.find((p) => p.type === 'month')?.value ?? '';
         if (day && month) return `${day}.${month}`;
       } catch {
         // Invalid IANA timezone — fall through to UTC
       }
     }
-    const day   = String(now.getUTCDate()).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
     const month = String(now.getUTCMonth() + 1).padStart(2, '0');
     return `${day}.${month}`;
   }

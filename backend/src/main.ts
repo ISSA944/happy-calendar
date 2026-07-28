@@ -1,16 +1,19 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.use(require('express').json({ limit: '5mb' }));
-  app.use(require('express').urlencoded({ extended: true, limit: '5mb' }));
+  app.use(json({ limit: '5mb' }));
+  app.use(urlencoded({ extended: true, limit: '5mb' }));
 
-  app.use(helmet({
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-  }));
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   const logger = new Logger('Bootstrap');
 
   app.useGlobalPipes(
@@ -24,15 +27,18 @@ async function bootstrap() {
   const allowedOrigins = [
     'https://yoyojoy.online',
     'https://www.yoyojoy.online',
-    /^https:\/\/[\w-]+\.vercel\.app$/,   // любые preview-деплои Vercel
+    /^https:\/\/[\w-]+\.vercel\.app$/, // любые preview-деплои Vercel
     'http://localhost:5173',
-    'http://192.168.100.17:5173',         // локальная сеть для тестов
+    'http://192.168.100.17:5173', // локальная сеть для тестов
   ];
 
   app.enableCors({
-    origin: (origin: string | undefined, cb: (err: Error | null, allow: boolean) => void) => {
+    origin: (
+      origin: string | undefined,
+      cb: (err: Error | null, allow: boolean) => void,
+    ) => {
       if (!origin) return cb(null, true);
-      const ok = allowedOrigins.some(o =>
+      const ok = allowedOrigins.some((o) =>
         typeof o === 'string' ? o === origin : o.test(origin),
       );
       cb(ok ? null : new Error(`CORS blocked: ${origin}`), ok);

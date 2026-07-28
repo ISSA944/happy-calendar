@@ -26,6 +26,27 @@ export interface JwtPayload {
 
 type EmailProvider = 'smtp' | 'resend' | 'none';
 
+type ResendEmailResult = {
+  data?: { id?: string } | null;
+  error?: object | null;
+};
+
+function asResendEmailResult(value: unknown): ResendEmailResult {
+  return typeof value === 'object' && value !== null ? value : {};
+}
+
+function messageIdOf(value: unknown): string {
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    'messageId' in value &&
+    typeof value.messageId === 'string'
+  ) {
+    return value.messageId;
+  }
+  return 'n/a';
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -88,7 +109,12 @@ export class AuthService {
     this.logger.log(`Email provider: ${this.provider}`);
   }
 
-  async register(email: string, name?: string, consents?: boolean, marketing?: boolean) {
+  async register(
+    email: string,
+    name?: string,
+    consents?: boolean,
+    marketing?: boolean,
+  ) {
     const normalizedEmail = email.trim().toLowerCase();
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';
     // OTP-бэкдор (код всегда 1111) — активен во всех окружениях, см. TEST_EMAIL выше.
@@ -104,13 +130,18 @@ export class AuthService {
       // Test account in dev: auto-wipe on every registration so re-registration always works cleanly
       await this.prisma.user.deleteMany({ where: { email: normalizedEmail } });
     } else {
-      const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+      const existing = await this.prisma.user.findUnique({
+        where: { email: normalizedEmail },
+      });
       if (existing) {
         if (isTestAccount) {
           // login() не принимает name — без этого имя, введённое на экране регистрации,
           // молча терялось при каждом повторном "регистрируюсь" на уже существующий аккаунт.
           if (name?.trim()) {
-            await this.prisma.user.update({ where: { id: existing.id }, data: { name: name.trim() } });
+            await this.prisma.user.update({
+              where: { id: existing.id },
+              data: { name: name.trim() },
+            });
           }
           return this.login(normalizedEmail);
         }
@@ -126,7 +157,11 @@ export class AuthService {
       await this.prisma.prefs.upsert({
         where: { userId: user.id },
         update: { consentPd: consents, marketingConsent: marketing ?? false },
-        create: { userId: user.id, consentPd: consents, marketingConsent: marketing ?? false },
+        create: {
+          userId: user.id,
+          consentPd: consents,
+          marketingConsent: marketing ?? false,
+        },
       });
     }
 
@@ -142,7 +177,7 @@ export class AuthService {
         if (!isDev) throw err;
         this.logger.warn(
           `\n⚠️  DEV MODE — email send failed for <${normalizedEmail}>.\n` +
-          `   OTP code: [ ${code} ]  (enter this on the OTP page)\n`,
+            `   OTP code: [ ${code} ]  (enter this on the OTP page)\n`,
         );
       }
     } else {
@@ -154,10 +189,17 @@ export class AuthService {
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { otpHash, otpExpiresAt, otpFailedAttempts: 0, otpLastFailedAt: null },
+      data: {
+        otpHash,
+        otpExpiresAt,
+        otpFailedAttempts: 0,
+        otpLastFailedAt: null,
+      },
     });
 
-    this.logger.log(`OTP отправлен на ${normalizedEmail} (TTL ${this.OTP_TTL_MIN} мин)`);
+    this.logger.log(
+      `OTP отправлен на ${normalizedEmail} (TTL ${this.OTP_TTL_MIN} мин)`,
+    );
 
     return { ok: true, email: normalizedEmail };
   }
@@ -165,7 +207,9 @@ export class AuthService {
   async login(email: string) {
     const normalizedEmail = email.trim().toLowerCase();
 
-    const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+    const user = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
     if (!user) {
       throw new NotFoundException('Email not found');
     }
@@ -180,7 +224,9 @@ export class AuthService {
         await this.sendOtpEmail(normalizedEmail, code);
       } catch (err) {
         if (!isDev) throw err;
-        this.logger.warn(`\n⚠️  DEV MODE — email send failed for <${normalizedEmail}>.\n   OTP code: [ ${code} ]\n`);
+        this.logger.warn(
+          `\n⚠️  DEV MODE — email send failed for <${normalizedEmail}>.\n   OTP code: [ ${code} ]\n`,
+        );
       }
     } else {
       this.logger.warn(`\n🧪 TEST ACCOUNT — OTP bypassed, code is 1111\n`);
@@ -191,10 +237,17 @@ export class AuthService {
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { otpHash, otpExpiresAt, otpFailedAttempts: 0, otpLastFailedAt: null },
+      data: {
+        otpHash,
+        otpExpiresAt,
+        otpFailedAttempts: 0,
+        otpLastFailedAt: null,
+      },
     });
 
-    this.logger.log(`Login OTP отправлен на ${normalizedEmail} (TTL ${this.OTP_TTL_MIN} мин)`);
+    this.logger.log(
+      `Login OTP отправлен на ${normalizedEmail} (TTL ${this.OTP_TTL_MIN} мин)`,
+    );
     return { ok: true, email: normalizedEmail };
   }
 
@@ -219,7 +272,8 @@ export class AuthService {
     const MAX_ATTEMPTS = 5;
     const WINDOW_MS = 15 * 60_000;
     const recentlyFailed =
-      user.otpLastFailedAt && Date.now() - user.otpLastFailedAt.getTime() < WINDOW_MS;
+      user.otpLastFailedAt &&
+      Date.now() - user.otpLastFailedAt.getTime() < WINDOW_MS;
     if (recentlyFailed && user.otpFailedAttempts >= MAX_ATTEMPTS) {
       throw new UnauthorizedException('Too many attempts. Request a new code.');
     }
@@ -239,7 +293,12 @@ export class AuthService {
     // Одноразовость: чистим OTP + сбрасываем счётчик
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { otpHash: null, otpExpiresAt: null, otpFailedAttempts: 0, otpLastFailedAt: null },
+      data: {
+        otpHash: null,
+        otpExpiresAt: null,
+        otpFailedAttempts: 0,
+        otpLastFailedAt: null,
+      },
     });
 
     // Создаём Profile/Prefs пустыми, если их ещё нет (upsert without update)
@@ -276,25 +335,27 @@ export class AuthService {
     return this.issueTokens(user.id, user.email);
   }
 
-  async requestEmailChange(
-    userId: string,
-    email: string,
-    consents?: boolean,
-  ) {
+  async requestEmailChange(userId: string, email: string, consents?: boolean) {
     const normalizedEmail = email.trim().toLowerCase();
-    const currentUser = await this.prisma.user.findUnique({ where: { id: userId } });
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
     if (!currentUser) throw new UnauthorizedException('User not found');
     if (currentUser.email === normalizedEmail) {
       throw new BadRequestException('Email is unchanged');
     }
 
-    this.logger.log(`Requesting email change: userId=${userId}, from ${currentUser.email} to ${normalizedEmail}`);
+    this.logger.log(
+      `Requesting email change: userId=${userId}, from ${currentUser.email} to ${normalizedEmail}`,
+    );
 
     const existing = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
     if (existing && existing.id !== userId) {
-      this.logger.warn(`Email change failed: ${normalizedEmail} is already in use by another user`);
+      this.logger.warn(
+        `Email change failed: ${normalizedEmail} is already in use by another user`,
+      );
       throw new ConflictException('Email already in use');
     }
 
@@ -304,13 +365,17 @@ export class AuthService {
     this.logger.log(`Sending email change OTP to ${normalizedEmail}...`);
     try {
       await this.sendOtpEmail(normalizedEmail, code);
-      this.logger.log(`Email change OTP successfully sent to ${normalizedEmail}`);
+      this.logger.log(
+        `Email change OTP successfully sent to ${normalizedEmail}`,
+      );
     } catch (err) {
-      this.logger.error(`Failed to send email change OTP to ${normalizedEmail}: ${err instanceof Error ? err.message : String(err)}`);
+      this.logger.error(
+        `Failed to send email change OTP to ${normalizedEmail}: ${err instanceof Error ? err.message : String(err)}`,
+      );
       if (!isDev) throw err;
       this.logger.warn(
         `\n⚠️  DEV MODE — email change send failed for <${normalizedEmail}>.\n` +
-        `   OTP code: [ ${code} ]  (enter this on the email-change OTP page)\n`,
+          `   OTP code: [ ${code} ]  (enter this on the email-change OTP page)\n`,
       );
     }
 
@@ -427,13 +492,15 @@ export class AuthService {
 
     if (this.provider === 'smtp' && this.smtpTransport) {
       try {
-        const info = await this.smtpTransport.sendMail({
+        const info: unknown = await this.smtpTransport.sendMail({
           from: `${this.smtpFromName} <${this.smtpFromEmail}>`,
           to,
           subject,
           html,
         });
-        this.logger.log(`OTP email sent to ${to} via SMTP (id=${info.messageId})`);
+        this.logger.log(
+          `OTP email sent to ${to} via SMTP (id=${messageIdOf(info)})`,
+        );
         return;
       } catch (err) {
         this.logger.error(
@@ -446,19 +513,23 @@ export class AuthService {
 
     if (this.provider === 'resend' && this.resend) {
       try {
-        const { data, error } = await this.resend.emails.send({
-          from: `YoYoJoy Day <${this.resendFromEmail}>`,
-          to,
-          subject,
-          html,
-        });
-        if (error) {
+        const result = asResendEmailResult(
+          await this.resend.emails.send({
+            from: `YoYoJoy Day <${this.resendFromEmail}>`,
+            to,
+            subject,
+            html,
+          }),
+        );
+        if (result.error) {
           this.logger.error(
-            `Resend API rejected email for ${to} (from=${this.resendFromEmail}): ${JSON.stringify(error)}`,
+            `Resend API rejected email for ${to} (from=${this.resendFromEmail}): ${JSON.stringify(result.error)}`,
           );
           throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
         }
-        this.logger.log(`OTP email sent to ${to} via Resend (id=${data?.id ?? 'n/a'})`);
+        this.logger.log(
+          `OTP email sent to ${to} via Resend (id=${result.data?.id ?? 'n/a'})`,
+        );
         return;
       } catch (err) {
         if (err instanceof InternalServerErrorException) throw err;
@@ -470,7 +541,9 @@ export class AuthService {
       }
     }
 
-    this.logger.error('No email provider configured (set SMTP_* or RESEND_API_KEY)');
+    this.logger.error(
+      'No email provider configured (set SMTP_* or RESEND_API_KEY)',
+    );
     throw new InternalServerErrorException(EMAIL_FAILURE_MSG);
   }
 
@@ -501,10 +574,15 @@ export class AuthService {
               <div style="text-align:center">
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto">
                   <tr>
-                    ${code.split('').map(d => `
+                    ${code
+                      .split('')
+                      .map(
+                        (d) => `
                     <td style="padding:0 5px">
                       <div style="width:56px;height:72px;background:#f0fafa;border:2px solid #2FA7A0;border-radius:14px;text-align:center;line-height:72px;font-size:40px;font-weight:800;color:#006a65;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">${d}</div>
-                    </td>`).join('')}
+                    </td>`,
+                      )
+                      .join('')}
                   </tr>
                 </table>
               </div>
@@ -540,10 +618,14 @@ export class AuthService {
       return fs
         .readdirSync(dir)
         .filter((f) => f.toLowerCase().endsWith('.pdf'))
-        .map((f) => ({ filename: f, content: fs.readFileSync(path.join(dir, f)) }));
+        .map((f) => ({
+          filename: f,
+          content: fs.readFileSync(path.join(dir, f)),
+        }));
     } catch (err) {
       this.logger.warn(
-        `Не удалось прочитать подарки из ${dir}: ` + (err instanceof Error ? err.message : String(err)),
+        `Не удалось прочитать подарки из ${dir}: ` +
+          (err instanceof Error ? err.message : String(err)),
       );
       return [];
     }
@@ -554,33 +636,54 @@ export class AuthService {
   private async sendWelcomeEmail(to: string, name: string | null) {
     const subject = 'Добро пожаловать в YoYoJoy Day 🌿';
     const gifts = this.loadGiftAttachments();
-    const trackerFile = gifts.find((g) => g.filename.toLowerCase().includes('tracker'))?.filename ?? null;
-    const checklistFile = gifts.find((g) => g.filename.toLowerCase().includes('checklist'))?.filename ?? null;
+    const trackerFile =
+      gifts.find((g) => g.filename.toLowerCase().includes('tracker'))
+        ?.filename ?? null;
+    const checklistFile =
+      gifts.find((g) => g.filename.toLowerCase().includes('checklist'))
+        ?.filename ?? null;
     const html = this.renderWelcomeEmailHtml(name, trackerFile, checklistFile);
-    const giftNote = gifts.length ? ` (+${gifts.length} PDF)` : ' (без вложений — файлов подарков пока нет)';
+    const giftNote = gifts.length
+      ? ` (+${gifts.length} PDF)`
+      : ' (без вложений — файлов подарков пока нет)';
 
     if (this.provider === 'smtp' && this.smtpTransport) {
-      const info = await this.smtpTransport.sendMail({
+      const info: unknown = await this.smtpTransport.sendMail({
         from: `${this.smtpFromName} <${this.smtpFromEmail}>`,
         to,
         subject,
         html,
-        attachments: gifts.map((g) => ({ filename: g.filename, content: g.content })),
+        attachments: gifts.map((g) => ({
+          filename: g.filename,
+          content: g.content,
+        })),
       });
-      this.logger.log(`Welcome email sent to ${to} via SMTP${giftNote} (id=${info.messageId})`);
+      this.logger.log(
+        `Welcome email sent to ${to} via SMTP${giftNote} (id=${messageIdOf(info)})`,
+      );
       return;
     }
 
     if (this.provider === 'resend' && this.resend) {
-      const { data, error } = await this.resend.emails.send({
-        from: `YoYoJoy Day <${this.resendFromEmail}>`,
-        to,
-        subject,
-        html,
-        attachments: gifts.map((g) => ({ filename: g.filename, content: g.content })),
-      });
-      if (error) throw new Error(`Resend rejected welcome email: ${JSON.stringify(error)}`);
-      this.logger.log(`Welcome email sent to ${to} via Resend${giftNote} (id=${data?.id ?? 'n/a'})`);
+      const result = asResendEmailResult(
+        await this.resend.emails.send({
+          from: `YoYoJoy Day <${this.resendFromEmail}>`,
+          to,
+          subject,
+          html,
+          attachments: gifts.map((g) => ({
+            filename: g.filename,
+            content: g.content,
+          })),
+        }),
+      );
+      if (result.error)
+        throw new Error(
+          `Resend rejected welcome email: ${JSON.stringify(result.error)}`,
+        );
+      this.logger.log(
+        `Welcome email sent to ${to} via Resend${giftNote} (id=${result.data?.id ?? 'n/a'})`,
+      );
       return;
     }
 
@@ -589,20 +692,24 @@ export class AuthService {
 
   // Логотипы — PNG (не SVG: Gmail/Outlook режут SVG в письмах), хостятся на фронтенд-домене
   // из public/email-assets/*.png (deploy.sh копирует dist/ целиком, public/ уже часть сборки).
-  private readonly telegramLogoUrl = 'https://yoyojoy.online/email-assets/telegram.png';
+  private readonly telegramLogoUrl =
+    'https://yoyojoy.online/email-assets/telegram.png';
   private readonly maxLogoUrl = 'https://yoyojoy.online/email-assets/max.png';
   // Иконки подарков — Material Symbols Outlined (та же семья, что material-symbols-outlined
   // по всему приложению), отрисованы в PNG через sharp вместо эмодзи 📅/✅ (не рендерятся
   // консистентно в Gmail/Outlook), заливка Zen-Emerald #006a65.
-  private readonly giftTrackerIconUrl = 'https://yoyojoy.online/email-assets/gift-tracker.png';
-  private readonly giftChecklistIconUrl = 'https://yoyojoy.online/email-assets/gift-checklist.png';
+  private readonly giftTrackerIconUrl =
+    'https://yoyojoy.online/email-assets/gift-tracker.png';
+  private readonly giftChecklistIconUrl =
+    'https://yoyojoy.online/email-assets/gift-checklist.png';
 
   private renderWelcomeEmailHtml(
     name: string | null,
     trackerFile: string | null,
     checklistFile: string | null,
   ): string {
-    const greeting = name && name.trim() ? `Привет, ${name.trim()}!` : 'Привет!';
+    const greeting =
+      name && name.trim() ? `Привет, ${name.trim()}!` : 'Привет!';
     const telegramUrl = this.config.get<string>('TELEGRAM_CHANNEL_URL');
     const maxUrl = this.config.get<string>('MAX_CHANNEL_URL');
 
@@ -719,7 +826,10 @@ export class AuthService {
     const accessSecret = this.config.getOrThrow<string>('JWT_ACCESS_SECRET');
     const refreshSecret = this.config.getOrThrow<string>('JWT_REFRESH_SECRET');
     const accessTtl = this.config.getOrThrow<string>('JWT_ACCESS_TTL');
-    const refreshTtl = email === 'mukaniskander01@gmail.com' ? '365d' : this.config.getOrThrow<string>('JWT_REFRESH_TTL');
+    const refreshTtl =
+      email === 'mukaniskander01@gmail.com'
+        ? '365d'
+        : this.config.getOrThrow<string>('JWT_REFRESH_TTL');
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(accessPayload as object, {

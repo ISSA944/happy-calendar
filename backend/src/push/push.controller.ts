@@ -44,14 +44,16 @@ class UnsubscribeDto {
 @Controller('api/push')
 @UseGuards(JwtAuthGuard)
 export class PushController {
-  constructor(
-    private readonly pushService: PushService,
-  ) {}
+  constructor(private readonly pushService: PushService) {}
 
   @Post('subscribe')
   @HttpCode(200)
   async subscribe(@CurrentUser() user: AuthUser, @Body() dto: SubscribeDto) {
-    return this.pushService.subscribe(user.sub, dto.subscription, dto.user_agent);
+    return this.pushService.subscribe(
+      user.sub,
+      dto.subscription,
+      dto.user_agent,
+    );
   }
 
   @Post('test')

@@ -67,7 +67,7 @@ export function useWebPush() {
         setError(result.error || 'Ошибка подключения.');
       }
       return false;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Push] Subscription fatal:', error);
       setError('Ошибка подключения.');
       return false;

@@ -4,6 +4,9 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { apiClient } from '../api'
 import { setAuthTokens } from '../auth/token-storage'
 import { useAppStore } from '../store'
+import { getHttpStatus } from '../utils/http'
+
+type OtpLocationState = { flow?: 'login' }
 
 // ── Isolated timer so its setInterval never re-renders OTP boxes ──
 const CountdownTimer = memo(function CountdownTimer({
@@ -107,7 +110,7 @@ const OtpBox = memo(function OtpBox({
 export function OtpPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const isLoginFlow = (location.state as any)?.flow === 'login'
+  const isLoginFlow = (location.state as OtpLocationState | null)?.flow === 'login'
   const email = useAppStore((s) => s.email)
   const setShowOnboardingLoader = useAppStore((s) => s.setShowOnboardingLoader)
 
@@ -196,13 +199,13 @@ export function OtpPage() {
         setShowGiftSent(true)
         setTimeout(() => navigate('/notifications'), 1400)
       }
-    } catch (err: any) {
-      const status = err?.response?.status
+    } catch (err: unknown) {
+      const status = getHttpStatus(err)
       if (status === 429) {
         setSubmitError('Слишком много попыток. Подожди 1 час и попробуй снова.')
       } else if (status === 401) {
         setSubmitError('Неверный код или он уже истёк. Запроси новый.')
-      } else if (status >= 400 && status < 500) {
+      } else if (status !== undefined && status >= 400 && status < 500) {
         setSubmitError('Ошибка запроса. Вернись назад и попробуй снова.')
       } else {
         setSubmitError('Нет связи с сервером. Проверь интернет и попробуй снова.')
@@ -210,7 +213,7 @@ export function OtpPage() {
     } finally {
       setIsSubmitting(false)
     }
-  }, [code, email, isSubmitting, isValid, navigate])
+  }, [code, email, isLoginFlow, isSubmitting, isValid, navigate, setShowOnboardingLoader])
 
   const handleExpire = useCallback(() => {}, [])
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { Drawer } from 'vaul'
 
 export interface BottomSheetProps {
@@ -21,11 +21,6 @@ export function BottomSheet({
   hideDragIndicator = false,
   draggable = true,
 }: BottomSheetProps) {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-
-  if (!mounted) return null
-
   return (
     <Drawer.Root
       open={isOpen}

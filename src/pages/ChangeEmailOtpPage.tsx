@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiClient } from '../api'
 import { setAuthTokens } from '../auth/token-storage'
 import { useAppStore, useEmailChangeDraft } from '../store'
+import { getHttpStatus } from '../utils/http'
 
 const CountdownTimer = memo(function CountdownTimer({
   initialSeconds,
@@ -154,10 +155,11 @@ export function ChangeEmailOtpPage() {
       setEmail(email.trim())
       clearDraft()
       navigate('/settings', { replace: true, state: { emailChanged: true } })
-    } catch (err: any) {
-      if (err.response?.status === 401) {
+    } catch (err: unknown) {
+      const status = getHttpStatus(err)
+      if (status === 401) {
         setSubmitError('Неверный код или срок его действия истек.')
-      } else if (err.response?.status === 409) {
+      } else if (status === 409) {
         setSubmitError('Данная почта уже занята другим пользователем.')
       } else {
         setSubmitError('Произошла ошибка. Попробуйте еще раз позже.')

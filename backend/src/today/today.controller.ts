@@ -1,4 +1,11 @@
-import { Controller, Get, Post, HttpCode, UseGuards, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  HttpCode,
+  UseGuards,
+  Logger,
+} from '@nestjs/common';
 import { TodayService } from './today.service';
 import { AiService } from '../ai';
 import { PrismaService } from '../prisma';
@@ -8,7 +15,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/current-user.decorator';
 
-const POOL_MIN = 2;     // refill pool when fewer than this many phrases left
+const POOL_MIN = 2; // refill pool when fewer than this many phrases left
 const POOL_TTL = 86400; // 24h TTL for pool keys
 
 @Controller('api/today')
@@ -33,8 +40,10 @@ export class TodayController {
     const cached = await this.redis.get(cacheKey);
     if (cached) {
       try {
-        return JSON.parse(cached);
-      } catch { /* fall through to fresh fetch */ }
+        return JSON.parse(cached) as unknown;
+      } catch {
+        /* fall through to fresh fetch */
+      }
     }
 
     const pack = await this.todayService.getTodayPack(user.sub);
@@ -48,15 +57,18 @@ export class TodayController {
     const [profile, prefs, userRow] = await Promise.all([
       this.prisma.profile.findUnique({ where: { userId: user.sub } }),
       this.prisma.prefs.findUnique({ where: { userId: user.sub } }),
-      this.prisma.user.findUnique({ where: { id: user.sub }, select: { name: true } }),
+      this.prisma.user.findUnique({
+        where: { id: user.sub },
+        select: { name: true },
+      }),
     ]);
 
-    const mood       = profile?.currentMood ?? 'Нормально';
-    const zodiacSign = profile?.zodiacSign  ?? undefined;
-    const gender     = profile?.gender      ?? undefined;
-    const name       = userRow?.name        ?? undefined;
-    const today      = this.getTodayStr(prefs?.timezone);
-    const holiday    = resolveHoliday(today).name ?? undefined;
+    const mood = profile?.currentMood ?? 'Нормально';
+    const zodiacSign = profile?.zodiacSign ?? undefined;
+    const gender = profile?.gender ?? undefined;
+    const name = userRow?.name ?? undefined;
+    const today = this.getTodayStr(prefs?.timezone);
+    const holiday = resolveHoliday(today).name ?? undefined;
 
     // Pool делим по имени+полу (или anon) — иначе фразы одного юзера достанутся другому.
     const poolKey = `support-pool:${mood}:${zodiacSign ?? 'unknown'}:${name ?? 'anon'}:${gender ?? 'u'}:${today}`;
@@ -74,7 +86,13 @@ export class TodayController {
     } else {
       // Pool empty — generate batch and fill it
       this.logger.log(`nextSupport pool MISS key=${poolKey}, generating batch`);
-      const batch = await this.ai.generateSupportPhrasesBatch(mood, zodiacSign, holiday, name, gender);
+      const batch = await this.ai.generateSupportPhrasesBatch(
+        mood,
+        zodiacSign,
+        holiday,
+        name,
+        gender,
+      );
       if (batch.length > 1) {
         await this.redis.lpush(poolKey, batch.slice(1), POOL_TTL);
       }
@@ -98,10 +116,18 @@ export class TodayController {
     gender?: string,
   ): Promise<void> {
     try {
-      const batch = await this.ai.generateSupportPhrasesBatch(mood, zodiacSign, holiday, name, gender);
+      const batch = await this.ai.generateSupportPhrasesBatch(
+        mood,
+        zodiacSign,
+        holiday,
+        name,
+        gender,
+      );
       if (batch.length > 0) {
         await this.redis.lpush(poolKey, batch, POOL_TTL);
-        this.logger.log(`nextSupport pool refilled key=${poolKey}, ${batch.length} phrases`);
+        this.logger.log(
+          `nextSupport pool refilled key=${poolKey}, ${batch.length} phrases`,
+        );
       }
     } catch (err) {
       this.logger.error('Pool refill failed', err);
@@ -117,10 +143,12 @@ export class TodayController {
           day: '2-digit',
           month: '2-digit',
         }).formatToParts(now);
-        const day   = parts.find(p => p.type === 'day')?.value   ?? '';
-        const month = parts.find(p => p.type === 'month')?.value ?? '';
+        const day = parts.find((p) => p.type === 'day')?.value ?? '';
+        const month = parts.find((p) => p.type === 'month')?.value ?? '';
         if (day && month) return `${day}.${month}`;
-      } catch { /* fall through */ }
+      } catch {
+        /* fall through */
+      }
     }
     const d = String(now.getUTCDate()).padStart(2, '0');
     const m = String(now.getUTCMonth() + 1).padStart(2, '0');

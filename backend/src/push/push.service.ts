@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma';
-import { WebPushService } from './web-push.service';
+import {
+  WebPushService,
+  type BrowserPushSubscription,
+} from './web-push.service';
 
 @Injectable()
 export class PushService {
@@ -14,7 +17,11 @@ export class PushService {
   /**
    * Subscribes a user to push notifications using Web Push.
    */
-  async subscribe(userId: string, subscription: any, userAgent?: string) {
+  async subscribe(
+    userId: string,
+    subscription: BrowserPushSubscription,
+    userAgent?: string,
+  ) {
     this.logger.log(`subscribe userId=${userId}`);
     return this.webPush.subscribe(userId, subscription, userAgent);
   }
@@ -23,8 +30,8 @@ export class PushService {
    * Sends a test push notification to all active web push subscriptions of a user.
    */
   async sendTestPush(userId: string) {
-    const webSubscriptions = await this.prisma.webPushSubscription.findMany({ 
-      where: { userId } 
+    const webSubscriptions = await this.prisma.webPushSubscription.findMany({
+      where: { userId },
     });
 
     const total = webSubscriptions.length;

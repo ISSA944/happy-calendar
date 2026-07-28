@@ -5,12 +5,21 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/current-user.decorator';
 
-const VALID_MOODS = ['Спокойна', 'Нормально', 'Устала', 'Тревожна', 'Грустна', 'Воодушевлена'] as const;
+const VALID_MOODS = [
+  'Спокойна',
+  'Нормально',
+  'Устала',
+  'Тревожна',
+  'Грустна',
+  'Воодушевлена',
+] as const;
 
 class PatchMoodDto {
   @IsString()
   @MaxLength(32)
-  @IsIn(VALID_MOODS, { message: 'mood must be one of the 6 canonical mood values' })
+  @IsIn(VALID_MOODS, {
+    message: 'mood must be one of the 6 canonical mood values',
+  })
   mood!: string;
 }
 

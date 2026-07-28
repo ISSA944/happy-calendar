@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { apiClient } from '../api'
 import { useAppStore } from '../store'
 import { isValidEmail } from '../utils/validation'
+import { getHttpStatus } from '../utils/http'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -26,8 +27,8 @@ export function LoginPage() {
       await apiClient.post('auth/login', { email: emailInput.trim() })
       setEmail(emailInput.trim())
       navigate('/otp', { state: { flow: 'login' } })
-    } catch (err: any) {
-      const status = err?.response?.status
+    } catch (err: unknown) {
+      const status = getHttpStatus(err)
       if (status === 404) {
         setSubmitError('Этот email не зарегистрирован.')
       } else if (status === 429) {

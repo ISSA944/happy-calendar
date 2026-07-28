@@ -16,7 +16,9 @@ export class HolidaysController {
 
   @Get(':id/card')
   async card(@Param('id') id: string, @Query('tone') tone?: string) {
-    const safeTone: Tone = TONES.includes(tone as Tone) ? (tone as Tone) : 'cute';
+    const safeTone: Tone = TONES.includes(tone as Tone)
+      ? (tone as Tone)
+      : 'cute';
     return this.holidaysService.getCard(id, safeTone);
   }
 }

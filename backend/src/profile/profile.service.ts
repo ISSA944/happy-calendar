@@ -30,7 +30,9 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
-  @Matches(/^(https?:\/\/|data:image\/(jpeg|png|webp|gif);base64,)/, { message: 'avatarUrl must be a URL or base64 data image' })
+  @Matches(/^(https?:\/\/|data:image\/(jpeg|png|webp|gif);base64,)/, {
+    message: 'avatarUrl must be a URL or base64 data image',
+  })
   @MaxLength(2_000_000)
   avatarUrl?: string;
 
@@ -114,10 +116,13 @@ export class ProfileService {
 
     const prefsData: Record<string, unknown> = {};
     if (dto.pushTime !== undefined) prefsData.pushTime = dto.pushTime;
-    if (dto.horoscopeTime !== undefined) prefsData.horoscopeTime = dto.horoscopeTime;
+    if (dto.horoscopeTime !== undefined)
+      prefsData.horoscopeTime = dto.horoscopeTime;
     if (dto.supportTime !== undefined) prefsData.supportTime = dto.supportTime;
-    if (dto.holidaysTime !== undefined) prefsData.holidaysTime = dto.holidaysTime;
-    if (dto.personalCareTime !== undefined) prefsData.personalCareTime = dto.personalCareTime;
+    if (dto.holidaysTime !== undefined)
+      prefsData.holidaysTime = dto.holidaysTime;
+    if (dto.personalCareTime !== undefined)
+      prefsData.personalCareTime = dto.personalCareTime;
     if (dto.horoscopeEnabled !== undefined)
       prefsData.horoscopeEnabled = dto.horoscopeEnabled;
     if (dto.holidaysEnabled !== undefined)
@@ -159,11 +164,14 @@ export class ProfileService {
     // Fetch zodiacSign + name so the AI can address by name (or sign as fallback).
     const [profile, user] = await Promise.all([
       this.prisma.profile.findUnique({ where: { userId } }),
-      this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      }),
     ]);
     const zodiacSign = profile?.zodiacSign ?? undefined;
-    const gender     = profile?.gender     ?? undefined;
-    const name       = user?.name ?? undefined;
+    const gender = profile?.gender ?? undefined;
+    const name = user?.name ?? undefined;
 
     const [{ supportPhrase }] = await Promise.all([
       this.ai.updateMoodSupport(userId, mood, zodiacSign, name, gender),

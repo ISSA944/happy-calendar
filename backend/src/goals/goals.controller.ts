@@ -10,7 +10,10 @@ class SetGoalsDto {
   @IsArray()
   @ArrayUnique()
   @IsString({ each: true })
-  @IsIn(GOAL_IDS, { each: true, message: 'goal id must be one of calm|hear|food|move' })
+  @IsIn(GOAL_IDS, {
+    each: true,
+    message: 'goal id must be one of calm|hear|food|move',
+  })
   selected!: string[];
 }
 

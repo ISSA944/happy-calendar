@@ -29,7 +29,10 @@ export class HolidaysService {
    * Картинка праздника: сначала прямая привязка (calendarHolidayId), иначе любая по теме.
    * Пока таблица HolidayImage пуста → null (фронт рисует CSS-градиент по themeKey). ТЗ п. 7.3.
    */
-  private async resolveImageUrl(holidayId: string, themeKey: string): Promise<string | null> {
+  private async resolveImageUrl(
+    holidayId: string,
+    themeKey: string,
+  ): Promise<string | null> {
     const direct = await this.prisma.holidayImage.findFirst({
       where: { calendarHolidayId: holidayId },
       select: { url: true },
@@ -78,7 +81,8 @@ export class HolidaysService {
     const h = await this.prisma.calendarHoliday.findUnique({ where: { id } });
     if (!h) throw new NotFoundException('Holiday not found');
 
-    const text = tone === 'humor' ? h.humor : tone === 'cynical' ? h.cynical : h.cute;
+    const text =
+      tone === 'humor' ? h.humor : tone === 'cynical' ? h.cynical : h.cute;
 
     return {
       id: h.id,

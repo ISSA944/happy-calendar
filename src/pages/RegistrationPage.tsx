@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { apiClient } from '../api'
 import { useAppStore, useRegistrationDraft } from '../store'
 import { isValidEmail } from '../utils/validation'
+import { getHttpStatus } from '../utils/http'
 
 export function RegistrationPage() {
   const navigate = useNavigate()
@@ -40,8 +41,8 @@ export function RegistrationPage() {
       setEmail(emailInput.trim())
       clearDraft()
       navigate('/otp')
-    } catch (err: any) {
-      const status = err?.response?.status
+    } catch (err: unknown) {
+      const status = getHttpStatus(err)
       if (status === 409) {
         setSubmitError('__email_exists__')
       } else {

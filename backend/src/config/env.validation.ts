@@ -33,10 +33,7 @@ export const envSchema = z.object({
   SMTP_FROM_NAME: z.string().default('YoYoJoy Day'),
 
   RESEND_API_KEY: z.string().optional(),
-  RESEND_FROM_EMAIL: z
-    .string()
-    .email()
-    .default('onboarding@resend.dev'),
+  RESEND_FROM_EMAIL: z.string().email().default('onboarding@resend.dev'),
 
   // Каналы для приветственного письма с подарком — кнопки Телеграм/МАКС рендерятся только
   // если ссылка задана (пока клиент не прислал реальные — не шлём письмо с мёртвыми ссылками).
