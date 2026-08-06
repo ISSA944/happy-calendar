@@ -70,4 +70,70 @@ describe('NotificationCronService', () => {
       data: { status: 'sent', type: 'daily_horoscope' },
     });
   });
+
+  it('sends a separate personal-care notification for every active goal', async () => {
+    const prisma = {
+      prefs: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            userId: 'user-1',
+            horoscopeEnabled: false,
+            supportEnabled: false,
+            holidaysEnabled: false,
+            personalCareEnabled: true,
+            horoscopeTime: '09:00',
+            supportTime: '09:00',
+            holidaysTime: '09:00',
+            personalCareTime: '09:00',
+            timezone: 'Asia/Qyzylorda',
+            user: {
+              webPushSubscriptions: [
+                {
+                  endpoint: 'https://push.example/subscription',
+                  p256dh: 'key',
+                  auth: 'auth',
+                },
+              ],
+            },
+          },
+        ]),
+      },
+      profile: {
+        findUnique: jest.fn().mockResolvedValue({ currentMood: 'Нормально' }),
+      },
+      notification: {
+        create: jest.fn().mockResolvedValue({ id: 'notification-1' }),
+      },
+    };
+    const sentPayloads: Array<{ title: string; body: string }> = [];
+    const send = (
+      _subscription: unknown,
+      payload: { title: string; body: string },
+    ) => {
+      sentPayloads.push(payload);
+      return Promise.resolve(true);
+    };
+    (currentTimeInTz as jest.Mock).mockReturnValue('09:00');
+
+    const service = new NotificationCronService(
+      prisma as unknown as PrismaService,
+      {} as TodayService,
+      { send } as unknown as WebPushService,
+      {} as HolidaysService,
+      {
+        getToday: jest.fn().mockResolvedValue([
+          { title: 'Тихая самоподдержка', affirmation: 'Будь добра к себе.' },
+          { title: 'День нежности к телу', affirmation: 'Дай телу отдохнуть.' },
+        ]),
+      } as unknown as PersonalCareService,
+    );
+
+    await service.handleCron();
+
+    expect(sentPayloads.map(({ title, body }) => ({ title, body }))).toEqual([
+      { title: 'Тихая самоподдержка', body: 'Будь добра к себе.' },
+      { title: 'День нежности к телу', body: 'Дай телу отдохнуть.' },
+    ]);
+    expect(prisma.notification.create).toHaveBeenCalledTimes(2);
+  });
 });

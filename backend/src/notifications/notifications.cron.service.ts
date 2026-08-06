@@ -204,15 +204,15 @@ export class NotificationCronService {
     }
 
     if (fire.firePersonalCare) {
-      // При нескольких активных целях getToday() отдаёт карточку на каждую — в пуш идёт первая,
-      // остальные упоминаются числом (сама детализация — в приложении, см. HolidaysTodayBlock).
-      const [main, ...rest] = await this.personalCareService.getToday(userId);
-      if (main) {
-        const body =
-          rest.length > 0
-            ? `${main.affirmation} И ещё ${rest.length} по другим целям.`
-            : main.affirmation;
-        contents.push({ title: main.title, body, type: 'daily_personal_care' });
+      // Каждая активная цель — самостоятельный личный день, поэтому и push приходит отдельный.
+      // Нельзя сворачивать карточки в один текст: пользователь иначе не видит задание каждой цели.
+      const careDays = await this.personalCareService.getToday(userId);
+      for (const careDay of careDays) {
+        contents.push({
+          title: careDay.title,
+          body: careDay.affirmation,
+          type: 'daily_personal_care',
+        });
       }
     }
 
