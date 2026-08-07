@@ -32,12 +32,15 @@ const VARIANT_FIELDS: Record<
 
 /**
  * Все активные цели юзера, в стабильном порядке GOAL_IDS (не порядке из БД) — показываем КАЖДУЮ
- * сразу отдельной карточкой (до 4), а не ротируем одну на день. Если активных целей нет —
- * дефолт на первую цель (calm), чтобы блок не пустовал.
+ * сразу отдельной карточкой (до 4), а не ротируем одну на день. Для UI при отсутствии активных
+ * целей доступен дефолт calm; фоновые уведомления отключают этот fallback через опцию getToday().
  */
-function orderedGoalIds(activeGoals: string[]): string[] {
+function orderedGoalIds(
+  activeGoals: string[],
+  fallbackWhenNoActiveGoals: boolean,
+): string[] {
   const ordered = GOAL_IDS.filter((id) => activeGoals.includes(id));
-  return ordered.length ? ordered : [GOAL_IDS[0]];
+  return ordered.length || !fallbackWhenNoActiveGoals ? ordered : [GOAL_IDS[0]];
 }
 
 export interface MilestoneHit {
@@ -84,8 +87,12 @@ export class PersonalCareService {
    * фолбэк на день 1, чтобы блок никогда не пустовал. Если у юзера активно несколько целей —
    * возвращаем карточку НА КАЖДУЮ (до 4), а не одну ротируемую: title/themeKey/imageUrl общие на
    * весь день, различаются только task/affirmation/goalTags/doneToday (см. VARIANT_FIELDS).
+   * fallbackWhenNoActiveGoals по умолчанию true для совместимости с Home; cron передаёт false.
    */
-  async getToday(userId: string): Promise<PersonalCareView[]> {
+  async getToday(
+    userId: string,
+    options: { fallbackWhenNoActiveGoals?: boolean } = {},
+  ): Promise<PersonalCareView[]> {
     const [prefs, user, activeGoals] = await Promise.all([
       this.prisma.prefs.findUnique({ where: { userId } }),
       this.prisma.user.findUnique({
@@ -105,7 +112,10 @@ export class PersonalCareService {
       }));
     if (!day) return [];
 
-    const goalIds = orderedGoalIds(activeGoals);
+    const goalIds = orderedGoalIds(
+      activeGoals,
+      options.fallbackWhenNoActiveGoals ?? true,
+    );
     const dateKey = todayDdMmYyyy(prefs?.timezone);
     const imageUrl = await this.resolveImageUrl(day.id, day.themeKey);
 
@@ -133,8 +143,8 @@ export class PersonalCareService {
   /**
    * «Я сделала это»: засчитывает день заботы для КОНКРЕТНОЙ цели (идемпотентно — один зачёт
    * на пару (день, цель); при нескольких активных целях каждая карточка засчитывается
-   * независимо своей кнопкой), считает попадания в вехи и шлёт пуш(и) по правилу группировки
-   * (ТЗ п. 3). goalId приходит от клиента — он же был показан на конкретной карточке в
+   * независимо своей кнопкой), считает попадания в вехи и шлёт отдельный push по достигнутой цели.
+   * goalId приходит от клиента — он же был показан на конкретной карточке в
    * getToday(), проверяем только, что это один из 4 известных id (защита от мусорных значений).
    */
   async complete(
@@ -184,10 +194,7 @@ export class PersonalCareService {
     return { alreadyDone: false, milestoneHits: hits };
   }
 
-  /**
-   * Правило группировки (ТЗ п. 3, лист «Как использовать»):
-   * одна веха у нескольких целей → ОДИН пуш (цели перечислены); разные вехи → отдельные пуши.
-   */
+  /** Каждая достигнутая веха отправляется отдельным push с явным названием цели. */
   private async sendMilestonePushes(
     userId: string,
     name: string | null,
@@ -198,25 +205,13 @@ export class PersonalCareService {
     });
     if (!subs.length) return;
 
-    // Группируем по номеру вехи.
-    const byMilestone = new Map<number, MilestoneHit[]>();
-    for (const h of hits) {
-      const arr = byMilestone.get(h.count) ?? [];
-      arr.push(h);
-      byMilestone.set(h.count, arr);
-    }
-
-    for (const [milestone, group] of byMilestone) {
+    for (const hit of hits) {
       const template = await this.prisma.pushMilestoneTemplate.findUnique({
-        where: { milestone },
+        where: { milestone: hit.count },
       });
       if (!template) continue;
 
-      let body = fillName(template.body, name);
-      if (group.length > 1) {
-        const titles = group.map((g) => `«${g.goalTitle}»`).join(', ');
-        body += ` Сразу по целям: ${titles}.`;
-      }
+      const body = `${fillName(template.body, name)} Цель: «${hit.goalTitle}».`;
       const title = `${template.emoji} ${template.title}`;
 
       let anySent = false;
@@ -231,7 +226,7 @@ export class PersonalCareService {
             body,
             data: {
               type: 'goal_milestone',
-              milestone,
+              milestone: hit.count,
               url: 'https://yoyojoy.online/home',
             },
           },

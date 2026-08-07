@@ -195,19 +195,23 @@ export class NotificationCronService {
 
     if (fire.fireHolidays) {
       const holidays = await this.holidaysService.getTodayHolidays(userId);
-      if (holidays.length) {
-        const extra = holidays.length - 1;
-        const body =
-          extra > 0 ? `${holidays[0].title} и ещё ${extra}` : holidays[0].title;
-        contents.push({ title: 'Праздник дня', body, type: 'daily_holiday' });
+      for (const holiday of holidays) {
+        contents.push({
+          title: 'Праздник дня',
+          body: holiday.title,
+          type: 'daily_holiday',
+        });
       }
     }
 
     if (fire.firePersonalCare) {
       // Каждая активная цель — самостоятельный личный день, поэтому и push приходит отдельный.
       // Нельзя сворачивать карточки в один текст: пользователь иначе не видит задание каждой цели.
-      const careDays = await this.personalCareService.getToday(userId);
+      const careDays = await this.personalCareService.getToday(userId, {
+        fallbackWhenNoActiveGoals: false,
+      });
       for (const careDay of careDays) {
+        if (careDay.doneToday) continue;
         contents.push({
           title: careDay.title,
           body: careDay.affirmation,

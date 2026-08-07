@@ -41,7 +41,7 @@ export class UpdateProfileDto {
   @Matches(/^\d{2}:\d{2}$/, { message: 'pushTime must be HH:MM' })
   pushTime?: string;
 
-  // Per-category push times (HH:MM UTC) — ТЗ п. 4.5.
+  // Per-category local push times (HH:MM); cron interprets them in prefs.timezone.
   @IsOptional()
   @IsString()
   @Matches(/^\d{2}:\d{2}$/, { message: 'horoscopeTime must be HH:MM' })
