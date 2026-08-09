@@ -32,23 +32,7 @@ export class TodayController {
 
   @Get()
   async getToday(@CurrentUser() user: AuthUser) {
-    // HTTP-level cache: 30s cache per user+date — при смене дня старый ключ
-    // автоматически устаревает и пользователь сразу видит новый праздник/контент.
-    const now = new Date();
-    const dateKey = `${String(now.getUTCDate()).padStart(2, '0')}.${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
-    const cacheKey = `today:response:${user.sub}:${dateKey}`;
-    const cached = await this.redis.get(cacheKey);
-    if (cached) {
-      try {
-        return JSON.parse(cached) as unknown;
-      } catch {
-        /* fall through to fresh fetch */
-      }
-    }
-
-    const pack = await this.todayService.getTodayPack(user.sub);
-    await this.redis.set(cacheKey, JSON.stringify(pack), 30);
-    return pack;
+    return this.todayService.getTodayPack(user.sub);
   }
 
   @Post('support/next')
@@ -67,11 +51,11 @@ export class TodayController {
     const zodiacSign = profile?.zodiacSign ?? undefined;
     const gender = profile?.gender ?? undefined;
     const name = userRow?.name ?? undefined;
-    const today = this.getTodayStr(prefs?.timezone);
-    const holiday = resolveHoliday(today).name ?? undefined;
+    const { isoDate, displayDate } = this.getTodayDateParts(prefs?.timezone);
+    const holiday = resolveHoliday(displayDate).name ?? undefined;
 
     // Pool делим по имени+полу (или anon) — иначе фразы одного юзера достанутся другому.
-    const poolKey = `support-pool:${mood}:${zodiacSign ?? 'unknown'}:${name ?? 'anon'}:${gender ?? 'u'}:${today}`;
+    const poolKey = `support-pool:${mood}:${zodiacSign ?? 'unknown'}:${name ?? 'anon'}:${gender ?? 'u'}:${isoDate}`;
 
     // Try to pop a phrase from the shared pool first (no AI call)
     let supportPhrase = await this.redis.rpop(poolKey);
@@ -93,17 +77,18 @@ export class TodayController {
         name,
         gender,
       );
-      if (batch.length > 1) {
-        await this.redis.lpush(poolKey, batch.slice(1), POOL_TTL);
+      if (!batch.isFallback && batch.phrases.length > 1) {
+        await this.redis.lpush(poolKey, batch.phrases.slice(1), POOL_TTL);
       }
-      supportPhrase = batch[0] ?? 'Ты справляешься. Продолжай.';
+      supportPhrase =
+        batch.phrases[0] ??
+        'Сейчас можно остановиться и спокойно вернуть себе опору. Тебе не нужно решать всё сразу или быть сильнее собственных сил. Выбери один бережный шаг, который сделает ближайший час немного легче.';
+      if (batch.isFallback) {
+        return { support: { text: supportPhrase } };
+      }
     }
 
     await this.todayService.replaceSupportPhrase(user.sub, mood, supportPhrase);
-    // Инвалидируем HTTP-кэш чтобы следующий GET /api/today показал новую фразу
-    const nowInv = new Date();
-    const dateInv = `${String(nowInv.getUTCDate()).padStart(2, '0')}.${String(nowInv.getUTCMonth() + 1).padStart(2, '0')}`;
-    await this.redis.del(`today:response:${user.sub}:${dateInv}`);
     return { support: { text: supportPhrase } };
   }
 
@@ -123,10 +108,10 @@ export class TodayController {
         name,
         gender,
       );
-      if (batch.length > 0) {
-        await this.redis.lpush(poolKey, batch, POOL_TTL);
+      if (!batch.isFallback && batch.phrases.length > 0) {
+        await this.redis.lpush(poolKey, batch.phrases, POOL_TTL);
         this.logger.log(
-          `nextSupport pool refilled key=${poolKey}, ${batch.length} phrases`,
+          `nextSupport pool refilled key=${poolKey}, ${batch.phrases.length} phrases`,
         );
       }
     } catch (err) {
@@ -134,24 +119,35 @@ export class TodayController {
     }
   }
 
-  private getTodayStr(timezone?: string | null): string {
+  private getTodayDateParts(timezone?: string | null): {
+    isoDate: string;
+    displayDate: string;
+  } {
     const now = new Date();
     if (timezone) {
       try {
-        const parts = new Intl.DateTimeFormat('en-GB', {
+        const parts = new Intl.DateTimeFormat('en-CA', {
           timeZone: timezone,
+          year: 'numeric',
           day: '2-digit',
           month: '2-digit',
         }).formatToParts(now);
+        const year = parts.find((p) => p.type === 'year')?.value ?? '';
         const day = parts.find((p) => p.type === 'day')?.value ?? '';
         const month = parts.find((p) => p.type === 'month')?.value ?? '';
-        if (day && month) return `${day}.${month}`;
+        if (year && day && month) {
+          return {
+            isoDate: `${year}-${month}-${day}`,
+            displayDate: `${day}.${month}`,
+          };
+        }
       } catch {
         /* fall through */
       }
     }
+    const y = String(now.getUTCFullYear());
     const d = String(now.getUTCDate()).padStart(2, '0');
     const m = String(now.getUTCMonth() + 1).padStart(2, '0');
-    return `${d}.${m}`;
+    return { isoDate: `${y}-${m}-${d}`, displayDate: `${d}.${m}` };
   }
 }

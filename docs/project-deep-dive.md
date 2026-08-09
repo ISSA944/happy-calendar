@@ -34,7 +34,7 @@ YoYoJoy Day — это PWA-приложение (Progressive Web App), комп�
 | Prisma ORM 6 | Работа с БД через TypeScript |
 | PostgreSQL 15 | Основная база данных |
 | Redis | Кэш AI-ответов (TTL 36 часов) |
-| OpenAI API | Генерация гороскопов и фраз поддержки |
+| Cloudflare Workers AI | Генерация гороскопов и фраз поддержки |
 | @nestjs/schedule | CRON-задачи (push-уведомления) |
 | web-push | Отправка Web Push уведомлений |
 | JWT (access + refresh) | Аутентификация |
@@ -67,7 +67,7 @@ YoYoJoy Day — это PWA-приложение (Progressive Web App), комп�
      |
      ├── [PostgreSQL] — хранит пользователей, контент, закладки
      ├── [Redis]      — кэш AI-ответов 
-     └── [OpenAI API] — генерирует гороскопы и фразы
+     └── [Cloudflare Workers AI] — генерирует гороскопы и фразы
 ```
 
 ---
@@ -200,38 +200,37 @@ Axios interceptor автоматически:
 ## AI Логика (самое интересное)
 
 ### Что генерирует AI:
-- `horoscope` — главный прогноз (2-3 предложения)
-- `horoscopeDetailed` — детальный анализ (3-4 предложения)
-- `advice` — практический совет
-- `moon` — лунная фаза и её влияние
-- `aspect` — планетарный аспект дня
-- `supportPhrase` — персональная фраза поддержки
+- `horoscope` — 3–4 предложения, 240–650 символов
+- `horoscopeDetailed` — 6–8 предложений, 520–1400 символов
+- `advice` — два практических предложения
+- `moon` / `aspect` — по 1–2 предложения
+- `supportPhrase` — 3–4 предложения, 220–650 символов
 
 **Праздник** НЕ генерируется AI — берётся из локального словаря `holidays.data.ts`.
 
 ### Модель:
-`gpt-5.4-mini-2026-03-17` со Structured Outputs (strict JSON schema).
+`@cf/openai/gpt-oss-120b` через OpenAI-compatible endpoint; JSON дополнительно проверяется Zod.
 
 ### Кэширование (3 уровня):
 ```
 1. DB Cache  — DailyFeed таблица (userId + date)
               Если уже есть запись на сегодня → возвращаем её.
 
-2. Redis Cache — ключ: pack:{zodiacSign}:{mood}:{name}:{date}
+2. Redis Cache — ключ: pack:{zodiacSign}:{mood}:{name}:{YYYY-MM-DD}
               TTL: 36 часов (покрывает все часовые пояса РФ).
-              Если fallback-ответ → TTL только 5 минут.
+              Если fallback-ответ → TTL 5 минут и meta.contentSource=fallback.
 
 3. Distributed Lock — предотвращает двойной вызов AI
               Если запрос уже идёт → ждём 1 сек и проверяем Redis снова.
 ```
 
 ### Fallback (Mock Mode):
-Если AI_API_KEY не задан или OpenAI упал — бэкенд НЕ падает.
+Если Workers AI недоступен или ключ не задан — бэкенд НЕ падает.
 Возвращает данные из встроенных словарей:
 - 12 готовых гороскопов (по одному на каждый знак)
 - 5 фраз поддержки для каждого из 6 настроений
 
-Сейчас в проде работает живой AI (ключ подключён). Раньше действительно был в Fallback-режиме — но не из-за отсутствия ключа, а из-за скрытого бага: модель `gpt-5.4-mini-2026-03-17` отклоняет параметр `max_tokens` с ошибкой 400, а бэкенд, по дизайну, при любой ошибке API тихо уходит в мок вместо падения — поэтому проблема долго оставалась незамеченной. Исправлено переименованием параметра в `max_completion_tokens`, подтверждено в логах (`LLM OK`, без 400-ошибок).
+Fallback не записывается в `horoscopes`, `support_phrases` или `daily_feed`: он живёт в Redis 300 секунд, после чего фронт тихо повторяет `/api/today`. Живой JSON принимается только после Zod-проверки объёма и структуры. Прямой OpenAI с московского VPS не используется, потому что отвечает `403 unsupported_country_region_territory`; актуальный провайдер — Cloudflare Workers AI, модель `@cf/openai/gpt-oss-120b`.
 
 ---
 
@@ -399,7 +398,7 @@ cd backend && npx prisma studio
 YoYoJoy Day — полноценный fullstack продукт с:
 - PWA (работает как приложение на телефоне)
 - JWT аутентификацией без пароля
-- AI-генерацией через OpenAI Structured Outputs
+- AI-генерацией через Cloudflare Workers AI и Zod-валидацией
 - 3-уровневым кэшированием (DB → Redis → Lock)
 - Умным fallback (никогда не упадёт)
 - Web Push уведомлениями по расписанию

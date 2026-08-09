@@ -9,9 +9,13 @@ import {
 import { PrismaService } from '../prisma';
 import { AiService } from '../ai';
 import { TodayService } from '../today/today.service';
-import { RedisService } from '../redis/redis.service';
 
 export class UpdateProfileDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  name?: string;
+
   @IsOptional()
   @IsString()
   @Matches(/^\d{2}\.\d{2}\.\d{4}$/, { message: 'birthdate must be DD.MM.YYYY' })
@@ -92,7 +96,6 @@ export class ProfileService {
     private readonly prisma: PrismaService,
     private readonly ai: AiService,
     private readonly today: TodayService,
-    private readonly redis: RedisService,
   ) {}
 
   async getFullProfile(userId: string) {
@@ -134,7 +137,12 @@ export class ProfileService {
     if (dto.timezone !== undefined) prefsData.timezone = dto.timezone;
 
     const [user, profile, prefs] = await Promise.all([
-      this.prisma.user.findUnique({ where: { id: userId } }),
+      dto.name !== undefined
+        ? this.prisma.user.update({
+            where: { id: userId },
+            data: { name: dto.name.trim() },
+          })
+        : this.prisma.user.findUnique({ where: { id: userId } }),
       Object.keys(profileData).length
         ? this.prisma.profile.upsert({
             where: { userId },
@@ -173,7 +181,7 @@ export class ProfileService {
     const gender = profile?.gender ?? undefined;
     const name = user?.name ?? undefined;
 
-    const [{ supportPhrase }] = await Promise.all([
+    const [supportResult] = await Promise.all([
       this.ai.updateMoodSupport(userId, mood, zodiacSign, name, gender),
       this.prisma.profile.upsert({
         where: { userId },
@@ -186,12 +194,16 @@ export class ProfileService {
     ]);
 
     // Persist new phrase and update DailyFeed — horoscope stays the same
-    await this.today.replaceSupportPhrase(userId, mood, supportPhrase);
-    // Инвалидируем HTTP-кэш /api/today чтобы фронт сразу увидел новое настроение
-    const nowInv = new Date();
-    const dateInv = `${String(nowInv.getUTCDate()).padStart(2, '0')}.${String(nowInv.getUTCMonth() + 1).padStart(2, '0')}`;
-    await this.redis.del(`today:response:${userId}:${dateInv}`);
-
-    return { currentMood: mood, support: { text: supportPhrase, mood } };
+    if (!supportResult.isFallback) {
+      await this.today.replaceSupportPhrase(
+        userId,
+        mood,
+        supportResult.supportPhrase,
+      );
+    }
+    return {
+      currentMood: mood,
+      support: { text: supportResult.supportPhrase, mood },
+    };
   }
 }

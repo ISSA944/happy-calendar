@@ -9,6 +9,9 @@ export const envSchema = z.object({
 
   // AI
   AI_API_KEY: z.string().optional(),
+  AI_BASE_URL: z.string().url().optional(),
+  AI_MODEL: z.string().min(1).default('@cf/openai/gpt-oss-120b'),
+  // Legacy compatibility only. Prefer AI_BASE_URL for new deployments.
   OPENAI_BASE_URL: z.string().url().optional(),
 
   // Redis — optional; if absent, AI pack caching is disabled

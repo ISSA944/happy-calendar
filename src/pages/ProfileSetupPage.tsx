@@ -2,7 +2,6 @@ import { useState, useMemo, useRef, startTransition } from 'react'
 import { flushSync } from 'react-dom'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { apiClient } from '../api'
 import { useWebPush } from '../hooks'
 import { useAppStore } from '../store'
 import { prepareAvatarDataUrl } from '../utils/image'
@@ -25,6 +24,8 @@ function isValidBirthDate(dateStr: string): boolean {
 }
 
 import { CalendarSheet } from '../features/auth/CalendarSheet'
+import { ProfileNameField } from '../features/auth/ProfileNameField'
+import { saveProfileSetup } from '../features/auth/profile-setup.service'
 import { GoalsSelector } from '../features/goals/GoalsSelector'
 
 export function ProfileSetupPage() {
@@ -48,6 +49,8 @@ export function ProfileSetupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [selectedGoals, setSelectedGoals] = useState<string[]>([])
+  const hadNameOnEntry = useRef(Boolean(userName.trim())).current
+  const [nameDraft, setNameDraft] = useState(userName)
 
   const toggleGoal = (id: string) => {
     setSelectedGoals((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]))
@@ -76,7 +79,9 @@ export function ProfileSetupPage() {
     setSubmitError('')
 
     try {
-      await apiClient.patch('profile', {
+      await saveProfileSetup({
+        hadNameOnEntry,
+        nameDraft,
         birthdate: birthDate,
         zodiacSign: zodiacSign ?? '',
         gender,
@@ -91,6 +96,9 @@ export function ProfileSetupPage() {
       storeBirthDate(birthDate)
       storeGender(gender)
       storeZodiac(zodiacSign ?? '')
+      if (!hadNameOnEntry && nameDraft.trim()) {
+        setUserName(nameDraft.trim())
+      }
       flushSync(() => {
         setShowOnboardingLoader(true)
         setHasCompletedOnboarding(true)
@@ -161,17 +169,11 @@ export function ProfileSetupPage() {
 
           {/* Имя — если уже ввели на регистрации, просто показываем; если пропустили, даём
               короткое поле прямо тут. Необязательное, как и на регистрации — не влияет на isValid. */}
-          {userName ? (
-            <p className="mt-4 text-base font-bold text-on-surface">{userName}</p>
-          ) : (
-            <input
-              type="text"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              placeholder="Введите своё имя"
-              className="mt-4 w-full max-w-[240px] h-11 px-4 bg-surface-container-lowest border border-outline-variant rounded-full text-center text-sm font-medium text-on-surface placeholder:text-on-surface-variant/50 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none"
-            />
-          )}
+          <ProfileNameField
+            hadNameOnEntry={hadNameOnEntry}
+            value={nameDraft}
+            onChange={setNameDraft}
+          />
 
           {/* Zodiac — shows in right col on landscape */}
           <div className="hidden landscape:flex mt-6 w-full bg-surface-container-lowest border border-outline-variant/30 rounded-[24px] p-4 items-center justify-between shadow-sm">
@@ -240,7 +242,7 @@ export function ProfileSetupPage() {
         </div>
 
         <p className="order-4 mt-5 landscape:col-span-2 text-[13px] text-on-surface-variant/80 text-center leading-relaxed px-2">
-          Всё это — имя, цели, время уведомлений — можно изменить в любой момент в Настройках.
+          Цели и время уведомлений можно изменить в любой момент в Настройках.
         </p>
 
         {/* Общая CTA (одна на оба режима — раньше дублировалась под portrait/landscape) */}

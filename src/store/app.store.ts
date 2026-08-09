@@ -35,6 +35,7 @@ export interface DailyPack {
   }
   supportPhrase: string
   holiday: string | null
+  contentSource: 'ai' | 'stored' | 'fallback'
 }
 
 // ── Goals ────────────────────────────────────────────────────────────────
@@ -87,6 +88,10 @@ type TodayResponse = {
   horoscope: { main: string; detailed: string; advice: string; moon: string; aspect: string }
   support: { text: string }
   holiday: { title: string } | null
+  meta?: {
+    contentSource: 'ai' | 'stored' | 'fallback'
+    retryAfterSeconds?: number
+  }
 }
 
 type MoodPatchResponse = {
@@ -197,6 +202,15 @@ function delay(ms: number) {
   return new Promise<void>(resolve => setTimeout(resolve, ms))
 }
 
+let fallbackRetryTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearFallbackRetry() {
+  if (fallbackRetryTimer !== null) {
+    clearTimeout(fallbackRetryTimer)
+    fallbackRetryTimer = null
+  }
+}
+
 function preloadImage(src: string) {
   if (typeof window === 'undefined' || !src) return Promise.resolve()
 
@@ -247,9 +261,19 @@ export const useAppStore = create<AppState>()(
             horoscope: data.horoscope,
             supportPhrase: data.support.text,
             holiday: data.holiday?.title ?? null,
+            contentSource: data.meta?.contentSource ?? 'stored',
           }
 
           set({ dailyPack: nextPack })
+
+          clearFallbackRetry()
+          if (data.meta?.contentSource === 'fallback') {
+            const retryAfterSeconds = data.meta.retryAfterSeconds ?? 300
+            fallbackRetryTimer = setTimeout(() => {
+              fallbackRetryTimer = null
+              void get().initDailyPack()
+            }, retryAfterSeconds * 1000)
+          }
 
           if (isLoaderShowing) {
             await Promise.all([
@@ -305,14 +329,7 @@ export const useAppStore = create<AppState>()(
 
       // User Profile defaults
       userName: '',
-      setUserName: (userName) => {
-        set({ userName })
-        if (getAccessToken()) {
-          apiClient.patch('profile', { name: userName }).catch((err) => {
-            console.warn('[store] Failed to sync name with backend', err)
-          })
-        }
-      },
+      setUserName: (userName) => set({ userName }),
       gender: 'UNKNOWN',
       setGender: (gender) => {
         set({ gender })
@@ -676,6 +693,7 @@ export const useAppStore = create<AppState>()(
       },
 
       resetApp: async () => {
+        clearFallbackRetry()
         if (getAccessToken()) {
           try {
             await apiClient.post('auth/logout')

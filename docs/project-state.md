@@ -36,8 +36,8 @@ YoYoJoy Day — прогрессивное веб-приложение (PWA), к
 ### Бэкенд
 - **NestJS 11** + TypeScript
 - **Prisma ORM 6** + PostgreSQL 15
-- **Redis 7** — AI-кэш (TTL 36ч), HTTP-кэш /api/today (TTL 30с), pool фраз поддержки
-- **OpenAI API** (gpt-5.4-mini-2026-03-17) — Structured Outputs, строгая JSON-схема
+- **Redis 7** — AI-кэш (живой ответ 36ч, fallback 300с), pool фраз поддержки
+- **Cloudflare Workers AI** (`@cf/openai/gpt-oss-120b`) — OpenAI-compatible REST API + серверная Zod-валидация
 - **Resend** — транзакционные письма (OTP-коды)
 - **web-push** — VAPID push-уведомления (без Firebase SDK)
 - **@nestjs/throttler** — rate limiting
@@ -99,11 +99,13 @@ YoYoJoy Day — прогрессивное веб-приложение (PWA), к
 - Блок "Сменить настроение" расположен между Поддержкой и Гороскопом
 
 ### AI-генерация
-- Провайдер: OpenAI (gpt-5.4-mini-2026-03-17), Structured Outputs
+- Провайдер: Cloudflare Workers AI, модель `@cf/openai/gpt-oss-120b`
+- Конфигурация: `AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY`; legacy `OPENAI_BASE_URL` читается только при отсутствии нового URL
 - Персонализация: знак зодиака + настроение + пол + имя + дата
-- Redis-кэш 36ч по ключу `pack:знак:настроение:имя:дата`
+- Redis-кэш 36ч по ключу `pack:знак:настроение:имя:YYYY-MM-DD`
 - Distributed lock — защита от двойных AI-вызовов при одновременных запросах
-- Fallback на заготовленные фразы при отсутствии ключа или ошибке API
+- Zod проверяет JSON, количество предложений и объём; сломанный/короткий ответ повторяется один раз
+- Содержательный fallback хранится только в Redis 300с, не пишется в PostgreSQL и автоматически заменяется фронтом после повтора
 - Пул фраз поддержки: 5 фраз генерируются заранее, хранятся в Redis, выдаются без AI-вызова
 
 ### Push-уведомления
@@ -145,7 +147,7 @@ YoYoJoy Day — прогрессивное веб-приложение (PWA), к
 - welcome-orb: 296 KB JPG → 10 KB WebP (-97%)
 - Webpack manualChunks: react-vendor + framer-motion в отдельных чанках
 - prefers-reduced-motion CSS — автоматически отключает анимации при системной настройке
-- HTTP-кэш /api/today: 30 секунд в Redis, инвалидируется при смене настроения
+- `/api/today` опирается на ISO-ключи DailyFeed/Redis; отдельный HTTP-кэш удалён, чтобы fallback гарантированно заменялся после 300 секунд
 - Error Boundary — белый экран при крэше заменён понятным сообщением
 
 ### UX-детали

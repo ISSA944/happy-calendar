@@ -27,7 +27,9 @@ export class TodayService {
       }),
     ]);
 
-    const today = this.getTodayDateStr(prefs?.timezone ?? undefined);
+    const { isoDate, displayDate } = this.getTodayDateParts(
+      prefs?.timezone ?? undefined,
+    );
     const zodiacSign = profile?.zodiacSign ?? '';
     const mood = profile?.currentMood ?? 'Нормально';
     const gender = profile?.gender ?? 'UNKNOWN';
@@ -35,7 +37,7 @@ export class TodayService {
 
     // ── 1. DailyFeed DB cache — must match current zodiac sign ────────────────
     const existingFeed = await this.prisma.dailyFeed.findUnique({
-      where: { userId_date: { userId, date: today } },
+      where: { userId_date: { userId, date: isoDate } },
       include: { horoscope: true, supportPhrase: true, holiday: true },
     });
 
@@ -44,12 +46,13 @@ export class TodayService {
       existingFeed?.supportPhrase &&
       existingFeed.horoscope.zodiacSign === zodiacSign
     ) {
-      this.logger.log(`getTodayPack DB hit userId=${userId} date=${today}`);
+      this.logger.log(`getTodayPack DB hit userId=${userId} date=${isoDate}`);
       return this.buildResponse(
-        today,
+        displayDate,
         existingFeed.horoscope,
         existingFeed.supportPhrase,
         existingFeed.holiday,
+        'stored',
       );
     }
 
@@ -60,7 +63,7 @@ export class TodayService {
           `(zodiac was="${existingFeed.horoscope?.zodiacSign ?? 'none'}", now="${zodiacSign}")`,
       );
       await this.prisma.dailyFeed.delete({
-        where: { userId_date: { userId, date: today } },
+        where: { userId_date: { userId, date: isoDate } },
       });
     }
 
@@ -68,7 +71,7 @@ export class TodayService {
     // Включаем имя в ключ: AI обращается по имени, поэтому фразу нельзя шарить
     // между разными юзерами с одним знаком. Юзеры без имени делят anon-кэш.
     const nameKey = name ?? 'anon';
-    const cacheKey = `pack:${zodiacSign}:${mood}:${nameKey}:${today}`;
+    const cacheKey = `pack:${zodiacSign}:${mood}:${nameKey}:${isoDate}`;
     const lockKey = `lock:${cacheKey}`;
 
     let pack: AiDailyPack | null = null;
@@ -102,7 +105,8 @@ export class TodayService {
             zodiacSign,
             mood,
             gender,
-            date: today,
+            date: isoDate,
+            holidayDate: displayDate,
             name,
           };
           pack = await this.ai.generateDailyPack(userId, context);
@@ -122,12 +126,16 @@ export class TodayService {
       }
     }
 
+    if (pack.isFallback) {
+      return this.buildPackResponse(displayDate, pack, 'fallback');
+    }
+
     // ── 4. Persist horoscope (shared ref — upsert is idempotent) ──────────────
     const horoscope = await this.prisma.horoscope.upsert({
-      where: { date_zodiacSign: { date: today, zodiacSign } },
+      where: { date_zodiacSign: { date: isoDate, zodiacSign } },
       update: {},
       create: {
-        date: today,
+        date: isoDate,
         zodiacSign,
         main: pack.horoscope,
         detailed: pack.horoscopeDetailed,
@@ -145,15 +153,15 @@ export class TodayService {
     // ── 6. Persist holiday (shared ref — upsert is idempotent) ────────────────
     const holiday = pack.holiday
       ? await this.prisma.holiday.upsert({
-          where: { date: today },
+          where: { date: displayDate },
           update: {},
-          create: { date: today, title: pack.holiday },
+          create: { date: displayDate, title: pack.holiday },
         })
       : null;
 
     // ── 7. Save DailyFeed (user ↔ content join for today) ─────────────────────
     await this.prisma.dailyFeed.upsert({
-      where: { userId_date: { userId, date: today } },
+      where: { userId_date: { userId, date: isoDate } },
       update: {
         horoscopeId: horoscope.id,
         supportPhraseId: supportPhrase.id,
@@ -161,14 +169,20 @@ export class TodayService {
       },
       create: {
         userId,
-        date: today,
+        date: isoDate,
         horoscopeId: horoscope.id,
         supportPhraseId: supportPhrase.id,
         holidayId: holiday?.id ?? null,
       },
     });
 
-    return this.buildResponse(today, horoscope, supportPhrase, holiday);
+    return this.buildResponse(
+      displayDate,
+      horoscope,
+      supportPhrase,
+      holiday,
+      'ai',
+    );
   }
 
   /**
@@ -177,7 +191,7 @@ export class TodayService {
    */
   async replaceSupportPhrase(userId: string, mood: string, text: string) {
     const prefs = await this.prisma.prefs.findUnique({ where: { userId } });
-    const today = this.getTodayDateStr(prefs?.timezone ?? undefined);
+    const { isoDate } = this.getTodayDateParts(prefs?.timezone ?? undefined);
 
     const newPhrase = await this.prisma.supportPhrase.create({
       data: { mood, text },
@@ -186,7 +200,7 @@ export class TodayService {
     // updateMany silently skips if no DailyFeed exists yet.
     // getTodayPack will create a complete record on first home load.
     await this.prisma.dailyFeed.updateMany({
-      where: { userId, date: today },
+      where: { userId, date: isoDate },
       data: { supportPhraseId: newPhrase.id },
     });
 
@@ -212,9 +226,11 @@ export class TodayService {
     const zodiac = profile?.zodiacSign ?? undefined;
     const gender = profile?.gender ?? undefined;
     const name = user?.name ?? undefined;
-    const today = this.getTodayDateStr(prefs?.timezone ?? undefined);
+    const { isoDate, displayDate } = this.getTodayDateParts(
+      prefs?.timezone ?? undefined,
+    );
 
-    const poolKey = `support-pool:${mood}:${zodiac ?? 'unknown'}:${name ?? 'anon'}:${gender ?? 'u'}:${today}`;
+    const poolKey = `support-pool:${mood}:${zodiac ?? 'unknown'}:${name ?? 'anon'}:${gender ?? 'u'}:${isoDate}`;
 
     let phrase = await this.redis.rpop(poolKey);
 
@@ -224,7 +240,8 @@ export class TodayService {
         zodiacSign: zodiac ?? '',
         mood,
         gender: gender ?? 'UNKNOWN',
-        date: today,
+        date: isoDate,
+        holidayDate: displayDate,
         name,
       };
       const batch = await this.ai.generateSupportPhrasesBatch(
@@ -234,10 +251,11 @@ export class TodayService {
         context.name,
         context.gender !== 'UNKNOWN' ? context.gender : undefined,
       );
-      if (batch.length > 1) {
-        await this.redis.lpush(poolKey, batch.slice(1), 86400);
+      if (!batch.isFallback && batch.phrases.length > 1) {
+        await this.redis.lpush(poolKey, batch.phrases.slice(1), 86400);
       }
-      phrase = batch[0] ?? null;
+      phrase = batch.phrases[0] ?? null;
+      if (batch.isFallback) return phrase;
     }
 
     // Update DailyFeed so home screen also shows the new phrase
@@ -261,6 +279,7 @@ export class TodayService {
     },
     supportPhrase: { text: string },
     holiday: { title: string } | null,
+    contentSource: 'ai' | 'stored',
   ) {
     return {
       date,
@@ -273,28 +292,63 @@ export class TodayService {
       },
       support: { text: supportPhrase.text },
       holiday: holiday ? { title: holiday.title } : null,
+      meta: { contentSource },
     };
   }
 
-  /** Returns today's date as "DD.MM" in the user's timezone, or UTC if unknown/invalid. */
-  private getTodayDateStr(timezone?: string): string {
+  private buildPackResponse(
+    displayDate: string,
+    pack: AiDailyPack,
+    contentSource: 'fallback',
+  ) {
+    return {
+      date: displayDate,
+      horoscope: {
+        main: pack.horoscope,
+        detailed: pack.horoscopeDetailed,
+        advice: pack.advice,
+        moon: pack.moon,
+        aspect: pack.aspect,
+      },
+      support: { text: pack.supportPhrase },
+      holiday: pack.holiday ? { title: pack.holiday } : null,
+      meta: { contentSource, retryAfterSeconds: 300 },
+    };
+  }
+
+  /** Returns ISO persistence key and DD.MM UI/holiday key in the user's timezone. */
+  private getTodayDateParts(timezone?: string): {
+    isoDate: string;
+    displayDate: string;
+  } {
     const now = new Date();
     if (timezone) {
       try {
-        const parts = new Intl.DateTimeFormat('en-GB', {
+        const parts = new Intl.DateTimeFormat('en-CA', {
           timeZone: timezone,
+          year: 'numeric',
           day: '2-digit',
           month: '2-digit',
         }).formatToParts(now);
+        const year = parts.find((p) => p.type === 'year')?.value ?? '';
         const day = parts.find((p) => p.type === 'day')?.value ?? '';
         const month = parts.find((p) => p.type === 'month')?.value ?? '';
-        if (day && month) return `${day}.${month}`;
+        if (year && day && month) {
+          return {
+            isoDate: `${year}-${month}-${day}`,
+            displayDate: `${day}.${month}`,
+          };
+        }
       } catch {
         // Invalid IANA timezone — fall through to UTC
       }
     }
+    const year = String(now.getUTCFullYear());
     const day = String(now.getUTCDate()).padStart(2, '0');
     const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-    return `${day}.${month}`;
+    return {
+      isoDate: `${year}-${month}-${day}`,
+      displayDate: `${day}.${month}`,
+    };
   }
 }
