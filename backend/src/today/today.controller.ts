@@ -54,8 +54,8 @@ export class TodayController {
     const { isoDate, displayDate } = this.getTodayDateParts(prefs?.timezone);
     const holiday = resolveHoliday(displayDate).name ?? undefined;
 
-    // Pool делим по имени+полу (или anon) — иначе фразы одного юзера достанутся другому.
-    const poolKey = `support-pool:${mood}:${zodiacSign ?? 'unknown'}:${name ?? 'anon'}:${gender ?? 'u'}:${isoDate}`;
+    // Персональный versioned pool; имя используется только в AI prompt, не в key/logs.
+    const poolKey = `support-pool:short-v2:${user.sub}:${zodiacSign ?? 'unknown'}:${mood}:${isoDate}`;
 
     // Try to pop a phrase from the shared pool first (no AI call)
     let supportPhrase = await this.redis.rpop(poolKey);
@@ -82,7 +82,7 @@ export class TodayController {
       }
       supportPhrase =
         batch.phrases[0] ??
-        'Сейчас можно остановиться и спокойно вернуть себе опору. Тебе не нужно решать всё сразу или быть сильнее собственных сил. Выбери один бережный шаг, который сделает ближайший час немного легче.';
+        'Сейчас можно спокойно вернуть себе опору. Выбери один бережный шаг и не требуй от себя решить всё сразу.';
       if (batch.isFallback) {
         return { support: { text: supportPhrase } };
       }

@@ -200,11 +200,11 @@ Axios interceptor автоматически:
 ## AI Логика (самое интересное)
 
 ### Что генерирует AI:
-- `horoscope` — 3–4 предложения, 240–650 символов
-- `horoscopeDetailed` — 6–8 предложений, 520–1400 символов
-- `advice` — два практических предложения
-- `moon` / `aspect` — по 1–2 предложения
-- `supportPhrase` — 3–4 предложения, 220–650 символов
+- `horoscope` — 2–4 предложения, 160–500 символов
+- `horoscopeDetailed` — 3–4 предложения, 350–850 символов
+- `advice` — 1–2 практических предложения, 60–220 символов
+- `moon` / `aspect` — ровно по одному предложению, 45–180 символов
+- `supportPhrase` — 1–2 предложения, 60–220 символов
 
 **Праздник** НЕ генерируется AI — берётся из локального словаря `holidays.data.ts`.
 
@@ -216,7 +216,7 @@ Axios interceptor автоматически:
 1. DB Cache  — DailyFeed таблица (userId + date)
               Если уже есть запись на сегодня → возвращаем её.
 
-2. Redis Cache — ключ: pack:{zodiacSign}:{mood}:{name}:{YYYY-MM-DD}
+2. Redis Cache — персональный ключ: pack:short-v2:{userId}:{zodiacSign}:{mood}:{YYYY-MM-DD}
               TTL: 36 часов (покрывает все часовые пояса РФ).
               Если fallback-ответ → TTL 5 минут и meta.contentSource=fallback.
 
@@ -230,7 +230,7 @@ Axios interceptor автоматически:
 - 12 готовых гороскопов (по одному на каждый знак)
 - 5 фраз поддержки для каждого из 6 настроений
 
-Fallback не записывается в `horoscopes`, `support_phrases` или `daily_feed`: он живёт в Redis 300 секунд, после чего фронт тихо повторяет `/api/today`. Живой JSON принимается только после Zod-проверки объёма и структуры. Прямой OpenAI с московского VPS не используется, потому что отвечает `403 unsupported_country_region_territory`; актуальный провайдер — Cloudflare Workers AI, модель `@cf/openai/gpt-oss-120b`.
+Fallback не записывается в `horoscopes`, `support_phrases` или `daily_feed`: он живёт в Redis 300 секунд, после чего фронт тихо повторяет `/api/today`. Старый сохранённый feed, нарушающий короткий контракт, автоматически пересобирается. Живой JSON принимается только после Zod-проверки объёма и структуры. Прямой OpenAI с московского VPS не используется, потому что отвечает `403 unsupported_country_region_territory`; актуальный провайдер — Cloudflare Workers AI, модель `@cf/openai/gpt-oss-120b`.
 
 ---
 

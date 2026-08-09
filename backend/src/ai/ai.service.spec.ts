@@ -10,16 +10,16 @@ const context = {
 
 const validPack = {
   horoscope:
-    'Сегодня важно не торопить события и сначала понять, куда действительно хочется направить силы. Разговор, который давно откладывался, даст больше ясности, если говорить спокойно и без попытки всё решить за другого человека. Вечером оставь время для простого дела, которое возвращает ощущение опоры и собственного ритма.',
+    'Сегодня не распыляй силы: выбери одно дело, которое действительно двигает тебя вперёд. Спокойный разговор поможет прояснить ожидания и сохранить энергию для важного. Вечером отметь небольшой результат и дай себе время восстановиться.',
   horoscopeDetailed:
-    'Марс, покровитель Овна, сегодня усиливает желание действовать быстро, но лунная энергия просит сначала проверить внутренний мотив. В рабочих вопросах полезно выбрать одну приоритетную задачу и довести её до ясного промежуточного результата. В отношениях прямота сработает лучше, если добавить к ней внимание к чувствам собеседника. Неожиданная идея может оказаться ценной, однако ей потребуется практичный план. После обеда темп стоит немного снизить, чтобы заметить детали и не принять усталость за потерю интереса. Вечер подходит для спокойного подведения итогов и решения, что действительно заслуживает твоей энергии завтра.',
+    'Марс поддерживает решительность Овна, но сегодня особенно важно направить её в одну понятную задачу. Лунная энергия усиливает чувствительность к чужим словам, поэтому полезно отделять факты от первой эмоциональной реакции. В отношениях честность сработает лучше давления, если дать собеседнику время ответить. Вечер подходит для спокойного подведения итогов и выбора главного шага на завтра.',
   advice:
-    'Перед важным ответом сделай короткую паузу и сформулируй для себя желаемый результат разговора. Затем выбери один конкретный шаг, который можно завершить сегодня без лишнего давления.',
-  moon: 'Лунная энергия делает чувства заметнее, поэтому честная пауза поможет отличить тревогу от настоящего предчувствия.',
+    'Запиши один результат, который реально получить сегодня, и начни с самого простого действия.',
+  moon: 'Лунная энергия делает чувства заметнее и помогает честно увидеть свою главную потребность.',
   aspect:
-    'Мягкий аспект Марса и Сатурна поддерживает последовательные действия, если не пытаться получить весь результат сразу.',
+    'Мягкий аспект Марса и Сатурна поддерживает последовательные действия без лишней спешки.',
   supportPhrase:
-    'Тревога сейчас может говорить громко, но она не определяет ни тебя, ни исход этого дня. Сначала верни телу ощущение безопасности: выдохни, почувствуй опору под ногами и назови одну вещь, которая уже под контролем. Тебе не нужно решать всё сразу — достаточно следующего бережного шага.',
+    'Тревога может звучать громко, но она не определяет тебя и этот день. Верни себе опору одним спокойным вдохом и выбери ближайший бережный шаг.',
 };
 
 function config(values: Record<string, string | undefined>) {
@@ -58,9 +58,11 @@ describe('AiService', () => {
     });
 
     expect(pack.isFallback).toBe(true);
-    expect(pack.horoscope.length).toBeGreaterThanOrEqual(240);
-    expect(pack.horoscopeDetailed.length).toBeGreaterThanOrEqual(520);
-    expect(pack.supportPhrase.length).toBeGreaterThanOrEqual(220);
+    expect(pack.horoscope.length).toBeGreaterThanOrEqual(160);
+    expect(pack.horoscope.length).toBeLessThanOrEqual(500);
+    expect(pack.horoscopeDetailed.length).toBeGreaterThanOrEqual(350);
+    expect(pack.supportPhrase.length).toBeGreaterThanOrEqual(60);
+    expect(pack.supportPhrase.length).toBeLessThanOrEqual(220);
   });
 
   it('uses the configured Workers AI endpoint, model and max_completion_tokens', async () => {
@@ -85,7 +87,7 @@ describe('AiService', () => {
       expect.objectContaining({
         model: '@cf/openai/gpt-oss-120b',
         reasoning_effort: 'low',
-        max_completion_tokens: 3000,
+        max_completion_tokens: 1400,
       }),
     );
     expect((service as unknown as { baseURL?: string }).baseURL).toBe(
@@ -139,9 +141,10 @@ describe('AiService', () => {
 
     expect(create).toHaveBeenCalledTimes(1);
     expect(pack.isFallback).toBe(true);
-    expect(pack.horoscope.length).toBeGreaterThanOrEqual(240);
-    expect(pack.horoscopeDetailed.length).toBeGreaterThanOrEqual(520);
-    expect(pack.supportPhrase.length).toBeGreaterThanOrEqual(220);
+    expect(pack.horoscope.length).toBeGreaterThanOrEqual(160);
+    expect(pack.horoscopeDetailed.length).toBeGreaterThanOrEqual(350);
+    expect(pack.supportPhrase.length).toBeGreaterThanOrEqual(60);
+    expect(pack.supportPhrase.length).toBeLessThanOrEqual(220);
   });
 
   it('keeps OPENAI_BASE_URL as a legacy fallback', () => {
@@ -181,9 +184,42 @@ describe('AiService', () => {
     expect(create).toHaveBeenLastCalledWith(
       expect.objectContaining({
         reasoning_effort: 'low',
-        max_completion_tokens: 800,
+        max_completion_tokens: 400,
       }),
     );
     expect(result).toEqual({ supportPhrase: validPack.supportPhrase });
+  });
+
+  it('generates five compact support phrases within the batch token budget', async () => {
+    const service = new AiService(config({ AI_API_KEY: 'test-token' }));
+    const create = jest.fn().mockResolvedValue(
+      completion({
+        p1: validPack.supportPhrase,
+        p2: validPack.supportPhrase,
+        p3: validPack.supportPhrase,
+        p4: validPack.supportPhrase,
+        p5: validPack.supportPhrase,
+      }),
+    );
+    Object.defineProperty(service, 'openai', {
+      value: { chat: { completions: { create } } },
+    });
+
+    const result = await service.generateSupportPhrasesBatch(
+      'Тревожна',
+      'Овен ♈︎',
+      undefined,
+      'Анна',
+      'F',
+    );
+
+    expect(result.phrases).toHaveLength(5);
+    expect(result.phrases.every((phrase) => phrase.length <= 220)).toBe(true);
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reasoning_effort: 'low',
+        max_completion_tokens: 1200,
+      }),
+    );
   });
 });

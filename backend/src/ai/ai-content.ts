@@ -34,12 +34,12 @@ function substantiveText(
 }
 
 export const dailyPackContentSchema = z.object({
-  horoscope: substantiveText('horoscope', 240, 650, 3, 4),
-  horoscopeDetailed: substantiveText('horoscopeDetailed', 520, 1400, 6, 8),
-  advice: substantiveText('advice', 100, 420, 2, 2),
-  moon: substantiveText('moon', 70, 320, 1, 2),
-  aspect: substantiveText('aspect', 70, 320, 1, 2),
-  supportPhrase: substantiveText('supportPhrase', 220, 650, 3, 4),
+  horoscope: substantiveText('horoscope', 160, 500, 2, 4),
+  horoscopeDetailed: substantiveText('horoscopeDetailed', 350, 850, 3, 4),
+  advice: substantiveText('advice', 60, 220, 1, 2),
+  moon: substantiveText('moon', 45, 180, 1, 1),
+  aspect: substantiveText('aspect', 45, 180, 1, 1),
+  supportPhrase: substantiveText('supportPhrase', 60, 220, 1, 2),
 });
 
 export type ValidatedDailyPack = z.infer<typeof dailyPackContentSchema>;
@@ -49,7 +49,7 @@ export function parseDailyPackContent(raw: string): ValidatedDailyPack {
 }
 
 const supportContentSchema = z.object({
-  supportPhrase: substantiveText('supportPhrase', 220, 650, 3, 4),
+  supportPhrase: substantiveText('supportPhrase', 60, 220, 1, 2),
 });
 
 export function parseSupportContent(raw: string): { supportPhrase: string } {

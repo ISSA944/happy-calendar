@@ -74,3 +74,52 @@ describe('daily fallback refresh', () => {
     )
   })
 })
+
+describe('profile mood hydration', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    vi.mocked(apiClient.get).mockReset()
+    useAppStore.setState({
+      currentMood: 'Тревожна',
+      hasCompletedOnboarding: true,
+      birthDate: '01.01.1990',
+      zodiacSign: 'Козерог ♑︎',
+    })
+  })
+
+  it('resets a new incomplete profile to Нормально instead of leaking persisted mood', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        user: { email: 'new@example.com', name: 'Новый пользователь' },
+        profile: null,
+        prefs: null,
+      },
+    })
+
+    await useAppStore.getState().syncProfile()
+
+    expect(useAppStore.getState().currentMood).toBe('Нормально')
+    expect(useAppStore.getState().hasCompletedOnboarding).toBe(false)
+  })
+
+  it('keeps the mood and onboarding state returned by an existing server profile', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        user: { email: 'existing@example.com', name: 'Анна' },
+        profile: {
+          birthdate: '10.08.1990',
+          zodiacSign: 'Лев ♌︎',
+          gender: 'F',
+          avatarUrl: null,
+          currentMood: 'Грустна',
+        },
+        prefs: null,
+      },
+    })
+
+    await useAppStore.getState().syncProfile()
+
+    expect(useAppStore.getState().currentMood).toBe('Грустна')
+    expect(useAppStore.getState().hasCompletedOnboarding).toBe(true)
+  })
+})

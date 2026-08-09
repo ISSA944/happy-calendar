@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { AiService, type AiDailyPack, type PromptContext } from '../ai';
 import { RedisService } from '../redis/redis.service';
+import { dailyPackContentSchema } from '../ai/ai-content';
 
 const CACHE_TTL_SECONDS = 129_600; // 36 hours (covers all RU timezones)
 const AI_LOCK_TTL = 30; // max seconds one AI call should take
@@ -41,10 +42,24 @@ export class TodayService {
       include: { horoscope: true, supportPhrase: true, holiday: true },
     });
 
+    const storedContentIsCompact =
+      existingFeed?.horoscope &&
+      existingFeed?.supportPhrase &&
+      dailyPackContentSchema.safeParse({
+        horoscope: existingFeed.horoscope.main,
+        horoscopeDetailed:
+          existingFeed.horoscope.detailed ?? existingFeed.horoscope.main,
+        advice: existingFeed.horoscope.advice,
+        moon: existingFeed.horoscope.moon,
+        aspect: existingFeed.horoscope.aspect,
+        supportPhrase: existingFeed.supportPhrase.text,
+      }).success;
+
     if (
       existingFeed?.horoscope &&
       existingFeed?.supportPhrase &&
-      existingFeed.horoscope.zodiacSign === zodiacSign
+      existingFeed.horoscope.zodiacSign === zodiacSign &&
+      storedContentIsCompact
     ) {
       this.logger.log(`getTodayPack DB hit userId=${userId} date=${isoDate}`);
       return this.buildResponse(
@@ -67,18 +82,18 @@ export class TodayService {
       });
     }
 
-    // ── 2. Redis cache (zodiacSign + mood + name + date) ───────────────────────
-    // Включаем имя в ключ: AI обращается по имени, поэтому фразу нельзя шарить
-    // между разными юзерами с одним знаком. Юзеры без имени делят anon-кэш.
-    const nameKey = name ?? 'anon';
-    const cacheKey = `pack:${zodiacSign}:${mood}:${nameKey}:${isoDate}`;
+    // ── 2. Personal Redis cache (version + user + sign + mood + ISO date) ────
+    // Имя остаётся только в AI-контексте и никогда не попадает в Redis key/logs.
+    const cacheKey = `pack:short-v2:${userId}:${zodiacSign}:${mood}:${isoDate}`;
     const lockKey = `lock:${cacheKey}`;
 
     let pack: AiDailyPack | null = null;
     const cached = await this.redis.get(cacheKey);
 
     if (cached) {
-      this.logger.log(`getTodayPack Redis HIT key=${cacheKey}`);
+      this.logger.log(
+        `getTodayPack Redis HIT userId=${userId} date=${isoDate}`,
+      );
       pack = JSON.parse(cached) as AiDailyPack;
     }
 
@@ -88,7 +103,9 @@ export class TodayService {
 
       if (!lockAcquired) {
         // Another request has the lock — wait briefly then re-check Redis.
-        this.logger.log(`getTodayPack lock busy, waiting... key=${cacheKey}`);
+        this.logger.log(
+          `getTodayPack lock busy userId=${userId} date=${isoDate}`,
+        );
         await new Promise((r) => setTimeout(r, 1000));
         const retried = await this.redis.get(cacheKey);
         if (retried) {
@@ -100,7 +117,9 @@ export class TodayService {
         // Call AI and write to Redis whether we hold the lock or not.
         // Edge case without lock: two concurrent writes are idempotent (same data).
         try {
-          this.logger.log(`getTodayPack calling AI key=${cacheKey}`);
+          this.logger.log(
+            `getTodayPack calling AI userId=${userId} date=${isoDate}`,
+          );
           const context: PromptContext = {
             zodiacSign,
             mood,
@@ -113,7 +132,7 @@ export class TodayService {
           const ttl = pack.isFallback ? 300 : CACHE_TTL_SECONDS;
           if (pack.isFallback) {
             this.logger.warn(
-              `Caching fallback response for 5 minutes (key=${cacheKey})`,
+              `Caching fallback response for 5 minutes userId=${userId} date=${isoDate}`,
             );
           }
           await this.redis.set(cacheKey, JSON.stringify(pack), ttl);
@@ -133,7 +152,13 @@ export class TodayService {
     // ── 4. Persist horoscope (shared ref — upsert is idempotent) ──────────────
     const horoscope = await this.prisma.horoscope.upsert({
       where: { date_zodiacSign: { date: isoDate, zodiacSign } },
-      update: {},
+      update: {
+        main: pack.horoscope,
+        detailed: pack.horoscopeDetailed,
+        advice: pack.advice,
+        moon: pack.moon,
+        aspect: pack.aspect,
+      },
       create: {
         date: isoDate,
         zodiacSign,
@@ -230,7 +255,7 @@ export class TodayService {
       prefs?.timezone ?? undefined,
     );
 
-    const poolKey = `support-pool:${mood}:${zodiac ?? 'unknown'}:${name ?? 'anon'}:${gender ?? 'u'}:${isoDate}`;
+    const poolKey = `support-pool:short-v2:${userId}:${zodiac ?? 'unknown'}:${mood}:${isoDate}`;
 
     let phrase = await this.redis.rpop(poolKey);
 

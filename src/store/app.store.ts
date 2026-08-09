@@ -557,13 +557,19 @@ export const useAppStore = create<AppState>()(
           set({
             email: data.user?.email ?? get().email,
             userName: data.user?.name ?? get().userName,
-            birthDate: data.profile?.birthdate ?? get().birthDate,
-            zodiacSign: data.profile?.zodiacSign ?? get().zodiacSign,
-            hasCompletedOnboarding:
-              Boolean(data.profile?.birthdate && data.profile?.zodiacSign) || get().hasCompletedOnboarding,
-            gender: (data.profile?.gender as 'F' | 'M' | 'UNKNOWN' | undefined) ?? get().gender,
-            profilePhoto: data.profile?.avatarUrl ?? get().profilePhoto,
-            currentMood: data.profile?.currentMood ?? get().currentMood,
+            birthDate: data.profile?.birthdate ?? '',
+            zodiacSign: data.profile?.zodiacSign ?? '',
+            hasCompletedOnboarding: Boolean(
+              data.profile?.birthdate && data.profile?.zodiacSign,
+            ),
+            gender:
+              (data.profile?.gender as
+                | 'F'
+                | 'M'
+                | 'UNKNOWN'
+                | undefined) ?? 'UNKNOWN',
+            profilePhoto: data.profile?.avatarUrl ?? '',
+            currentMood: data.profile?.currentMood ?? 'Нормально',
             horoscopeTime: data.prefs?.horoscopeTime
               ?? data.prefs?.pushTime
               ?? get().horoscopeTime,
