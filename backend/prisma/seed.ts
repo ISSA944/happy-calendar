@@ -24,14 +24,24 @@ const DATA_DIR = path.resolve(process.cwd(), 'prisma', 'seed-data');
 function readJson<T>(file: string): T | null {
   const p = path.join(DATA_DIR, file);
   if (!fs.existsSync(p)) {
-    console.warn(`⚠️  ${file} не найден — пропускаю. Сначала запусти соответствующий import-скрипт.`);
+    console.warn(
+      `⚠️  ${file} не найден — пропускаю. Сначала запусти соответствующий import-скрипт.`,
+    );
     return null;
   }
   return JSON.parse(fs.readFileSync(p, 'utf8')) as T;
 }
 
 async function seedHolidays() {
-  type H = { date: string; title: string; cute: string; humor: string; cynical: string; themeKey: string; scope: string };
+  type H = {
+    date: string;
+    title: string;
+    cute: string;
+    humor: string;
+    cynical: string;
+    themeKey: string;
+    scope: string;
+  };
   const data = readJson<H[]>('holidays.json');
   if (!data) return;
   await prisma.calendarHoliday.deleteMany({});
@@ -41,6 +51,39 @@ async function seedHolidays() {
     await prisma.calendarHoliday.createMany({ data: data.slice(i, i + CHUNK) });
   }
   console.log(`✅ calendar_holidays: ${data.length}`);
+}
+
+async function seedPostcardPacks() {
+  type P = { key: string; date: string; title: string };
+  const data = readJson<P[]>('january-postcards-v8.json');
+  if (!data) return;
+  const pack = 'calendar/01/v8-20260808';
+
+  for (const postcard of data) {
+    const acceptedTitles =
+      postcard.key === '01-114'
+        ? [postcard.title, 'День рождения Calend.ru']
+        : [postcard.title];
+    const matches = await prisma.calendarHoliday.findMany({
+      where: { date: postcard.date, title: { in: acceptedTitles } },
+      select: { id: true },
+    });
+    if (matches.length !== 1) {
+      throw new Error(
+        `Открытка ${postcard.key}: ожидался ровно один праздник, найдено ${matches.length}`,
+      );
+    }
+    await prisma.calendarHoliday.update({
+      where: { id: matches[0].id },
+      data: {
+        title: postcard.title,
+        postcardKey: postcard.key,
+        postcardPack: pack,
+      },
+    });
+  }
+
+  console.log(`✅ january postcards: ${data.length} (${pack})`);
 }
 
 async function seedMilestones() {
@@ -76,13 +119,18 @@ async function seedPersonalCareDays() {
   // Upsert по dayOfYear — идемпотентно, и никогда не трогает legacy-строки старого прототипного
   // сида (у них dayOfYear = NULL, они на completions FK RESTRICT, поэтому не удаляются вовсе).
   for (const d of data) {
-    await prisma.personalCareDay.upsert({ where: { dayOfYear: d.dayOfYear }, update: d, create: d });
+    await prisma.personalCareDay.upsert({
+      where: { dayOfYear: d.dayOfYear },
+      update: d,
+      create: d,
+    });
   }
   console.log(`✅ personal_care_days (по dayOfYear): ${data.length}`);
 }
 
 async function main() {
   await seedHolidays();
+  await seedPostcardPacks();
   await seedMilestones();
   await seedPersonalCareDays();
 }

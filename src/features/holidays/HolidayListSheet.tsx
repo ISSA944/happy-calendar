@@ -94,7 +94,10 @@ export function HolidayListSheet({ isOpen, onClose, holidays }: HolidayListSheet
                 className="flex items-center gap-3 bg-white rounded-2xl p-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform text-left"
               >
                 <div className="w-11 h-11 flex-shrink-0 rounded-xl overflow-hidden">
-                  <ThemeArt themeKey={h.themeKey} className="w-full h-full" />
+                  {h.imageUrl
+                    ? <img src={h.imageUrl} alt="" className="w-full h-full object-cover" />
+                    : <ThemeArt themeKey={h.themeKey} className="w-full h-full" />
+                  }
                 </div>
                 <span className="flex-1 min-w-0 font-semibold text-sm text-on-surface truncate">{h.title}</span>
                 {h.scope === 'intl' && (

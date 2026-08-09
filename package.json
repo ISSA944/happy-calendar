@@ -11,8 +11,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint src",
     "lint:frontend": "eslint src",
+    "test:frontend": "vitest run --dir src",
     "test": "npm --prefix backend test -- --runInBand",
-    "check": "npm run build && npm run lint:frontend && npm --prefix backend run build && npm --prefix backend run lint && npm test",
+    "check": "npm run build && npm run lint:frontend && npm run test:frontend && npm --prefix backend run build && npm --prefix backend run lint && npm test",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -42,6 +43,7 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.0",
     "vite": "^7.3.2",
-    "vite-plugin-pwa": "^1.2.0"
+    "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^4.1.10"
   }
 }

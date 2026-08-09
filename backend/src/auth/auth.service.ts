@@ -26,6 +26,34 @@ export interface JwtPayload {
 
 type EmailProvider = 'smtp' | 'resend' | 'none';
 
+type TestAccountPolicy = {
+  fixedOtp: string;
+  sendOtpEmail: boolean;
+  repeatWelcomeEmail: boolean;
+  resetOnDevRegistration: boolean;
+  preserveNameOnRegistration: boolean;
+  refreshTtl: string;
+};
+
+const TEST_ACCOUNT_POLICIES: Record<string, TestAccountPolicy> = {
+  'mukaniskander01@gmail.com': {
+    fixedOtp: '1111',
+    sendOtpEmail: false,
+    repeatWelcomeEmail: true,
+    resetOnDevRegistration: true,
+    preserveNameOnRegistration: false,
+    refreshTtl: '365d',
+  },
+  'metrolabsgroup@gmail.com': {
+    fixedOtp: '1111',
+    sendOtpEmail: true,
+    repeatWelcomeEmail: true,
+    resetOnDevRegistration: false,
+    preserveNameOnRegistration: true,
+    refreshTtl: '365d',
+  },
+};
+
 type ResendEmailResult = {
   data?: { id?: string } | null;
   error?: object | null;
@@ -52,12 +80,6 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly OTP_TTL_MIN = 15;
   private readonly BCRYPT_ROUNDS = 10;
-  // Тестовый аккаунт с обходом OTP (код всегда 1111) — по явному запросу владельца
-  // продукта активен ВО ВСЕХ окружениях, включая прод. Осознанный риск: кто угодно,
-  // знающий этот email, может войти в аккаунт без реального кода. Жёстко ограничено
-  // ровно одним email ниже — не расширять на другие адреса.
-  private readonly TEST_EMAIL = 'mukaniskander01@gmail.com';
-
   private readonly smtpTransport: Transporter | null;
   private readonly smtpFromEmail: string;
   private readonly smtpFromName: string;
@@ -109,6 +131,10 @@ export class AuthService {
     this.logger.log(`Email provider: ${this.provider}`);
   }
 
+  private testAccountPolicy(email: string): TestAccountPolicy | null {
+    return TEST_ACCOUNT_POLICIES[email] ?? null;
+  }
+
   async register(
     email: string,
     name?: string,
@@ -117,16 +143,11 @@ export class AuthService {
   ) {
     const normalizedEmail = email.trim().toLowerCase();
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';
-    // OTP-бэкдор (код всегда 1111) — активен во всех окружениях, см. TEST_EMAIL выше.
-    // Авто-сброс профиля при повторной регистрации — ТОЛЬКО в dev (чисто удобство при локальной
-    // разработке). В проде этот же email используется владельцем как реальный аккаунт — вайп
-    // при каждом register() уничтожал его настоящий профиль/прогресс при любой потере сессии.
-    // Если аккаунт уже существует — register() тихо ведёт себя как login() (шлёт OTP на тот же
-    // профиль вместо ошибки 409), чтобы владелец никогда не упирался в «уже зарегистрирован» на
-    // своём реальном аккаунте, но данные при этом не терялись.
-    const isTestAccount = normalizedEmail === this.TEST_EMAIL;
+    // Фиксированный OTP тестовых аккаунтов активен во всех окружениях, включая production.
+    // Это осознанный риск: политика жёстко ограничена перечисленными выше адресами.
+    const testPolicy = this.testAccountPolicy(normalizedEmail);
 
-    if (isTestAccount && isDev) {
+    if (testPolicy?.resetOnDevRegistration && isDev) {
       // Test account in dev: auto-wipe on every registration so re-registration always works cleanly
       await this.prisma.user.deleteMany({ where: { email: normalizedEmail } });
     } else {
@@ -134,10 +155,10 @@ export class AuthService {
         where: { email: normalizedEmail },
       });
       if (existing) {
-        if (isTestAccount) {
+        if (testPolicy) {
           // login() не принимает name — без этого имя, введённое на экране регистрации,
           // молча терялось при каждом повторном "регистрируюсь" на уже существующий аккаунт.
-          if (name?.trim()) {
+          if (!testPolicy.preserveNameOnRegistration && name?.trim()) {
             await this.prisma.user.update({
               where: { id: existing.id },
               data: { name: name.trim() },
@@ -165,12 +186,12 @@ export class AuthService {
       });
     }
 
-    const code = isTestAccount ? '1111' : randomInt(1000, 10_000).toString();
+    const code = testPolicy?.fixedOtp ?? randomInt(1000, 10_000).toString();
 
     // Try to send email first (clean-state policy: save hash only on success).
     // In development: if email send fails for any reason, log code to terminal so
     // any email can be tested locally. In production: failure still throws 500.
-    if (!isTestAccount) {
+    if (!testPolicy || testPolicy.sendOtpEmail) {
       try {
         await this.sendOtpEmail(normalizedEmail, code);
       } catch (err) {
@@ -181,7 +202,9 @@ export class AuthService {
         );
       }
     } else {
-      this.logger.warn(`\n🧪 TEST ACCOUNT — OTP bypassed, code is 1111\n`);
+      this.logger.warn(
+        `\n🧪 TEST ACCOUNT — OTP email bypassed, code is ${code}\n`,
+      );
     }
 
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
@@ -215,11 +238,10 @@ export class AuthService {
     }
 
     const isDev = this.config.get<string>('NODE_ENV') !== 'production';
-    // Тест-аккаунт (OTP 1111) — активен во всех окружениях, см. TEST_EMAIL выше.
-    const isTestAccount = normalizedEmail === this.TEST_EMAIL;
-    const code = isTestAccount ? '1111' : randomInt(1000, 10_000).toString();
+    const testPolicy = this.testAccountPolicy(normalizedEmail);
+    const code = testPolicy?.fixedOtp ?? randomInt(1000, 10_000).toString();
 
-    if (!isTestAccount) {
+    if (!testPolicy || testPolicy.sendOtpEmail) {
       try {
         await this.sendOtpEmail(normalizedEmail, code);
       } catch (err) {
@@ -229,7 +251,9 @@ export class AuthService {
         );
       }
     } else {
-      this.logger.warn(`\n🧪 TEST ACCOUNT — OTP bypassed, code is 1111\n`);
+      this.logger.warn(
+        `\n🧪 TEST ACCOUNT — OTP email bypassed, code is ${code}\n`,
+      );
     }
 
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
@@ -253,10 +277,7 @@ export class AuthService {
 
   async verifyOtp(email: string, code: string) {
     const normalizedEmail = email.trim().toLowerCase();
-    // Тест-аккаунт (см. TEST_EMAIL выше) — по явному запросу владельца письмо с подарком
-    // должно приходить заново при каждом входе, а не один раз за жизнь аккаунта, чтобы можно
-    // было гонять полный флоу регистрации сколько угодно раз для проверки.
-    const isTestAccount = normalizedEmail === this.TEST_EMAIL;
+    const testPolicy = this.testAccountPolicy(normalizedEmail);
 
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -314,10 +335,10 @@ export class AuthService {
     });
 
     // Приветственное письмо — один раз за всю жизнь аккаунта (флаг welcomeEmailSentAt), КРОМЕ
-    // тест-аккаунта — тому шлём заново при каждом verifyOtp(), см. isTestAccount выше.
+    // тестовых политик с repeatWelcomeEmail — им шлём заново при каждом verifyOtp().
     // verifyOtp() — общая точка входа для регистрации И логина, поэтому завязываемся на флаг,
     // а не на тип запроса. Best-effort: письмо НИКОГДА не блокирует вход — любая ошибка гасится.
-    if (isTestAccount || !user.welcomeEmailSentAt) {
+    if (testPolicy?.repeatWelcomeEmail || !user.welcomeEmailSentAt) {
       try {
         await this.sendWelcomeEmail(normalizedEmail, user.name);
         await this.prisma.user.update({
@@ -827,9 +848,8 @@ export class AuthService {
     const refreshSecret = this.config.getOrThrow<string>('JWT_REFRESH_SECRET');
     const accessTtl = this.config.getOrThrow<string>('JWT_ACCESS_TTL');
     const refreshTtl =
-      email === 'mukaniskander01@gmail.com'
-        ? '365d'
-        : this.config.getOrThrow<string>('JWT_REFRESH_TTL');
+      (email && this.testAccountPolicy(email)?.refreshTtl) ??
+      this.config.getOrThrow<string>('JWT_REFRESH_TTL');
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(accessPayload as object, {

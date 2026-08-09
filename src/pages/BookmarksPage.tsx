@@ -116,7 +116,18 @@ export function BookmarksPage() {
                     <span className="material-symbols-outlined text-lg">close</span>
                   </button>
                 </div>
-                <p className="text-on-surface font-headline font-medium text-[15px] leading-relaxed">{bm.text}</p>
+                {bm.imageUrl ? (
+                  <div className="space-y-3">
+                    <img
+                      src={bm.imageUrl}
+                      alt={bm.title ? `Открытка «${bm.title}»` : 'Сохранённая открытка'}
+                      className="block w-full aspect-video object-cover rounded-[16px]"
+                    />
+                    {bm.title && <p className="text-on-surface font-headline font-semibold text-[15px]">{bm.title}</p>}
+                  </div>
+                ) : (
+                  <p className="text-on-surface font-headline font-medium text-[15px] leading-relaxed">{bm.text}</p>
+                )}
               </motion.div>
             ))}
           </AnimatePresence>

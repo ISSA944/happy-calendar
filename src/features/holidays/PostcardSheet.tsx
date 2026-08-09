@@ -47,7 +47,10 @@ function PostcardContentInner({ holiday }: PostcardContentProps) {
     return () => { cancelled = true }
   }, [holiday, tone, getHolidayCard])
 
-  const savedBookmark = card ? bookmarks.find((b) => b.type === 'открытка' && b.text === card.text) : undefined
+  const savedBookmark = card ? bookmarks.find((b) => (
+    b.type === 'открытка'
+    && (card.postcardReady && card.imageUrl ? b.imageUrl === card.imageUrl : b.text === card.text)
+  )) : undefined
   const isSaved = Boolean(savedBookmark)
 
   const handleSave = useCallback(() => {
@@ -59,12 +62,19 @@ function PostcardContentInner({ holiday }: PostcardContentProps) {
       date: getFullDateStr(),
       text: card.text,
       icon: 'celebration',
+      imageUrl: card.postcardReady ? card.imageUrl ?? undefined : undefined,
+      title: card.title,
+      tone: card.tone,
     })
   }, [card, savedBookmark, addBookmark, removeBookmark])
 
   const handleShare = useCallback(async () => {
     if (!card) return
-    const ok = await nativeShare(`YoYoJoy · ${card.title}`, card.text)
+    const ok = await nativeShare(
+      `YoYoJoy · ${card.title}`,
+      card.text,
+      card.postcardReady ? card.imageUrl ?? undefined : undefined,
+    )
     if (!ok) setShowChannels(true)
   }, [card])
 
@@ -91,27 +101,26 @@ function PostcardContentInner({ holiday }: PostcardContentProps) {
         ))}
       </div>
 
-      <div className="rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-        {/* Картинка/тема не зависит от тона — не должна дёргаться при переключении Милая/С юмором/Циничная.
-            layout — только на текстовом блоке ниже, НЕ на этом внешнем контейнере: layout на родителе
-            анимирует transform всего блока целиком при смене высоты, задевая и картинку тоже. */}
-        <div className="h-40 overflow-hidden">
+      <div className="rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)] bg-white">
+        <div className={card?.postcardReady ? 'aspect-video overflow-hidden' : 'h-40 overflow-hidden'}>
           {card?.imageUrl
-            ? <img src={card.imageUrl} alt="" className="block w-full h-full object-cover" />
+            ? <img src={card.imageUrl} alt={`Открытка «${card.title}», ${TONES.find((item) => item.id === card.tone)?.label ?? card.tone}`} className="block w-full h-full object-cover" />
             : <ThemeArt themeKey={holiday.themeKey} className="w-full h-full" />
           }
         </div>
-        <motion.div layout="size" className="bg-white p-5 min-h-[64px]">
-          <motion.p
-            key={isLoading ? 'loading' : tone}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.15 }}
-            className="text-[15px] leading-relaxed text-on-surface"
-          >
-            {isLoading ? '…' : card?.text}
-          </motion.p>
-        </motion.div>
+        {!card?.postcardReady && (
+          <motion.div layout="size" className="bg-white p-5 min-h-[64px]">
+            <motion.p
+              key={isLoading ? 'loading' : tone}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.15 }}
+              className="text-[15px] leading-relaxed text-on-surface"
+            >
+              {isLoading ? '…' : card?.text}
+            </motion.p>
+          </motion.div>
+        )}
       </div>
 
       {!showChannels ? (
@@ -143,7 +152,12 @@ function PostcardContentInner({ holiday }: PostcardContentProps) {
                 key={ch.id}
                 onClick={async () => {
                   if (!card) return
-                  shareViaChannel(ch.id, `YoYoJoy · ${card.title}`, card.text)
+                  shareViaChannel(
+                    ch.id,
+                    `YoYoJoy · ${card.title}`,
+                    card.text,
+                    card.postcardReady ? card.imageUrl ?? undefined : undefined,
+                  )
                   if (ch.id === 'copy' || ch.id === 'max') {
                     setCopyFeedback(ch.id === 'max' ? 'Вставь в МАКС' : 'Скопировано')
                     setTimeout(() => setCopyFeedback(''), 1800)

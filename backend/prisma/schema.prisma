@@ -301,22 +301,24 @@ model PersonalCareCompletion {
 // На одну дату может быть несколько строк.
 // ─────────────────────────────────────────────────────────────
 model CalendarHoliday {
-  id       String @id @default(uuid())
-  date     String // DD.MM — год условный, праздники ежегодные
-  title    String
-  cute     String
-  humor    String
-  cynical  String
-  themeKey String @map("theme_key")
-  scope    String @default("ru") // 'ru' | 'intl' — размётка от клиента ожидается
+  id           String  @id @default(uuid())
+  date         String // DD.MM — год условный, праздники ежегодные
+  title        String
+  cute         String
+  humor        String
+  cynical      String
+  themeKey     String  @map("theme_key")
+  scope        String  @default("ru") // 'ru' | 'intl' — размётка от клиента ожидается
+  postcardKey  String? @map("postcard_key")
+  postcardPack String? @map("postcard_pack")
 
   @@index([date])
   @@map("calendar_holidays")
 }
 
 // ─────────────────────────────────────────────────────────────
-// HOLIDAY IMAGES: готовые фоны из стороннего сервиса (ТЗ п. 7.1).
-// Пока пусто — фронт рендерит CSS-градиент по themeKey.
+// HOLIDAY IMAGES: legacy-фоны для праздников без готового версионированного пака (ТЗ п. 7.1).
+// При отсутствии и пака, и записи здесь фронт рендерит CSS-градиент по themeKey.
 // ─────────────────────────────────────────────────────────────
 model HolidayImage {
   id                String  @id @default(uuid())

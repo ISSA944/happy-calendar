@@ -15,6 +15,9 @@ export interface Bookmark {
   date: string
   text: string
   icon: string
+  imageUrl?: string
+  title?: string
+  tone?: Tone
 }
 
 export type OfflineTask = 
@@ -52,6 +55,7 @@ export interface HolidayCard {
   scope: string // 'ru' | 'intl'
   themeKey: string
   imageUrl: string | null
+  postcardReady: boolean
 }
 export type Tone = 'cute' | 'humor' | 'cynical'
 export interface HolidayCardWithText extends HolidayCard {
@@ -93,7 +97,14 @@ type MoodPatchResponse = {
 type BookmarkResponse = {
   id: string
   type: string
-  payload: { date: string; text: string; icon: string }
+  payload: {
+    date: string
+    text: string
+    icon: string
+    imageUrl?: string
+    title?: string
+    tone?: Tone
+  }
   createdAt?: string
 }
 
@@ -566,6 +577,9 @@ export const useAppStore = create<AppState>()(
               date: b.payload?.date ?? '',
               text: b.payload?.text ?? '',
               icon: b.payload?.icon ?? 'bookmark',
+              imageUrl: b.payload?.imageUrl,
+              title: b.payload?.title,
+              tone: b.payload?.tone,
             })),
           })
         } catch (err) {
@@ -585,7 +599,14 @@ export const useAppStore = create<AppState>()(
         try {
           const { data } = await apiClient.post<BookmarkResponse>('bookmarks', {
             type: bookmark.type,
-            payload: { date: bookmark.date, text: bookmark.text, icon: bookmark.icon },
+            payload: {
+              date: bookmark.date,
+              text: bookmark.text,
+              icon: bookmark.icon,
+              imageUrl: bookmark.imageUrl,
+              title: bookmark.title,
+              tone: bookmark.tone,
+            },
           })
           // Use backend-generated id
           set((state) => ({
@@ -629,7 +650,14 @@ export const useAppStore = create<AppState>()(
             if (task.type === 'ADD_BOOKMARK') {
               const { data } = await apiClient.post<BookmarkResponse>('bookmarks', {
                 type: task.payload.type,
-                payload: { date: task.payload.date, text: task.payload.text, icon: task.payload.icon },
+                payload: {
+                  date: task.payload.date,
+                  text: task.payload.text,
+                  icon: task.payload.icon,
+                  imageUrl: task.payload.imageUrl,
+                  title: task.payload.title,
+                  tone: task.payload.tone,
+                },
               })
               set((state) => ({
                 bookmarks: state.bookmarks.map(b => b.id === task.payload.id ? { ...b, id: data.id } : b)

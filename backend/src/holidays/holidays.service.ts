@@ -12,6 +12,7 @@ export interface HolidayCard {
   scope: string; // 'ru' | 'intl'
   themeKey: string;
   imageUrl: string | null; // null → фронт рисует градиент по themeKey
+  postcardReady: boolean;
 }
 
 export interface HolidayCardWithText extends HolidayCard {
@@ -22,12 +23,22 @@ export interface HolidayCardWithText extends HolidayCard {
 @Injectable()
 export class HolidaysService {
   private readonly logger = new Logger(HolidaysService.name);
+  private readonly postcardBaseUrl = 'https://yoyojoy.online/postcards';
 
   constructor(private readonly prisma: PrismaService) {}
 
+  private postcardUrl(
+    postcardKey: string | null,
+    postcardPack: string | null,
+    tone: Tone,
+  ): string | null {
+    if (!postcardKey || !postcardPack) return null;
+    return `${this.postcardBaseUrl}/${postcardPack}/${postcardKey}_${tone}.webp`;
+  }
+
   /**
-   * Картинка праздника: сначала прямая привязка (calendarHolidayId), иначе любая по теме.
-   * Пока таблица HolidayImage пуста → null (фронт рисует CSS-градиент по themeKey). ТЗ п. 7.3.
+   * Legacy-фолбэк для праздников без готового пака: сначала прямая привязка
+   * HolidayImage, затем картинка темы, затем фронтовый градиент. ТЗ п. 7.3.
    */
   private async resolveImageUrl(
     holidayId: string,
@@ -65,14 +76,23 @@ export class HolidaysService {
     });
 
     return Promise.all(
-      rows.map(async (h) => ({
-        id: h.id,
-        date: h.date,
-        title: h.title,
-        scope: h.scope,
-        themeKey: h.themeKey,
-        imageUrl: await this.resolveImageUrl(h.id, h.themeKey),
-      })),
+      rows.map(async (h) => {
+        const postcardImageUrl = this.postcardUrl(
+          h.postcardKey,
+          h.postcardPack,
+          'cute',
+        );
+        return {
+          id: h.id,
+          date: h.date,
+          title: h.title,
+          scope: h.scope,
+          themeKey: h.themeKey,
+          imageUrl:
+            postcardImageUrl ?? (await this.resolveImageUrl(h.id, h.themeKey)),
+          postcardReady: Boolean(postcardImageUrl),
+        };
+      }),
     );
   }
 
@@ -84,13 +104,21 @@ export class HolidaysService {
     const text =
       tone === 'humor' ? h.humor : tone === 'cynical' ? h.cynical : h.cute;
 
+    const postcardImageUrl = this.postcardUrl(
+      h.postcardKey,
+      h.postcardPack,
+      tone,
+    );
+
     return {
       id: h.id,
       date: h.date,
       title: h.title,
       scope: h.scope,
       themeKey: h.themeKey,
-      imageUrl: await this.resolveImageUrl(h.id, h.themeKey),
+      imageUrl:
+        postcardImageUrl ?? (await this.resolveImageUrl(h.id, h.themeKey)),
+      postcardReady: Boolean(postcardImageUrl),
       tone,
       text,
     };

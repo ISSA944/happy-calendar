@@ -1,4 +1,4 @@
-// Фолбэк-фон по теме, пока реальные картинки не загружены в HolidayImage (ТЗ п. 7.3).
+// Фолбэк-фон по теме для праздников без установленного готового WebP-пака (ТЗ п. 7.3).
 // Ключи 1:1 совпадают с backend/src/holidays/themes.constant.ts.
 export const THEME_GRADIENTS: Record<string, [string, string]> = {
   'Новый год и волшебство': ['#CFE0D8', '#8FBFA8'],
