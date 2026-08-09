@@ -40,6 +40,9 @@ CYBER_BRAIN.md
 # Playwright MCP session artifacts (console logs, page snapshots)
 .playwright-mcp/
 
+# Isolated Codex feature worktrees
+.worktrees/
+
 # Client-delivered raw content artifacts (kept local; imported → committed JSON seed)
 backend/data/
 # Client gift PDFs for welcome email (not committed)
