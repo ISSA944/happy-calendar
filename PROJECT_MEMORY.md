@@ -134,7 +134,7 @@ ssh root@157.22.198.107 "cd /root/yoyojoy-backend && docker compose -f docker-co
 
 - **`TELEGRAM_CHANNEL_URL` / `MAX_CHANNEL_URL`** — до сих пор не заданы в `.env`/`.env.prod`. Без них кнопки соцсетей в письме-подарке корректно не рендерятся (это не баг — специально сделана защита от «мёртвых» ссылок), но фича не работает, пока владелец не даст ссылки на каналы.
 - **Подарки и email-assets готовы.** В `public/email-assets/` подключены `telegram.png`, `max.png`, `gift-tracker.png` и `gift-checklist.png`; в `backend/assets/gifts/` есть `habit-tracker.pdf` и `self-care-checklist-30-days.pdf`. Удалять или заменять их не нужно.
-- **Workers AI production credentials** — нужны `AI_BASE_URL` с Cloudflare account ID и отдельный token с Workers AI Read/Edit. Токен нельзя публиковать в Git, документах, чатах или логах.
+- **Workers AI production настроен 10.08.2026.** В production `.env.prod` заданы `AI_BASE_URL`, `AI_MODEL=@cf/openai/gpt-oss-120b` и отдельный token с Workers AI Read/Edit; синтетический запрос и реальный `/api/today` подтвердили `AI_LIVE`. Секрет хранится только на VPS: токен нельзя публиковать в Git, документах, чатах или логах.
 - Старые fallback-записи с ключами `DD.MM` не удаляются разрушительно, но больше не участвуют в выдаче: новый код читает только ISO-дату `YYYY-MM-DD`.
 
 ---
