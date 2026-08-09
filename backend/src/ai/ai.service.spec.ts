@@ -192,15 +192,19 @@ describe('AiService', () => {
 
   it('generates five compact support phrases within the batch token budget', async () => {
     const service = new AiService(config({ AI_API_KEY: 'test-token' }));
-    const create = jest.fn().mockResolvedValue(
-      completion({
-        p1: validPack.supportPhrase,
-        p2: validPack.supportPhrase,
-        p3: validPack.supportPhrase,
-        p4: validPack.supportPhrase,
-        p5: validPack.supportPhrase,
-      }),
-    );
+    let capturedRequest: unknown;
+    const create = jest.fn((request: unknown) => {
+      capturedRequest = request;
+      return Promise.resolve(
+        completion({
+          p1: validPack.supportPhrase,
+          p2: validPack.supportPhrase,
+          p3: validPack.supportPhrase,
+          p4: validPack.supportPhrase,
+          p5: validPack.supportPhrase,
+        }),
+      );
+    });
     Object.defineProperty(service, 'openai', {
       value: { chat: { completions: { create } } },
     });
@@ -215,6 +219,15 @@ describe('AiService', () => {
 
     expect(result.phrases).toHaveLength(5);
     expect(result.phrases.every((phrase) => phrase.length <= 220)).toBe(true);
+    const request = capturedRequest as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const userMessage = request.messages.find(
+      (message) => message.role === 'user',
+    );
+    expect(userMessage?.content).toContain(
+      '{"p1":"...","p2":"...","p3":"...","p4":"...","p5":"..."}',
+    );
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         reasoning_effort: 'low',
