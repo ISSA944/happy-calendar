@@ -10,6 +10,8 @@ const webPush = vi.hoisted(() => ({
     isChecking: false,
     isSubscribed: false,
     isLoading: false,
+    permission: 'default' as NotificationPermission,
+    isSupported: true,
     error: null as string | null,
     subscribe: vi.fn(),
   },
@@ -26,6 +28,8 @@ beforeEach(() => {
     isChecking: false,
     isSubscribed: false,
     isLoading: false,
+    permission: 'default',
+    isSupported: true,
     error: null,
     subscribe: vi.fn(),
   }
@@ -38,6 +42,37 @@ afterEach(() => {
 })
 
 describe('PushDeviceStatus', () => {
+  it('shows only the checking state while this supported device is being inspected', () => {
+    webPush.state.isChecking = true
+
+    render(<PushDeviceStatus />)
+
+    expect(screen.getByText('Проверяем подключение уведомлений…')).toBeInTheDocument()
+    expect(screen.queryByText('На этом устройстве уведомления не подключены')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('shows actionable blocked copy without a recovery action when permission is denied', () => {
+    webPush.state.isChecking = true
+    webPush.state.permission = 'denied'
+
+    render(<PushDeviceStatus />)
+
+    expect(screen.getByText('Уведомления заблокированы в настройках браузера.')).toBeInTheDocument()
+    expect(screen.getByText('Разрешите уведомления для этого сайта, затем вернитесь сюда.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Подключить и проверить' })).not.toBeInTheDocument()
+  })
+
+  it('shows truthful unsupported copy without a recovery action', () => {
+    webPush.state.isChecking = true
+    webPush.state.isSupported = false
+
+    render(<PushDeviceStatus />)
+
+    expect(screen.getByText('Push-уведомления не поддерживаются этим браузером.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Подключить и проверить' })).not.toBeInTheDocument()
+  })
+
   it('warns and offers recovery when this device is not subscribed', () => {
     webPush.state.error = 'Уведомления заблокированы в настройках.'
 
@@ -65,7 +100,7 @@ describe('PushDeviceStatus', () => {
     confirmSubscription!(true)
 
     await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('push/test'))
-    expect(await screen.findByText('Тестовый push отправлен')).toBeInTheDocument()
+    expect(await screen.findByText('Тестовый push отправлен. Проверьте шторку уведомлений на этом устройстве.')).toBeInTheDocument()
   })
 
   it('shows connected state and can send another test', async () => {
@@ -77,7 +112,22 @@ describe('PushDeviceStatus', () => {
     await user.click(screen.getByRole('button', { name: 'Отправить тестовый push' }))
 
     expect(apiClient.post).toHaveBeenCalledWith('push/test')
-    expect(await screen.findByText('Тестовый push отправлен')).toBeInTheDocument()
+    expect(await screen.findByText('Тестовый push отправлен. Проверьте шторку уведомлений на этом устройстве.')).toBeInTheDocument()
+  })
+
+  it.each([
+    { sent: 0, total: 0 },
+    { sent: 0, total: 1 },
+  ])('shows a delivery-check error when the provider accepts no pushes ($sent/$total)', async (response) => {
+    webPush.state.isSubscribed = true
+    vi.mocked(apiClient.post).mockResolvedValue({ data: response })
+    const user = userEvent.setup()
+    render(<PushDeviceStatus />)
+
+    await user.click(screen.getByRole('button', { name: 'Отправить тестовый push' }))
+
+    expect(await screen.findByText('Не удалось отправить тестовый push. Попробуйте ещё раз.')).toBeInTheDocument()
+    expect(screen.queryByText(/Проверьте шторку уведомлений/)).not.toBeInTheDocument()
   })
 
   it('does not call push/test when subscribe returns false', async () => {

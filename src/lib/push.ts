@@ -34,9 +34,28 @@ export function isPushSupported(): boolean {
 /**
  * Gets the current push subscription if it exists.
  */
+const SERVICE_WORKER_READY_TIMEOUT_MS = 10000;
+
+async function getReadyServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(
+          () => reject(new Error('Timeout')),
+          SERVICE_WORKER_READY_TIMEOUT_MS,
+        );
+      }),
+    ]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
+
 export async function getPushSubscription(): Promise<PushSubscription | null> {
   if (!isPushSupported()) return null;
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await getReadyServiceWorkerRegistration();
   return registration.pushManager.getSubscription();
 }
 
@@ -55,33 +74,26 @@ export async function subscribeToPush(publicKey: string): Promise<PushResult> {
     return { success: false, errorType: 'unsupported', error: 'Push not supported' };
   }
 
-  const TIMEOUT_MS = 10000;
-
   try {
-    const registration = await Promise.race([
-      navigator.serviceWorker.ready,
-      new Promise<never>((_, reject) => {
-        window.setTimeout(() => reject(new Error('Timeout')), TIMEOUT_MS)
-      }),
-    ])
-      
-      if (!publicKey) {
-        return { success: false, errorType: 'subscribe_fail', error: 'VAPID key not configured' };
-      }
-      const applicationServerKey = urlBase64ToUint8Array(publicKey);
+    const registration = await getReadyServiceWorkerRegistration();
 
-      // Reuse an existing browser subscription instead of unsubscribing + resubscribing on every
-      // call: unsubscribe()+subscribe() reliably mints a brand-new endpoint on iOS Safari, and
-      // since the backend was never told about the old endpoint being dropped, it kept sending to
-      // it forever (until it happened to 410). Onboarding running more than once (re-registration,
-      // repeated test logins) is exactly when this piled up dead rows in web_push_subscriptions.
-      const existing = await registration.pushManager.getSubscription();
-      const subscription = existing ?? await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: applicationServerKey as BufferSource,
-      });
+    if (!publicKey) {
+      return { success: false, errorType: 'subscribe_fail', error: 'VAPID key not configured' };
+    }
+    const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
-      return { success: true, subscription };
+    // Reuse an existing browser subscription instead of unsubscribing + resubscribing on every
+    // call: unsubscribe()+subscribe() reliably mints a brand-new endpoint on iOS Safari, and
+    // since the backend was never told about the old endpoint being dropped, it kept sending to
+    // it forever (until it happened to 410). Onboarding running more than once (re-registration,
+    // repeated test logins) is exactly when this piled up dead rows in web_push_subscriptions.
+    const existing = await registration.pushManager.getSubscription();
+    const subscription = existing ?? await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: applicationServerKey as BufferSource,
+    });
+
+    return { success: true, subscription };
   } catch (error: unknown) {
     const errorType = error instanceof Error && error.message === 'Timeout'
       ? 'timeout'

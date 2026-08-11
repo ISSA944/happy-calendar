@@ -20,6 +20,8 @@ const subscription = {
 } as PushSubscription
 
 const originalNotification = globalThis.Notification
+const originalServiceWorker = navigator.serviceWorker
+const originalPushManager = window.PushManager
 
 beforeEach(() => {
   push.getPushSubscription.mockResolvedValue(null)
@@ -31,6 +33,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.useRealTimers()
   window.localStorage.clear()
   vi.restoreAllMocks()
   vi.clearAllMocks()
@@ -39,6 +42,14 @@ afterEach(() => {
   Object.defineProperty(globalThis, 'Notification', {
     configurable: true,
     value: originalNotification,
+  })
+  Object.defineProperty(navigator, 'serviceWorker', {
+    configurable: true,
+    value: originalServiceWorker,
+  })
+  Object.defineProperty(window, 'PushManager', {
+    configurable: true,
+    value: originalPushManager,
   })
 })
 
@@ -86,6 +97,29 @@ describe('useWebPush', () => {
 
     expect(result.current.isChecking).toBe(true)
     await waitFor(() => expect(result.current.isChecking).toBe(false))
+    expect(result.current.error).toBe('Не удалось проверить состояние push-подписки. Попробуйте ещё раз.')
+  })
+
+  it('stops checking and shows recovery when service-worker readiness never settles', async () => {
+    vi.useFakeTimers()
+    const actualPush = await vi.importActual<typeof import('../lib/push')>('../lib/push')
+    push.getPushSubscription.mockImplementation(actualPush.getPushSubscription)
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: { ready: new Promise<ServiceWorkerRegistration>(() => undefined) },
+    })
+    Object.defineProperty(window, 'PushManager', {
+      configurable: true,
+      value: class PushManager {},
+    })
+
+    const { result } = renderHook(() => useWebPush())
+
+    expect(result.current.isChecking).toBe(true)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000)
+    })
+    expect(result.current.isChecking).toBe(false)
     expect(result.current.error).toBe('Не удалось проверить состояние push-подписки. Попробуйте ещё раз.')
   })
 

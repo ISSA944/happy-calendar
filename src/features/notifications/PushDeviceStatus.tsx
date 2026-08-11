@@ -3,7 +3,15 @@ import { apiClient } from '../../api'
 import { useWebPush } from '../../hooks/useWebPush'
 
 export function PushDeviceStatus() {
-  const { isChecking, isSubscribed, isLoading, error: hookError, subscribe } = useWebPush()
+  const {
+    permission,
+    isSupported,
+    isChecking,
+    isSubscribed,
+    isLoading,
+    error: hookError,
+    subscribe,
+  } = useWebPush()
   const [isSendingTest, setIsSendingTest] = useState(false)
   const [testSent, setTestSent] = useState(false)
   const [testError, setTestError] = useState<string | null>(null)
@@ -13,8 +21,12 @@ export function PushDeviceStatus() {
     setTestSent(false)
     setTestError(null)
     try {
-      await apiClient.post<{ sent: number; total: number }>('push/test')
-      setTestSent(true)
+      const { data } = await apiClient.post<{ sent: number; total: number }>('push/test')
+      if (data.sent > 0) {
+        setTestSent(true)
+      } else {
+        setTestError('Не удалось отправить тестовый push. Попробуйте ещё раз.')
+      }
     } catch {
       setTestError('Не удалось отправить тестовый push. Попробуйте ещё раз.')
     } finally {
@@ -26,6 +38,29 @@ export function PushDeviceStatus() {
     if (await subscribe()) {
       await sendTest()
     }
+  }
+
+  if (!isSupported) {
+    return (
+      <div className="mt-4 rounded-xl bg-surface-container-low px-4 py-4">
+        <p className="font-semibold text-sm text-on-surface">
+          Push-уведомления не поддерживаются этим браузером.
+        </p>
+      </div>
+    )
+  }
+
+  if (permission === 'denied') {
+    return (
+      <div className="mt-4 rounded-xl bg-surface-container-low px-4 py-4">
+        <p className="font-semibold text-sm text-on-surface">
+          Уведомления заблокированы в настройках браузера.
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-on-surface-variant">
+          Разрешите уведомления для этого сайта, затем вернитесь сюда.
+        </p>
+      </div>
+    )
   }
 
   if (isChecking) {
@@ -52,7 +87,11 @@ export function PushDeviceStatus() {
       </p>
 
       {hookError && <p className="mt-3 text-xs text-error">{hookError}</p>}
-      {testSent && <p className="mt-3 text-xs text-primary">Тестовый push отправлен</p>}
+      {testSent && (
+        <p className="mt-3 text-xs text-primary">
+          Тестовый push отправлен. Проверьте шторку уведомлений на этом устройстве.
+        </p>
+      )}
       {testError && <p className="mt-3 text-xs text-error">{testError}</p>}
 
       <button
