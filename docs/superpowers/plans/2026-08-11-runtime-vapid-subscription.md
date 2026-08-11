@@ -136,7 +136,7 @@ Expected: frontend/backend builds, lints, and all tests pass.
 
 - [ ] **Step 2: Verify the artifact behavior**
 
-Build without `VITE_WEB_PUSH_PUBLIC_KEY`; inspect the emitted JS and confirm subscription code calls `push/public-key` and no longer compiles `publicKey = undefined` into the push path.
+Build without `VITE_WEB_PUSH_PUBLIC_KEY`; inspect the emitted JS and confirm subscription code calls `push/public-key`, contains no build-time `VITE_WEB_PUSH_PUBLIC_KEY` lookup, and no longer compiles `publicKey = undefined` into the push path. The runtime validation string `VAPID key not configured` may remain.
 
 - [ ] **Step 3: Commit and push**
 

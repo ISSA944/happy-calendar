@@ -48,4 +48,30 @@ describe('subscribeToPush', () => {
     expect(result).toEqual({ success: true, subscription })
     expect(Array.from(subscribe.mock.calls[0][0].applicationServerKey as Uint8Array)).toEqual([1, 2, 3])
   })
+
+  it('reuses an existing browser subscription without creating a new endpoint', async () => {
+    const existing = { endpoint: 'https://push.example/existing' } as PushSubscription
+    const subscribe = vi.fn()
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue(existing),
+        subscribe,
+      },
+    }
+
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: { ready: Promise.resolve(registration) },
+    })
+    Object.defineProperty(window, 'PushManager', { configurable: true, value: class PushManager {} })
+    Object.defineProperty(window, 'Notification', {
+      configurable: true,
+      value: { permission: 'granted' },
+    })
+
+    const result = await subscribeToPush('AQID')
+
+    expect(result).toEqual({ success: true, subscription: existing })
+    expect(subscribe).not.toHaveBeenCalled()
+  })
 })

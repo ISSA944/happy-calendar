@@ -24,7 +24,9 @@ The old build-time `VITE_WEB_PUSH_PUBLIC_KEY` dependency is removed from the sub
 - Backend unit/controller tests prove the public endpoint returns only the public key.
 - Frontend tests prove runtime key fetch precedes subscription and that sync failures are not reported as success.
 - `npm run check` passes.
-- Production bundle contains no compiled `VAPID key not configured` build guard.
+- Production bundle contains no `VITE_WEB_PUSH_PUBLIC_KEY` lookup and no Vite-compiled
+  `undefined` value in the subscription path. The runtime validation text
+  `VAPID key not configured` intentionally remains as defense against a malformed API response.
 - On the technical owner account, a fresh/re-synced subscription appears in PostgreSQL and authorized `POST /api/push/test` reports a successful delivery. Olga's account is not used.
 
 ## Deployment

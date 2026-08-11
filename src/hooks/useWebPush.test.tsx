@@ -49,7 +49,7 @@ describe('useWebPush', () => {
       publicKey === 'AQID' ? { success: true, subscription } : { success: false },
     )
     vi.spyOn(apiClient, 'get').mockResolvedValue({ data: { publicKey: 'AQID' } })
-    vi.spyOn(apiClient, 'post').mockResolvedValue({ data: {} })
+    vi.spyOn(apiClient, 'post').mockResolvedValue({ data: { subscribed: true } })
     const { result } = renderHook(() => useWebPush())
 
     let subscribed = false
@@ -75,5 +75,24 @@ describe('useWebPush', () => {
 
     expect(subscribed).toBe(false)
     expect(result.current.isSubscribed).toBe(false)
+  })
+
+  it('does not report success when backend rejects the subscription semantically', async () => {
+    window.localStorage.setItem('yoyojoy-access-token', 'access-token')
+    push.subscribeToPush.mockResolvedValue({ success: true, subscription })
+    vi.spyOn(apiClient, 'get').mockResolvedValue({ data: { publicKey: 'AQID' } })
+    vi.spyOn(apiClient, 'post').mockResolvedValue({
+      data: { subscribed: false, reason: 'invalid-subscription' },
+    })
+    const { result } = renderHook(() => useWebPush())
+
+    let subscribed = true
+    await act(async () => {
+      subscribed = await result.current.subscribe()
+    })
+
+    expect(subscribed).toBe(false)
+    expect(result.current.isSubscribed).toBe(false)
+    expect(result.current.error).toBe('Не удалось сохранить push-подписку. Попробуйте ещё раз.')
   })
 })

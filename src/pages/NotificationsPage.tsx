@@ -13,6 +13,7 @@ export function NotificationsPage() {
   const [pushError,        setPushError]        = useState('')
   const [isRequestingPush, setIsRequestingPush] = useState(false)
   const [showIosInstruction, setShowIosInstruction] = useState(false)
+  const visiblePushError = hookError || pushError
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   const iosNavigator = window.navigator as Navigator & { standalone?: boolean }
@@ -36,7 +37,7 @@ export function NotificationsPage() {
         return
       }
       
-      setPushError(hookError || 'Не удалось подключить push. Попробуйте ещё раз.')
+      setPushError('Не удалось подключить push. Попробуйте ещё раз.')
     } catch {
       setPushError('Критическая ошибка подключения.')
     } finally {
@@ -200,9 +201,9 @@ export function NotificationsPage() {
                 Настрою позже
               </button>
 
-              {pushError && (
+              {visiblePushError && (
                 <div className="flex flex-col items-center gap-2">
-                  <p className="text-center text-xs font-medium text-error leading-snug">{pushError}</p>
+                  <p className="text-center text-xs font-medium text-error leading-snug">{visiblePushError}</p>
                   <button
                     type="button"
                     onClick={() => { setPushError(''); void handleAllow(); }}

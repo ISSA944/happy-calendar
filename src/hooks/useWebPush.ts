@@ -3,6 +3,11 @@ import { apiClient } from '../api';
 import { getAccessToken } from '../auth/token-storage';
 import { getPushSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from '../lib/push';
 
+type PushSubscriptionSyncResponse = {
+  subscribed: boolean;
+  reason?: string;
+};
+
 export function useWebPush() {
   const [permission, setPermission] = useState<NotificationPermission>(() => {
     if (typeof Notification === 'undefined') return 'default';
@@ -17,14 +22,22 @@ export function useWebPush() {
     if (!accessToken) return false;
 
     try {
-      await apiClient.post('push/subscribe', {
+      const { data } = await apiClient.post<PushSubscriptionSyncResponse>('push/subscribe', {
         subscription: subscription.toJSON(),
         user_agent: navigator.userAgent,
       });
+      if (data.subscribed !== true) {
+        setIsSubscribed(false);
+        setError('Не удалось сохранить push-подписку. Попробуйте ещё раз.');
+        console.error('[Push] Backend rejected subscription:', data.reason || 'unknown-reason');
+        return false;
+      }
       setIsSubscribed(true);
       console.info('[Push] Subscription synced with backend.');
       return true;
     } catch (error) {
+      setIsSubscribed(false);
+      setError('Не удалось сохранить push-подписку. Попробуйте ещё раз.');
       console.error('[Push] Failed to sync subscription with backend:', error);
       return false;
     }
