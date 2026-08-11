@@ -14,6 +14,7 @@ export function useWebPush() {
     return Notification.permission;
   });
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,15 +47,31 @@ export function useWebPush() {
   // Check initial subscription status & Auto-sync
   useEffect(() => {
     let cancelled = false;
-    void getPushSubscription().then((sub) => {
-      if (cancelled) return;
-      if (sub) {
-        // Auto-sync existing subscription with backend just in case
-        void syncSubscription(sub);
-      } else {
-        setIsSubscribed(false);
+    const checkInitialSubscription = async () => {
+      try {
+        const subscription = await getPushSubscription();
+        if (cancelled) return;
+
+        if (subscription) {
+          // Auto-sync existing subscription with backend just in case
+          await syncSubscription(subscription);
+        } else {
+          setIsSubscribed(false);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setIsSubscribed(false);
+          setError('Не удалось проверить состояние push-подписки. Попробуйте ещё раз.');
+          console.error('[Push] Failed to check initial subscription:', error);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsChecking(false);
+        }
       }
-    });
+    };
+
+    void checkInitialSubscription();
     return () => { cancelled = true; };
   }, [syncSubscription]);
 
@@ -110,6 +127,7 @@ export function useWebPush() {
   return {
     permission,
     isSubscribed,
+    isChecking,
     isLoading,
     error,
     subscribe,
