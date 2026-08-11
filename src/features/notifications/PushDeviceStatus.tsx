@@ -13,18 +13,14 @@ export function PushDeviceStatus() {
     subscribe,
   } = useWebPush()
   const [isSendingTest, setIsSendingTest] = useState(false)
-  const [testSent, setTestSent] = useState(false)
   const [testError, setTestError] = useState<string | null>(null)
 
   const sendTest = async () => {
     setIsSendingTest(true)
-    setTestSent(false)
     setTestError(null)
     try {
       const { data } = await apiClient.post<{ sent: number; total: number }>('push/test')
-      if (data.sent > 0) {
-        setTestSent(true)
-      } else {
+      if (data.sent <= 0) {
         setTestError('Не удалось отправить тестовый push. Попробуйте ещё раз.')
       }
     } catch {
@@ -87,11 +83,6 @@ export function PushDeviceStatus() {
       </p>
 
       {hookError && <p className="mt-3 text-xs text-error">{hookError}</p>}
-      {testSent && (
-        <p className="mt-3 text-xs text-primary">
-          Тестовый push отправлен. Проверьте шторку уведомлений на этом устройстве.
-        </p>
-      )}
       {testError && <p className="mt-3 text-xs text-error">{testError}</p>}
 
       <button

@@ -100,10 +100,10 @@ describe('PushDeviceStatus', () => {
     confirmSubscription!(true)
 
     await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('push/test'))
-    expect(await screen.findByText('Тестовый push отправлен. Проверьте шторку уведомлений на этом устройстве.')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Подключить и проверить' })).toBeEnabled())
   })
 
-  it('shows connected state and can send another test', async () => {
+  it('keeps the connected controls without adding a success caption after a successful test', async () => {
     webPush.state.isSubscribed = true
     const user = userEvent.setup()
     render(<PushDeviceStatus />)
@@ -112,7 +112,9 @@ describe('PushDeviceStatus', () => {
     await user.click(screen.getByRole('button', { name: 'Отправить тестовый push' }))
 
     expect(apiClient.post).toHaveBeenCalledWith('push/test')
-    expect(await screen.findByText('Тестовый push отправлен. Проверьте шторку уведомлений на этом устройстве.')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Отправить тестовый push' })).toBeEnabled())
+    expect(screen.getByText('На этом устройстве уведомления подключены')).toBeInTheDocument()
+    expect(screen.queryByText(/Проверьте шторку уведомлений/)).not.toBeInTheDocument()
   })
 
   it.each([
