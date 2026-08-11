@@ -50,7 +50,7 @@ export type PushResult = {
   errorType?: 'timeout' | 'permission' | 'worker_missing' | 'subscribe_fail' | 'unsupported';
 };
 
-export async function subscribeToPush(): Promise<PushResult> {
+export async function subscribeToPush(publicKey: string): Promise<PushResult> {
   if (!isPushSupported()) {
     return { success: false, errorType: 'unsupported', error: 'Push not supported' };
   }
@@ -65,7 +65,6 @@ export async function subscribeToPush(): Promise<PushResult> {
       }),
     ])
       
-      const publicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY;
       if (!publicKey) {
         return { success: false, errorType: 'subscribe_fail', error: 'VAPID key not configured' };
       }

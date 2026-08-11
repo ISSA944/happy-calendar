@@ -14,7 +14,7 @@ export function useWebPush() {
 
   const syncSubscription = useCallback(async (subscription: PushSubscription) => {
     const accessToken = getAccessToken();
-    if (!accessToken) return;
+    if (!accessToken) return false;
 
     try {
       await apiClient.post('push/subscribe', {
@@ -23,8 +23,10 @@ export function useWebPush() {
       });
       setIsSubscribed(true);
       console.info('[Push] Subscription synced with backend.');
+      return true;
     } catch (error) {
       console.error('[Push] Failed to sync subscription with backend:', error);
+      return false;
     }
   }, []);
 
@@ -34,7 +36,6 @@ export function useWebPush() {
     void getPushSubscription().then((sub) => {
       if (cancelled) return;
       if (sub) {
-        setIsSubscribed(true);
         // Auto-sync existing subscription with backend just in case
         void syncSubscription(sub);
       } else {
@@ -55,11 +56,9 @@ export function useWebPush() {
         setPermission(result);
       }
 
-      const result = await subscribeToPush();
-      if (result.success && result.subscription) {
-        await syncSubscription(result.subscription);
-        return true;
-      }
+      const { data } = await apiClient.get<{ publicKey: string }>('push/public-key');
+      const result = await subscribeToPush(data.publicKey);
+      if (result.success && result.subscription) return syncSubscription(result.subscription);
       
       if (Notification.permission === 'denied') {
         setError('Уведомления заблокированы в настройках.');
