@@ -9,6 +9,7 @@ import { GoalsProgress } from '../features/goals/GoalsProgress'
 import { useGoalsEditor } from '../features/goals/useGoalsEditor'
 import { NotificationCategoriesEditor } from '../features/notifications/NotificationCategoriesEditor'
 import { useNotificationCategories } from '../features/notifications/useNotificationCategories'
+import { PushDeviceStatus } from '../features/notifications/PushDeviceStatus'
 import { prepareAvatarDataUrl } from '../utils/image'
 import { InstallBanner } from '../components/InstallBanner'
 
@@ -187,6 +188,7 @@ export function SettingsPage() {
           <h2 className="text-sm font-bold text-on-surface mb-1 px-1 uppercase tracking-wider opacity-60">Уведомления</h2>
           <p className="text-xs text-on-surface-variant/70 mb-2 px-1">Когда и что тебе присылать</p>
           <NotificationCategoriesEditor categories={notificationCategories} />
+          <PushDeviceStatus />
         </section>
 
         {/* Reset — только для локальной разработки. В проде не показываем реальным
