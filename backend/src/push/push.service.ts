@@ -14,6 +14,10 @@ export class PushService {
     private readonly webPush: WebPushService,
   ) {}
 
+  getPublicKey() {
+    return { publicKey: this.webPush.getPublicKey() };
+  }
+
   /**
    * Subscribes a user to push notifications using Web Push.
    */

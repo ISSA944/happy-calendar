@@ -32,6 +32,7 @@ function asWebPushError(error: unknown): WebPushError {
 export class WebPushService {
   private readonly logger = new Logger(WebPushService.name);
   private readonly isConfigured: boolean;
+  private readonly publicKey: string;
 
   constructor(
     private readonly configService: ConfigService,
@@ -41,6 +42,7 @@ export class WebPushService {
     const privateKey = this.configService.get<string>('WEB_PUSH_PRIVATE_KEY');
     const subject = this.configService.get<string>('WEB_PUSH_SUBJECT');
 
+    this.publicKey = publicKey ?? '';
     this.isConfigured = Boolean(publicKey && privateKey);
 
     if (this.isConfigured) {
@@ -54,6 +56,10 @@ export class WebPushService {
         'WEB_PUSH_PUBLIC_KEY/WEB_PUSH_PRIVATE_KEY missing; Web Push fallback disabled.',
       );
     }
+  }
+
+  getPublicKey(): string {
+    return this.publicKey;
   }
 
   async subscribe(

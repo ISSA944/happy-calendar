@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Post,
   HttpCode,
   UseGuards,
@@ -45,6 +46,11 @@ class UnsubscribeDto {
 @UseGuards(JwtAuthGuard)
 export class PushController {
   constructor(private readonly pushService: PushService) {}
+
+  @Get('public-key')
+  publicKey() {
+    return this.pushService.getPublicKey();
+  }
 
   @Post('subscribe')
   @HttpCode(200)
