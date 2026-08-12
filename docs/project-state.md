@@ -185,7 +185,6 @@ DELETE /api/notifications
 
 POST   /api/push/subscribe
 DELETE /api/push/unsubscribe
-POST   /api/push/test
 ```
 
 ---

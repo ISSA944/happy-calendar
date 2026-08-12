@@ -3,7 +3,6 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { apiClient } from '../../api'
 
 const webPush = vi.hoisted(() => ({
   state: {
@@ -33,7 +32,6 @@ beforeEach(() => {
     error: null,
     subscribe: vi.fn(),
   }
-  vi.spyOn(apiClient, 'post').mockResolvedValue({ data: { sent: 1, total: 1 } })
 })
 
 afterEach(() => {
@@ -42,12 +40,12 @@ afterEach(() => {
 })
 
 describe('PushDeviceStatus', () => {
-  it('shows only the checking state while this supported device is being inspected', () => {
+  it('renders nothing while this supported device is being inspected', () => {
     webPush.state.isChecking = true
 
     render(<PushDeviceStatus />)
 
-    expect(screen.getByText('Проверяем подключение уведомлений…')).toBeInTheDocument()
+    expect(screen.queryByText('Проверяем подключение уведомлений…')).not.toBeInTheDocument()
     expect(screen.queryByText('На этом устройстве уведомления не подключены')).not.toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
@@ -80,10 +78,10 @@ describe('PushDeviceStatus', () => {
 
     expect(screen.getByText('На этом устройстве уведомления не подключены')).toBeInTheDocument()
     expect(screen.getByText('Уведомления заблокированы в настройках.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Подключить и проверить' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Подключить уведомления' })).toBeInTheDocument()
   })
 
-  it('subscribes from the button and sends a test only after confirmation', async () => {
+  it('subscribes from the button without sending a test push', async () => {
     let confirmSubscription: (value: boolean) => void
     const subscription = new Promise<boolean>((resolve) => {
       confirmSubscription = resolve
@@ -92,66 +90,31 @@ describe('PushDeviceStatus', () => {
     const user = userEvent.setup()
     render(<PushDeviceStatus />)
 
-    await user.click(screen.getByRole('button', { name: 'Подключить и проверить' }))
+    await user.click(screen.getByRole('button', { name: 'Подключить уведомления' }))
 
     expect(webPush.state.subscribe).toHaveBeenCalledOnce()
-    expect(apiClient.post).not.toHaveBeenCalled()
 
     confirmSubscription!(true)
 
-    await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('push/test'))
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Подключить и проверить' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Подключить уведомления' })).toBeEnabled())
   })
 
-  it('keeps the connected controls without adding a success caption after a successful test', async () => {
+  it('renders nothing when this device is already connected', () => {
     webPush.state.isSubscribed = true
-    const user = userEvent.setup()
     render(<PushDeviceStatus />)
 
-    expect(screen.getByText('На этом устройстве уведомления подключены')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Отправить тестовый push' }))
-
-    expect(apiClient.post).toHaveBeenCalledWith('push/test')
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Отправить тестовый push' })).toBeEnabled())
-    expect(screen.getByText('На этом устройстве уведомления подключены')).toBeInTheDocument()
-    expect(screen.queryByText(/Проверьте шторку уведомлений/)).not.toBeInTheDocument()
+    expect(screen.queryByText('На этом устройстве уведомления подключены')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it.each([
-    { sent: 0, total: 0 },
-    { sent: 0, total: 1 },
-  ])('shows a delivery-check error when the provider accepts no pushes ($sent/$total)', async (response) => {
-    webPush.state.isSubscribed = true
-    vi.mocked(apiClient.post).mockResolvedValue({ data: response })
-    const user = userEvent.setup()
-    render(<PushDeviceStatus />)
-
-    await user.click(screen.getByRole('button', { name: 'Отправить тестовый push' }))
-
-    expect(await screen.findByText('Не удалось отправить тестовый push. Попробуйте ещё раз.')).toBeInTheDocument()
-    expect(screen.queryByText(/Проверьте шторку уведомлений/)).not.toBeInTheDocument()
-  })
-
-  it('does not call push/test when subscribe returns false', async () => {
+  it('keeps the recovery action available when subscribe returns false', async () => {
     webPush.state.subscribe.mockResolvedValue(false)
     const user = userEvent.setup()
     render(<PushDeviceStatus />)
 
-    await user.click(screen.getByRole('button', { name: 'Подключить и проверить' }))
+    await user.click(screen.getByRole('button', { name: 'Подключить уведомления' }))
 
     await waitFor(() => expect(webPush.state.subscribe).toHaveBeenCalledOnce())
-    expect(apiClient.post).not.toHaveBeenCalled()
-  })
-
-  it('keeps connected status when only the test request fails', async () => {
-    webPush.state.isSubscribed = true
-    vi.mocked(apiClient.post).mockRejectedValue(new Error('Provider unavailable'))
-    const user = userEvent.setup()
-    render(<PushDeviceStatus />)
-
-    await user.click(screen.getByRole('button', { name: 'Отправить тестовый push' }))
-
-    expect(await screen.findByText('Не удалось отправить тестовый push. Попробуйте ещё раз.')).toBeInTheDocument()
-    expect(screen.getByText('На этом устройстве уведомления подключены')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Подключить уведомления' })).toBeEnabled()
   })
 })
