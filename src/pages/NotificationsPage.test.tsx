@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiClient } from '../api'
@@ -30,6 +30,7 @@ import { NotificationsPage } from './NotificationsPage'
 
 const originalNotification = globalThis.Notification
 const originalMatchMedia = window.matchMedia
+const originalUserAgent = window.navigator.userAgent
 
 beforeEach(() => {
   window.localStorage.setItem('yoyojoy-access-token', 'access-token')
@@ -68,9 +69,37 @@ afterEach(() => {
     configurable: true,
     value: originalMatchMedia,
   })
+  Object.defineProperty(window.navigator, 'userAgent', {
+    configurable: true,
+    value: originalUserAgent,
+  })
 })
 
 describe('NotificationsPage', () => {
+  it('warns an iPhone browser user before letting them continue profile setup in Safari', async () => {
+    Object.defineProperty(window.navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)',
+    })
+    vi.mocked(window.matchMedia).mockReturnValue({ matches: false } as MediaQueryList)
+    const user = userEvent.setup()
+
+    render(<NotificationsPage />)
+
+    await user.click(screen.getAllByRole('button', { name: 'Разрешить уведомления' })[0])
+    expect(await screen.findByText('Добавьте приложение на главный экран')).toBeInTheDocument()
+
+    await user.click(screen.getAllByRole('button', { name: 'Понятно, спасибо' })[0])
+
+    expect(await screen.findByText('Продолжите настройку в приложении')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toHaveAccessibleDescription(
+      'Откройте YoYoJoy с домашнего экрана, чтобы подключить уведомления на этом устройстве.',
+    )
+    expect(screen.getByRole('button', { name: 'Понятно, открою приложение' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Продолжить в браузере' }))
+    expect(navigation.navigate).toHaveBeenCalledWith('/profile-setup')
+  })
+
   it('shows the current hook error when notification permission is denied', async () => {
     vi.spyOn(apiClient, 'get').mockResolvedValue({ data: { publicKey: 'AQID' } })
     push.subscribeToPush.mockResolvedValue({

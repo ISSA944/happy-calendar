@@ -5,6 +5,7 @@ import { apiClient } from '../api'
 import { setAuthTokens } from '../auth/token-storage'
 import { useAppStore } from '../store'
 import { getHttpStatus } from '../utils/http'
+import { markLoginPushCheckPending } from '../features/notifications/loginPushPrompt.storage'
 
 type OtpLocationState = { flow?: 'login' }
 
@@ -190,6 +191,7 @@ export function OtpPage() {
 
       setAuthTokens(data.accessToken, data.refreshToken)
       if (isLoginFlow) {
+        markLoginPushCheckPending()
         setShowOnboardingLoader(true)
         navigate('/')
       } else {

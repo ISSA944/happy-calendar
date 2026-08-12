@@ -6,6 +6,7 @@ export interface BottomSheetProps {
   onClose: () => void
   children: ReactNode
   title?: ReactNode
+  description?: string
   headerRight?: ReactNode
   hideDragIndicator?: boolean
   /** When false, disables swipe-to-close — sheet closes only via buttons. Default: true */
@@ -17,6 +18,7 @@ export function BottomSheet({
   onClose,
   children,
   title,
+  description,
   headerRight,
   hideDragIndicator = false,
   draggable = true,
@@ -36,6 +38,7 @@ export function BottomSheet({
           className="bg-[#fcf9f4] flex flex-col rounded-t-[24px] fixed bottom-0 left-0 right-0 max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] landscape:max-h-[90vh] outline-none mx-auto w-full max-w-md landscape:max-w-xl shadow-2xl"
           style={{ zIndex: 101, paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
         >
+          {description && <Drawer.Description className="sr-only">{description}</Drawer.Description>}
           {/* Header zone — drag handle + title/actions */}
           <div
             className="px-6 pt-3 pb-4"

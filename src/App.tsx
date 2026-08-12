@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BottomNav } from './components/BottomNav'
+import { LoginPushPrompt } from './features/notifications/LoginPushPrompt'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { PageLoader } from './components/ui/PageLoader'
 import { useAppStore } from './store'
@@ -185,6 +186,7 @@ function AppLayout() {
 
         <BottomNav />
       </div>
+      <LoginPushPrompt />
     </div>
   )
 }

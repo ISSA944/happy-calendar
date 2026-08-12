@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useWebPush } from '../hooks'
 import { NotificationCategoriesEditor } from '../features/notifications/NotificationCategoriesEditor'
 import { useNotificationCategories } from '../features/notifications/useNotificationCategories'
+import { BottomSheet } from '../components/ui/BottomSheet'
 
 export function NotificationsPage() {
   const navigate = useNavigate()
@@ -13,6 +14,7 @@ export function NotificationsPage() {
   const [pushError,        setPushError]        = useState('')
   const [isRequestingPush, setIsRequestingPush] = useState(false)
   const [showIosInstruction, setShowIosInstruction] = useState(false)
+  const [showBrowserContinuationWarning, setShowBrowserContinuationWarning] = useState(false)
   const visiblePushError = hookError || pushError
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -46,6 +48,7 @@ export function NotificationsPage() {
   }
 
   const handleSkip = () => navigate('/profile-setup')
+  const handleIosInstallAcknowledged = () => setShowBrowserContinuationWarning(true)
 
   return (
     <motion.div
@@ -129,7 +132,7 @@ export function NotificationsPage() {
               {/* Landscape-only action button inside scroll */}
               <div className="hidden landscape:block mt-4">
                 <button
-                  onClick={() => navigate('/profile-setup')}
+                  onClick={handleIosInstallAcknowledged}
                   className="w-full h-14 bg-primary text-on-primary rounded-2xl font-headline font-bold text-lg shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
                 >
                   Понятно, спасибо
@@ -179,7 +182,7 @@ export function NotificationsPage() {
         <div className="w-full max-w-[390px]">
           {showIosInstruction ? (
             <button
-              onClick={() => navigate('/profile-setup')}
+              onClick={handleIosInstallAcknowledged}
               className="w-full h-14 bg-primary text-on-primary rounded-2xl font-headline font-bold text-lg shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
             >
               Понятно, спасибо
@@ -217,6 +220,34 @@ export function NotificationsPage() {
           )}
         </div>
       </div>
+
+      <BottomSheet
+        isOpen={showBrowserContinuationWarning}
+        onClose={() => setShowBrowserContinuationWarning(false)}
+        title="Продолжите настройку в приложении"
+        description="Откройте YoYoJoy с домашнего экрана, чтобы подключить уведомления на этом устройстве."
+      >
+        <div className="px-6 pb-8">
+          <p className="text-sm leading-relaxed text-on-surface-variant">
+            Откройте YoYoJoy с домашнего экрана, чтобы подключить уведомления на этом устройстве.
+            Если хотите, настройку профиля можно продолжить в браузере.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowBrowserContinuationWarning(false)}
+            className="mt-6 w-full h-14 bg-primary text-on-primary rounded-full font-headline font-bold text-base active:scale-[0.98] transition-transform"
+          >
+            Понятно, открою приложение
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/profile-setup')}
+            className="mt-3 w-full py-2 text-sm font-semibold text-on-surface-variant"
+          >
+            Продолжить в браузере
+          </button>
+        </div>
+      </BottomSheet>
     </motion.div>
   )
 }
