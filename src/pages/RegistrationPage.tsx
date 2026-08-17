@@ -59,7 +59,7 @@ export function RegistrationPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       style={{ willChange: 'opacity' }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary min-h-[100dvh] w-full max-w-[430px] [@media(orientation:landscape)_and_(min-height:450px)]:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] [@media(orientation:landscape)_and_(min-height:450px)]:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
@@ -156,7 +156,16 @@ export function RegistrationPage() {
               </button>
 
               {submitError === '__email_exists__' ? (
-                <p className="text-center text-sm font-medium text-red-500">Этот email уже зарегистрирован.</p>
+                <div className="space-y-3 text-center">
+                  <p className="text-sm font-medium text-red-500">Этот email уже зарегистрирован.</p>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/login', { state: { email: emailInput.trim() } })}
+                    className="h-12 w-full rounded-full border border-primary text-sm font-bold text-primary transition-colors hover:bg-primary/5 active:scale-[0.98]"
+                  >
+                    Войти в аккаунт
+                  </button>
+                </div>
               ) : submitError ? (
                 <p className="text-center text-sm font-medium text-red-500">{submitError}</p>
               ) : null}

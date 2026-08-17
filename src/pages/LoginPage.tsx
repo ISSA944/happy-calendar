@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { apiClient } from '../api'
 import { useAppStore } from '../store'
@@ -8,9 +8,13 @@ import { getHttpStatus } from '../utils/http'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const setEmail = useAppStore((s) => s.setEmail)
 
-  const [emailInput, setEmailInput] = useState('')
+  const [emailInput, setEmailInput] = useState(() => {
+    const routedEmail = (location.state as { email?: unknown } | null)?.email
+    return typeof routedEmail === 'string' ? routedEmail : ''
+  })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
