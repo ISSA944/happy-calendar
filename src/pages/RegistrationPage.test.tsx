@@ -55,8 +55,26 @@ describe('RegistrationPage Android registration flow', () => {
   it('keeps the registration page as the viewport-height scroll container', () => {
     const page = renderRegistration()
 
-    expect(page).toHaveClass('h-[100dvh]', 'overflow-y-auto')
+    expect(page).toHaveClass(
+      'h-[100dvh]',
+      'overflow-y-auto',
+      'touch-pan-y',
+      '[-webkit-overflow-scrolling:touch]',
+    )
     expect(page).not.toHaveClass('min-h-[100dvh]')
+  })
+
+  it('uses compact vertical spacing on short phone screens', () => {
+    const page = renderRegistration()
+    const headerRow = page?.querySelector('header > div')
+    const title = screen.getByRole('heading', { name: 'Давай начнём' })
+    const email = screen.getByLabelText('Электронная почта')
+    const submit = screen.getByRole('button', { name: 'Получить код' })
+
+    expect(headerRow).toHaveClass('[@media(max-height:700px)]:h-12')
+    expect(title).toHaveClass('[@media(max-height:700px)]:text-3xl')
+    expect(email).toHaveClass('[@media(max-height:700px)]:h-12')
+    expect(submit).toHaveClass('[@media(max-height:700px)]:h-12')
   })
 
   it('offers login for an existing account and prefills an editable email', async () => {

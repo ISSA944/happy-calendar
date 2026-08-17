@@ -17,6 +17,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@material-symbols/font-400": "^0.46.0",
     "axios": "^1.15.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.8.0",

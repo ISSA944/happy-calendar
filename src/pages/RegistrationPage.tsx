@@ -59,11 +59,11 @@ export function RegistrationPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       style={{ willChange: 'opacity' }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] [@media(orientation:landscape)_and_(min-height:450px)]:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
+      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary h-[100dvh] w-full max-w-[430px] [@media(orientation:landscape)_and_(min-height:450px)]:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none touch-pan-y [-webkit-overflow-scrolling:touch]"
     >
       {/* TopAppBar */}
       <header className="sticky top-0 w-full z-50 bg-background px-5 pt-[env(safe-area-inset-top,0px)] border-b border-primary/5">
-        <div className="flex items-center h-16 relative">
+        <div className="flex items-center h-16 [@media(max-height:700px)]:h-12 relative">
           <button
             onClick={() => navigate(-1)}
             aria-label="Назад"
@@ -75,26 +75,26 @@ export function RegistrationPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col px-5 pt-4 min-h-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] landscape:pb-6 landscape:px-10 landscape:pt-6">
+      <main className="flex-1 flex flex-col px-5 pt-4 [@media(max-height:700px)]:pt-2 min-h-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] [@media(max-height:700px)]:pb-3 landscape:pb-6 landscape:px-10 landscape:pt-6">
 
         <form onSubmit={handleSubmit}
               className="flex flex-col flex-1 [@media(orientation:landscape)_and_(min-height:450px)]:grid [@media(orientation:landscape)_and_(min-height:450px)]:grid-cols-2 [@media(orientation:landscape)_and_(min-height:450px)]:gap-8 [@media(orientation:landscape)_and_(min-height:450px)]:items-start">
           {/* ── LEFT: headline + fields ── */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 [@media(max-height:700px)]:gap-2">
             <section className="shrink-0">
-              <h2 className="font-headline font-extrabold text-4xl landscape:text-2xl text-on-surface mb-2 landscape:mb-1 tracking-tight leading-tight">
+              <h2 className="font-headline font-extrabold text-4xl [@media(max-height:700px)]:text-3xl landscape:text-2xl text-on-surface mb-2 [@media(max-height:700px)]:mb-1 landscape:mb-1 tracking-tight leading-tight">
                 Давай начнём
               </h2>
-              <p className="text-on-surface-variant text-base landscape:text-sm font-medium leading-relaxed">
+              <p className="text-on-surface-variant text-base [@media(max-height:700px)]:text-sm landscape:text-sm font-medium leading-relaxed [@media(max-height:700px)]:leading-snug">
                 Введите данные, чтобы создать аккаунт.
               </p>
             </section>
 
-            <div className="space-y-4 shrink-0">
+            <div className="space-y-4 [@media(max-height:700px)]:space-y-2 shrink-0">
               <div className="space-y-1.5">
                 <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="name">Имя</label>
                 <input
-                  className="w-full h-14 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
+                  className="w-full h-14 [@media(max-height:700px)]:h-12 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
                   id="name" name="name" placeholder="Как к тебе обращаться?" type="text"
                   value={name} onChange={(e) => updateDraft({ name: e.target.value })}
                 />
@@ -102,21 +102,21 @@ export function RegistrationPage() {
               <div className="space-y-1.5">
                 <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="email">Электронная почта</label>
                 <input
-                  className="w-full h-14 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
+                  className="w-full h-14 [@media(max-height:700px)]:h-12 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
                   id="email" name="email" placeholder="example@mail.com" type="email"
                   value={emailInput} onChange={(e) => updateDraft({ email: e.target.value })}
                 />
-                <p className="text-xs text-on-surface-variant/60 ml-1">Мы пришлём код подтверждения на эту почту.</p>
+                <p className="text-xs text-on-surface-variant/60 ml-1 [@media(max-height:700px)]:hidden">Мы пришлём код подтверждения на эту почту.</p>
               </div>
             </div>
           </div>
 
           {/* ── RIGHT: checkboxes + CTA ── */}
-          <div className="flex flex-col justify-between gap-4 mt-6 landscape:mt-0 landscape:pt-14">
-            <div className="flex-1 min-h-[12px] landscape:hidden" />
+          <div className="flex flex-col justify-between gap-4 [@media(max-height:700px)]:gap-2 mt-6 [@media(max-height:700px)]:mt-3 landscape:mt-0 landscape:pt-14">
+            <div className="flex-1 min-h-[12px] [@media(max-height:700px)]:hidden landscape:hidden" />
 
-            <div className="space-y-4">
-              <div className="space-y-3">
+            <div className="space-y-4 [@media(max-height:700px)]:space-y-2">
+              <div className="space-y-3 [@media(max-height:700px)]:space-y-1">
                 <label className="flex gap-4 items-start cursor-pointer hover:bg-primary/5 p-3 -m-3 rounded-2xl transition-colors" htmlFor="consent">
                   <div className="mt-0.5 shrink-0">
                     <input className="w-5 h-5 rounded-[6px] border-outline-variant text-primary focus:ring-primary/20 cursor-pointer"
@@ -139,14 +139,14 @@ export function RegistrationPage() {
                   </div>
                   <div>
                     <span className="text-[13px] font-medium text-on-surface-variant leading-snug block">Я хочу получать рекламную рассылку на почту</span>
-                    <p className="text-[11px] text-on-surface-variant/60 mt-0.5">Можно отписаться в любой момент.</p>
+                    <p className="text-[11px] text-on-surface-variant/60 mt-0.5 [@media(max-height:700px)]:hidden">Можно отписаться в любой момент.</p>
                   </div>
                 </label>
               </div>
 
               <button
                 disabled={!canSubmit || isSubmitting} type="submit"
-                className={`h-14 landscape:h-12 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
+                className={`h-14 [@media(max-height:700px)]:h-12 landscape:h-12 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
                   canSubmit && !isSubmitting
                     ? 'bg-[#006a65] text-white shadow-lg shadow-[#006a65]/30 cursor-pointer'
                     : 'bg-[#e5e2dd] text-[#9ca3af] cursor-not-allowed'
@@ -169,7 +169,7 @@ export function RegistrationPage() {
               ) : submitError ? (
                 <p className="text-center text-sm font-medium text-red-500">{submitError}</p>
               ) : null}
-              <p className="text-center text-sm font-medium text-on-surface-variant/70">Почта нужна, чтобы сохранить твои настройки.</p>
+              <p className="text-center text-sm font-medium text-on-surface-variant/70 [@media(max-height:700px)]:hidden">Почта нужна, чтобы сохранить твои настройки.</p>
 
               <div className="flex items-center justify-center gap-2 pt-1">
                 <span className="text-sm text-on-surface-variant/60">Уже есть аккаунт?</span>
