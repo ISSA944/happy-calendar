@@ -7,7 +7,10 @@ import { useAppStore } from '../store'
 import { getHttpStatus } from '../utils/http'
 import { markLoginPushCheckPending } from '../features/notifications/loginPushPrompt.storage'
 
-type OtpLocationState = { flow?: 'login' }
+type OtpLocationState = {
+  flow?: 'login'
+  giftEmailAccepted?: boolean
+}
 
 // ── Isolated timer so its setInterval never re-renders OTP boxes ──
 const CountdownTimer = memo(function CountdownTimer({
@@ -111,9 +114,11 @@ const OtpBox = memo(function OtpBox({
 export function OtpPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const isLoginFlow = (location.state as OtpLocationState | null)?.flow === 'login'
+  const locationState = location.state as OtpLocationState | null
+  const isLoginFlow = locationState?.flow === 'login'
+  const giftEmailAccepted = locationState?.giftEmailAccepted === true
   const email = useAppStore((s) => s.email)
-  const setShowOnboardingLoader = useAppStore((s) => s.setShowOnboardingLoader)
+  const setHasCompletedOnboarding = useAppStore((s) => s.setHasCompletedOnboarding)
 
   const [code, setCode] = useState(['', '', '', ''])
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
@@ -121,7 +126,6 @@ export function OtpPage() {
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isResending, setIsResending] = useState(false)
-  const [showGiftSent, setShowGiftSent] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // Stable ref callbacks — recreating these inline each render defeats OtpBox memo
@@ -192,14 +196,10 @@ export function OtpPage() {
       setAuthTokens(data.accessToken, data.refreshToken)
       if (isLoginFlow) {
         markLoginPushCheckPending()
-        setShowOnboardingLoader(true)
+        setHasCompletedOnboarding(false)
         navigate('/')
       } else {
-        // Как и код чуть выше пришёл на почту — вторым письмом (после этого) уходит подарок
-        // (см. sendWelcomeEmail в auth.service.ts). Коротко подтверждаем это прямо тут же,
-        // тем же текстовым паттерном, что и подтверждение отправки кода.
-        setShowGiftSent(true)
-        setTimeout(() => navigate('/notifications'), 1400)
+        navigate('/notifications')
       }
     } catch (err: unknown) {
       const status = getHttpStatus(err)
@@ -215,7 +215,7 @@ export function OtpPage() {
     } finally {
       setIsSubmitting(false)
     }
-  }, [code, email, isLoginFlow, isSubmitting, isValid, navigate, setShowOnboardingLoader])
+  }, [code, email, isLoginFlow, isSubmitting, isValid, navigate, setHasCompletedOnboarding])
 
   const handleExpire = useCallback(() => {}, [])
 
@@ -273,6 +273,11 @@ export function OtpPage() {
               <> <span className="text-primary font-bold break-all">{email}</span></>
             )}
           </p>
+          {giftEmailAccepted && (
+            <p className="mt-3 rounded-2xl bg-primary/10 px-4 py-3 text-sm font-semibold leading-5 text-primary">
+              Код и письмо с двумя подарками отправлены. Проверьте Входящие, Промоакции и Спам.
+            </p>
+          )}
         </section>
 
         {/* ── OTP Boxes ── */}
@@ -311,12 +316,7 @@ export function OtpPage() {
             {isSubmitting ? 'Проверяем...' : 'Продолжить'}
           </button>
 
-          {showGiftSent ? (
-            <p className="flex items-center justify-center gap-1.5 text-center text-sm font-semibold text-primary">
-              <span className="material-symbols-outlined text-lg">redeem</span>
-              Подарок отправлен на {email}
-            </p>
-          ) : submitError ? (
+          {submitError ? (
             <p className="text-center text-sm font-medium text-red-500">
               {submitError}
             </p>

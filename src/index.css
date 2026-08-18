@@ -2,19 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Respect users / weak devices that request reduced motion.
-   Cuts all CSS animations/transitions to near-zero so old Android stops jankin. */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
 @layer base {
   html:not(.material-symbols-ready) .material-symbols-outlined {
     visibility: hidden;
@@ -106,9 +93,8 @@
     opacity: 0.25;
   }
 
-  /* Лендинг (LandingPage) — декоративные бесконечные анимации, см. src/features/landing.
-     Глобальный prefers-reduced-motion:reduce override выше (строка 7) уже гасит их все —
-     отдельно оборачивать каждый keyframe в no-preference не нужно. */
+  /* Лендинг (LandingPage) — согласованные декоративные бесконечные анимации.
+     Они работают и при системном reduced-motion: это осознанное продуктовое решение. */
   @keyframes landing-slow-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: .9; } }
   .animate-landing-slow-pulse { animation: landing-slow-pulse 4s ease-in-out infinite; }
 

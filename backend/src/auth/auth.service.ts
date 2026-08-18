@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { randomInt } from 'crypto';
 import { Resend } from 'resend';
+import type { User } from '@prisma/client';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import * as fs from 'fs';
@@ -29,9 +30,7 @@ type EmailProvider = 'smtp' | 'resend' | 'none';
 type TestAccountPolicy = {
   fixedOtp: string;
   sendOtpEmail: boolean;
-  repeatWelcomeEmail: boolean;
   resetOnDevRegistration: boolean;
-  preserveNameOnRegistration: boolean;
   refreshTtl: string;
 };
 
@@ -39,17 +38,13 @@ const TEST_ACCOUNT_POLICIES: Record<string, TestAccountPolicy> = {
   'mukaniskander01@gmail.com': {
     fixedOtp: '1111',
     sendOtpEmail: false,
-    repeatWelcomeEmail: true,
     resetOnDevRegistration: true,
-    preserveNameOnRegistration: false,
     refreshTtl: '365d',
   },
   'metrolabsgroup@gmail.com': {
     fixedOtp: '1111',
     sendOtpEmail: true,
-    repeatWelcomeEmail: true,
     resetOnDevRegistration: false,
-    preserveNameOnRegistration: true,
     refreshTtl: '365d',
   },
 };
@@ -147,32 +142,29 @@ export class AuthService {
     // Это осознанный риск: политика жёстко ограничена перечисленными выше адресами.
     const testPolicy = this.testAccountPolicy(normalizedEmail);
 
+    let user: User;
+
     if (testPolicy?.resetOnDevRegistration && isDev) {
       // Test account in dev: auto-wipe on every registration so re-registration always works cleanly
       await this.prisma.user.deleteMany({ where: { email: normalizedEmail } });
+      user = await this.prisma.user.create({
+        data: { email: normalizedEmail, name: name ?? null },
+      });
     } else {
       const existing = await this.prisma.user.findUnique({
         where: { email: normalizedEmail },
       });
       if (existing) {
-        if (testPolicy) {
-          // login() не принимает name — без этого имя, введённое на экране регистрации,
-          // молча терялось при каждом повторном "регистрируюсь" на уже существующий аккаунт.
-          if (!testPolicy.preserveNameOnRegistration && name?.trim()) {
-            await this.prisma.user.update({
-              where: { id: existing.id },
-              data: { name: name.trim() },
-            });
-          }
-          return this.login(normalizedEmail);
+        if (existing.emailVerifiedAt) {
+          throw new ConflictException('Email already registered');
         }
-        throw new ConflictException('Email already registered');
+        user = existing;
+      } else {
+        user = await this.prisma.user.create({
+          data: { email: normalizedEmail, name: name ?? null },
+        });
       }
     }
-
-    const user = await this.prisma.user.create({
-      data: { email: normalizedEmail, name: name ?? null },
-    });
 
     if (consents !== undefined) {
       await this.prisma.prefs.upsert({
@@ -207,6 +199,24 @@ export class AuthService {
       );
     }
 
+    let giftEmailAccepted = Boolean(user.welcomeEmailSentAt);
+    if (!giftEmailAccepted) {
+      try {
+        await this.sendWelcomeEmail(normalizedEmail, user.name);
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { welcomeEmailSentAt: new Date() },
+        });
+        giftEmailAccepted = true;
+      } catch (err) {
+        if (!isDev) throw err;
+        this.logger.warn(
+          `DEV MODE — welcome email failed for ${normalizedEmail}: ` +
+            (err instanceof Error ? err.message : String(err)),
+        );
+      }
+    }
+
     const otpHash = await bcrypt.hash(code, this.BCRYPT_ROUNDS);
     const otpExpiresAt = new Date(Date.now() + this.OTP_TTL_MIN * 60_000);
 
@@ -224,7 +234,7 @@ export class AuthService {
       `OTP отправлен на ${normalizedEmail} (TTL ${this.OTP_TTL_MIN} мин)`,
     );
 
-    return { ok: true, email: normalizedEmail };
+    return { ok: true, email: normalizedEmail, giftEmailAccepted };
   }
 
   async login(email: string) {
@@ -277,8 +287,6 @@ export class AuthService {
 
   async verifyOtp(email: string, code: string) {
     const normalizedEmail = email.trim().toLowerCase();
-    const testPolicy = this.testAccountPolicy(normalizedEmail);
-
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
@@ -319,6 +327,7 @@ export class AuthService {
         otpExpiresAt: null,
         otpFailedAttempts: 0,
         otpLastFailedAt: null,
+        emailVerifiedAt: new Date(),
       },
     });
 
@@ -333,25 +342,6 @@ export class AuthService {
       update: {},
       create: { userId: user.id },
     });
-
-    // Приветственное письмо — один раз за всю жизнь аккаунта (флаг welcomeEmailSentAt), КРОМЕ
-    // тестовых политик с repeatWelcomeEmail — им шлём заново при каждом verifyOtp().
-    // verifyOtp() — общая точка входа для регистрации И логина, поэтому завязываемся на флаг,
-    // а не на тип запроса. Best-effort: письмо НИКОГДА не блокирует вход — любая ошибка гасится.
-    if (testPolicy?.repeatWelcomeEmail || !user.welcomeEmailSentAt) {
-      try {
-        await this.sendWelcomeEmail(normalizedEmail, user.name);
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { welcomeEmailSentAt: new Date() },
-        });
-      } catch (err) {
-        this.logger.warn(
-          `Welcome email failed for ${normalizedEmail} (не критично, вход продолжается): ` +
-            (err instanceof Error ? err.message : String(err)),
-        );
-      }
-    }
 
     return this.issueTokens(user.id, user.email);
   }
@@ -576,36 +566,24 @@ export class AuthService {
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>YoYoJoy Day</title>
 </head>
-<body style="margin:0;padding:32px 16px;background:#f5f2ed;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
+<body style="margin:0;padding:16px 8px;background:#f5f2ed;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
     <tr>
       <td align="center">
-        <table role="presentation" width="480" cellspacing="0" cellpadding="0" border="0" style="max-width:480px;background:#fcf9f4;border-radius:24px;overflow:hidden">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:480px;background:#fcf9f4;border-radius:24px;overflow:hidden">
           <tr>
-            <td style="padding:40px 40px 28px;background:#006a65;text-align:center">
+            <td style="padding:32px 20px 24px;background:#006a65;text-align:center">
               <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px">YoYoJoy Day 🌿</div>
               <div style="color:#a4d8d5;font-size:13px;margin-top:6px">Твой персональный компаньон дня</div>
             </td>
           </tr>
           <tr>
-            <td style="padding:40px 40px 8px">
+            <td style="padding:32px 20px 8px">
               <p style="margin:0 0 28px;font-size:16px;line-height:1.55;color:#2a3f3e">
                 Привет! Вот твой одноразовый код для входа:
               </p>
               <div style="text-align:center">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto">
-                  <tr>
-                    ${code
-                      .split('')
-                      .map(
-                        (d) => `
-                    <td style="padding:0 5px">
-                      <div style="width:56px;height:72px;background:#f0fafa;border:2px solid #2FA7A0;border-radius:14px;text-align:center;line-height:72px;font-size:40px;font-weight:800;color:#006a65;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">${d}</div>
-                    </td>`,
-                      )
-                      .join('')}
-                  </tr>
-                </table>
+                <div style="display:inline-block;max-width:100%;box-sizing:border-box;padding:14px 18px 14px 28px;background:#f0fafa;border:2px solid #2FA7A0;border-radius:14px;font-size:36px;font-weight:800;line-height:1.2;letter-spacing:10px;color:#006a65;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;white-space:nowrap">${code}</div>
               </div>
               <p style="margin:28px 0 0;font-size:14px;line-height:1.55;color:#5a6968">
                 Код действует <strong style="color:#006a65">${this.OTP_TTL_MIN} минут</strong>. Никому его не передавай — мы не запрашиваем коды в чатах и сообщениях.
@@ -613,7 +591,7 @@ export class AuthService {
             </td>
           </tr>
           <tr>
-            <td style="padding:32px 40px 40px">
+            <td style="padding:28px 20px 32px">
               <div style="border-top:1px solid #e8e3db;padding-top:24px">
                 <p style="margin:0;font-size:12px;line-height:1.5;color:#8a9998;text-align:center">
                   Если ты не запрашивал(а) код — просто проигнорируй это письмо.
@@ -629,9 +607,7 @@ export class AuthService {
 </html>`;
   }
 
-  // Читает PDF-подарки из backend/assets/gifts/*.pdf. Файлов от клиента пока нет —
-  // возвращает [] (письмо уйдёт без вложений). Когда файлы положат в папку — они подхватятся
-  // автоматически, без изменения кода.
+  // Читает два production PDF-подарка из backend/assets/gifts/*.pdf.
   private loadGiftAttachments(): { filename: string; content: Buffer }[] {
     const dir = path.join(process.cwd(), 'assets', 'gifts');
     try {
@@ -652,11 +628,19 @@ export class AuthService {
     }
   }
 
-  // Приветственное письмо. Переиспользует тот же провайдер (Resend/SMTP), что и OTP.
-  // Вложения (PDF-подарки) — best-effort: если файлов нет, письмо уходит без них.
+  // Подарочное письмо отправляется только из register(), до перехода пользователя на OTP.
+  // Переиспользует тот же провайдер (Resend/SMTP), что и письмо с кодом.
   private async sendWelcomeEmail(to: string, name: string | null) {
     const subject = 'Добро пожаловать в YoYoJoy Day 🌿';
     const gifts = this.loadGiftAttachments();
+    const giftNames = new Set(gifts.map((gift) => gift.filename));
+    if (
+      gifts.length !== 2 ||
+      !giftNames.has('habit-tracker.pdf') ||
+      !giftNames.has('self-care-checklist-30-days.pdf')
+    ) {
+      throw new Error('Both PDF gifts are required for registration email');
+    }
     const trackerFile =
       gifts.find((g) => g.filename.toLowerCase().includes('tracker'))
         ?.filename ?? null;

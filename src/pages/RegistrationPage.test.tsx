@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiClient } from '../api'
 import { useRegistrationDraft } from '../store'
@@ -29,13 +29,18 @@ afterEach(() => {
   window.sessionStorage.clear()
 })
 
+function OtpStateProbe() {
+  const state = useLocation().state as { giftEmailAccepted?: boolean } | null
+  return <p>{state?.giftEmailAccepted ? 'Подарки подтверждены' : 'Нет статуса подарков'}</p>
+}
+
 function renderRegistration() {
   const view = render(
     <MemoryRouter initialEntries={['/register']}>
       <Routes>
         <Route path="/register" element={<RegistrationPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/otp" element={<p>Введите код</p>} />
+        <Route path="/otp" element={<OtpStateProbe />} />
       </Routes>
     </MemoryRouter>,
   )
@@ -75,6 +80,22 @@ describe('RegistrationPage Android registration flow', () => {
     expect(title).toHaveClass('[@media(max-height:700px)]:text-3xl')
     expect(email).toHaveClass('[@media(max-height:700px)]:h-12')
     expect(submit).toHaveClass('[@media(max-height:700px)]:h-12')
+    expect(page?.querySelector('main')).toHaveClass('pb-[max(5rem,env(safe-area-inset-bottom))]')
+  })
+
+  it('carries confirmed gift delivery to the OTP screen', async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({
+      data: {
+        ok: true,
+        email: 'new@example.com',
+        giftEmailAccepted: true,
+      },
+    })
+    renderRegistration()
+
+    await submitRegistration('new@example.com')
+
+    expect(await screen.findByText('Подарки подтверждены')).toBeInTheDocument()
   })
 
   it('offers login for an existing account and prefills an editable email', async () => {

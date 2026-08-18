@@ -30,7 +30,11 @@ export function RegistrationPage() {
     setSubmitError('')
 
     try {
-      await apiClient.post('auth/register', {
+      const { data } = await apiClient.post<{
+        ok: true
+        email: string
+        giftEmailAccepted: boolean
+      }>('auth/register', {
         email: emailInput.trim(),
         name: name.trim() || undefined,
         consents: consent,
@@ -40,7 +44,7 @@ export function RegistrationPage() {
       setUserName(name.trim())
       setEmail(emailInput.trim())
       clearDraft()
-      navigate('/otp')
+      navigate('/otp', { state: { giftEmailAccepted: data.giftEmailAccepted } })
     } catch (err: unknown) {
       const status = getHttpStatus(err)
       if (status === 409) {
@@ -75,7 +79,7 @@ export function RegistrationPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col px-5 pt-4 [@media(max-height:700px)]:pt-2 min-h-0 pb-[max(1.5rem,env(safe-area-inset-bottom))] [@media(max-height:700px)]:pb-3 landscape:pb-6 landscape:px-10 landscape:pt-6">
+      <main className="flex-1 flex flex-col px-5 pt-4 [@media(max-height:700px)]:pt-2 min-h-0 pb-[max(5rem,env(safe-area-inset-bottom))] [@media(max-height:700px)]:pb-16 landscape:pb-6 landscape:px-10 landscape:pt-6">
 
         <form onSubmit={handleSubmit}
               className="flex flex-col flex-1 [@media(orientation:landscape)_and_(min-height:450px)]:grid [@media(orientation:landscape)_and_(min-height:450px)]:grid-cols-2 [@media(orientation:landscape)_and_(min-height:450px)]:gap-8 [@media(orientation:landscape)_and_(min-height:450px)]:items-start">

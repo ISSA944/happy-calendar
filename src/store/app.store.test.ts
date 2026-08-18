@@ -96,10 +96,11 @@ describe('profile mood hydration', () => {
       },
     })
 
-    await useAppStore.getState().syncProfile()
+    const result = await useAppStore.getState().syncProfile()
 
     expect(useAppStore.getState().currentMood).toBe('Нормально')
     expect(useAppStore.getState().hasCompletedOnboarding).toBe(false)
+    expect(result).toBe(false)
   })
 
   it('keeps the mood and onboarding state returned by an existing server profile', async () => {
@@ -117,9 +118,18 @@ describe('profile mood hydration', () => {
       },
     })
 
-    await useAppStore.getState().syncProfile()
+    const result = await useAppStore.getState().syncProfile()
 
     expect(useAppStore.getState().currentMood).toBe('Грустна')
     expect(useAppStore.getState().hasCompletedOnboarding).toBe(true)
+    expect(result).toBe(true)
+  })
+
+  it('reports a profile loading failure without changing onboarding state', async () => {
+    vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('offline'))
+
+    const result = await useAppStore.getState().syncProfile()
+
+    expect(result).toBeNull()
   })
 })

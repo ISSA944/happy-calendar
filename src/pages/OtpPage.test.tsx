@@ -53,15 +53,34 @@ async function verifyOtp(flow?: 'login') {
 
 describe('OtpPage push handoff', () => {
   it('marks a current-device push check after a successful login', async () => {
+    useAppStore.setState({ hasCompletedOnboarding: true })
     await verifyOtp('login')
 
     expect(await screen.findByText('Главная')).toBeInTheDocument()
     expect(hasPendingLoginPushCheck()).toBe(true)
+    expect(useAppStore.getState().showOnboardingLoader).toBe(false)
+    expect(useAppStore.getState().hasCompletedOnboarding).toBe(false)
   })
 
   it('does not mark the login-only check during a new registration', async () => {
     await verifyOtp()
 
     expect(hasPendingLoginPushCheck()).toBe(false)
+  })
+
+  it('explains immediately that registration sent the code and two gifts', () => {
+    render(
+      <MemoryRouter initialEntries={[{
+        pathname: '/otp',
+        state: { giftEmailAccepted: true },
+      }]}>
+        <Routes>
+          <Route path="/otp" element={<OtpPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText(/Код и письмо с двумя подарками отправлены/)).toBeInTheDocument()
+    expect(screen.getByText(/Промоакции и Спам/)).toBeInTheDocument()
   })
 })

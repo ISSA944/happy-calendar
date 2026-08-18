@@ -15,6 +15,7 @@ type UserRecord = {
   otpExpiresAt: Date | null;
   otpFailedAttempts: number;
   otpLastFailedAt: Date | null;
+  emailVerifiedAt: Date | null;
   welcomeEmailSentAt: Date | null;
 };
 
@@ -30,6 +31,7 @@ function createUser(
     otpExpiresAt: null,
     otpFailedAttempts: 0,
     otpLastFailedAt: null,
+    emailVerifiedAt: new Date('2026-05-12T08:58:25.383Z'),
     welcomeEmailSentAt: null,
     ...overrides,
   };
@@ -38,7 +40,7 @@ function createUser(
 function createService(
   user: UserRecord,
   nodeEnv = 'production',
-  options: { stubWelcomeEmail?: boolean } = {},
+  options: { stubOtpEmail?: boolean; stubWelcomeEmail?: boolean } = {},
 ) {
   const userUpdates: Array<{
     where: { id: string };
@@ -89,7 +91,9 @@ function createService(
   );
   const sendOtpEmail = jest.fn().mockResolvedValue(undefined);
   const sendWelcomeEmail = jest.fn().mockResolvedValue(undefined);
-  Object.defineProperty(service, 'sendOtpEmail', { value: sendOtpEmail });
+  if (options.stubOtpEmail !== false) {
+    Object.defineProperty(service, 'sendOtpEmail', { value: sendOtpEmail });
+  }
   if (options.stubWelcomeEmail !== false) {
     Object.defineProperty(service, 'sendWelcomeEmail', {
       value: sendWelcomeEmail,
@@ -106,15 +110,150 @@ function createService(
   };
 }
 
+describe('AuthService registration email lifecycle', () => {
+  it('rejects registration for an already verified account', async () => {
+    const user = createUser('verified@example.com');
+    const { service, sendWelcomeEmail } = createService(user);
+
+    await expect(
+      service.register('verified@example.com', 'Другое имя', true, false),
+    ).rejects.toThrow('Email already registered');
+
+    expect(sendWelcomeEmail).not.toHaveBeenCalled();
+  });
+
+  it('sends OTP and exactly one gift during a new registration', async () => {
+    const user = createUser('new@example.com', {
+      name: 'Новая',
+      emailVerifiedAt: null,
+      welcomeEmailSentAt: null,
+    });
+    const { service, prisma, sendOtpEmail, sendWelcomeEmail, userUpdates } =
+      createService(user);
+    prisma.user.findUnique.mockResolvedValueOnce(null);
+
+    await expect(
+      service.register(' NEW@example.com ', 'Новая', true, false),
+    ).resolves.toEqual({
+      ok: true,
+      email: 'new@example.com',
+      giftEmailAccepted: true,
+    });
+
+    expect(sendOtpEmail).toHaveBeenCalledTimes(1);
+    expect(sendWelcomeEmail).toHaveBeenCalledTimes(1);
+    expect(sendWelcomeEmail).toHaveBeenCalledWith('new@example.com', 'Новая');
+    expect(
+      userUpdates.some(
+        (update) => update.data.welcomeEmailSentAt instanceof Date,
+      ),
+    ).toBe(true);
+  });
+
+  it('allows an unfinished account to repeat registration without duplicating an accepted gift', async () => {
+    const user = createUser('pending@example.com', {
+      emailVerifiedAt: null,
+      welcomeEmailSentAt: new Date('2026-08-18T10:00:00.000Z'),
+    });
+    const { service, prisma, sendOtpEmail, sendWelcomeEmail } =
+      createService(user);
+
+    await expect(
+      service.register('pending@example.com', 'Новое имя', true, false),
+    ).resolves.toEqual({
+      ok: true,
+      email: 'pending@example.com',
+      giftEmailAccepted: true,
+    });
+
+    expect(prisma.user.create).not.toHaveBeenCalled();
+    expect(sendOtpEmail).toHaveBeenCalledTimes(1);
+    expect(sendWelcomeEmail).not.toHaveBeenCalled();
+  });
+
+  it('keeps a failed gift registration retryable', async () => {
+    const user = createUser('retry@example.com', {
+      emailVerifiedAt: null,
+      welcomeEmailSentAt: null,
+    });
+    const { service, prisma, sendWelcomeEmail } = createService(user);
+    prisma.user.findUnique.mockResolvedValueOnce(null);
+    sendWelcomeEmail.mockRejectedValueOnce(new Error('gift provider failed'));
+
+    await expect(
+      service.register('retry@example.com', 'Retry', true, false),
+    ).rejects.toThrow('gift provider failed');
+
+    expect(prisma.user.create).toHaveBeenCalledTimes(1);
+    expect(
+      prisma.user.update.mock.calls.some(
+        ([input]: [{ data: Record<string, unknown> }]) =>
+          input.data.welcomeEmailSentAt instanceof Date,
+      ),
+    ).toBe(false);
+  });
+
+  it('marks email verified but never sends gifts from verifyOtp', async () => {
+    const otpHash = await bcrypt.hash('1111', 4);
+    const user = createUser(OLGA_EMAIL, {
+      otpHash,
+      otpExpiresAt: new Date(Date.now() + 60_000),
+      emailVerifiedAt: null,
+      welcomeEmailSentAt: new Date('2026-05-12T08:58:25.383Z'),
+    });
+    const { service, sendWelcomeEmail, userUpdates } = createService(user);
+
+    await service.verifyOtp(OLGA_EMAIL, '1111');
+
+    expect(sendWelcomeEmail).not.toHaveBeenCalled();
+    expect(
+      userUpdates.some((update) => update.data.emailVerifiedAt instanceof Date),
+    ).toBe(true);
+  });
+
+  it('never sends gifts during a regular login request', async () => {
+    const user = createUser('login@example.com', {
+      welcomeEmailSentAt: null,
+    });
+    const { service, sendWelcomeEmail } = createService(user);
+
+    await service.login('login@example.com');
+
+    expect(sendWelcomeEmail).not.toHaveBeenCalled();
+  });
+
+  it('renders the OTP email without a fixed-width mobile overflow', async () => {
+    const user = createUser('mobile@example.com');
+    const { service } = createService(user, 'production', {
+      stubOtpEmail: false,
+    });
+    let sentHtml = '';
+    const send = jest.fn((input: { html: string }) => {
+      sentHtml = input.html;
+      return Promise.resolve({ data: { id: 'otp-mail' } });
+    });
+    Object.defineProperty(service, 'provider', { value: 'resend' });
+    Object.defineProperty(service, 'resend', {
+      value: { emails: { send } },
+    });
+
+    await service.login('mobile@example.com');
+
+    expect(sentHtml).toContain('width="100%"');
+    expect(sentHtml).not.toContain('width="480"');
+    expect(sentHtml).toContain('letter-spacing');
+  });
+});
+
 describe('AuthService test-account policies', () => {
-  it('emails Olga the fixed 1111 OTP without deleting or overwriting her account', async () => {
+  it('emails Olga the fixed 1111 OTP on login without deleting or overwriting her account', async () => {
     const user = createUser(OLGA_EMAIL);
     const { service, prisma, sendOtpEmail, userUpdates } = createService(
       user,
       'development',
     );
 
-    await service.register(OLGA_EMAIL, 'Другое имя', true, true);
+    await service.login(OLGA_EMAIL);
 
     expect(prisma.user.deleteMany).not.toHaveBeenCalled();
     expect(prisma.user.create).not.toHaveBeenCalled();
@@ -138,20 +277,6 @@ describe('AuthService test-account policies', () => {
     await expect(bcrypt.compare('1111', otpHash)).resolves.toBe(true);
   });
 
-  it('sends Olga the welcome gifts again after every successful OTP verification', async () => {
-    const otpHash = await bcrypt.hash('1111', 4);
-    const user = createUser(OLGA_EMAIL, {
-      otpHash,
-      otpExpiresAt: new Date(Date.now() + 60_000),
-      welcomeEmailSentAt: new Date('2026-05-12T08:58:25.383Z'),
-    });
-    const { service, sendWelcomeEmail } = createService(user);
-
-    await service.verifyOtp(OLGA_EMAIL, '1111');
-
-    expect(sendWelcomeEmail).toHaveBeenCalledWith(OLGA_EMAIL, 'Ольга');
-  });
-
   it('issues Olga a 365-day refresh token', async () => {
     const otpHash = await bcrypt.hash('1111', 4);
     const user = createUser(OLGA_EMAIL, {
@@ -169,15 +294,15 @@ describe('AuthService test-account policies', () => {
     );
   });
 
-  it('attaches both PDF gifts to Olga welcome emails', async () => {
-    const otpHash = await bcrypt.hash('1111', 4);
-    const user = createUser(OLGA_EMAIL, {
-      otpHash,
-      otpExpiresAt: new Date(Date.now() + 60_000),
+  it('attaches both PDF gifts to a new registration email', async () => {
+    const user = createUser('gift@example.com', {
+      emailVerifiedAt: null,
+      welcomeEmailSentAt: null,
     });
-    const { service } = createService(user, 'production', {
+    const { service, prisma } = createService(user, 'production', {
       stubWelcomeEmail: false,
     });
+    prisma.user.findUnique.mockResolvedValueOnce(null);
     const send = jest.fn().mockResolvedValue({ data: { id: 'mail-1' } });
     Object.defineProperty(service, 'provider', { value: 'resend' });
     Object.defineProperty(service, 'resend', {
@@ -193,11 +318,11 @@ describe('AuthService test-account policies', () => {
       ],
     });
 
-    await service.verifyOtp(OLGA_EMAIL, '1111');
+    await service.register('gift@example.com', 'Получатель', true, false);
 
     expect(send).toHaveBeenCalledWith(
       expect.objectContaining({
-        to: OLGA_EMAIL,
+        to: 'gift@example.com',
         attachments: [
           expect.objectContaining({ filename: 'habit-tracker.pdf' }),
           expect.objectContaining({
@@ -206,5 +331,31 @@ describe('AuthService test-account policies', () => {
         ],
       }),
     );
+  });
+
+  it('does not accept registration when either PDF gift is missing', async () => {
+    const user = createUser('missing-gift@example.com', {
+      emailVerifiedAt: null,
+      welcomeEmailSentAt: null,
+    });
+    const { service, prisma } = createService(user, 'production', {
+      stubWelcomeEmail: false,
+    });
+    prisma.user.findUnique.mockResolvedValueOnce(null);
+    const send = jest.fn().mockResolvedValue({ data: { id: 'mail-1' } });
+    Object.defineProperty(service, 'provider', { value: 'resend' });
+    Object.defineProperty(service, 'resend', {
+      value: { emails: { send } },
+    });
+    Object.defineProperty(service, 'loadGiftAttachments', {
+      value: () => [
+        { filename: 'habit-tracker.pdf', content: Buffer.from('tracker') },
+      ],
+    });
+
+    await expect(
+      service.register('missing-gift@example.com', 'Получатель', true, false),
+    ).rejects.toThrow('Both PDF gifts are required');
+    expect(send).not.toHaveBeenCalled();
   });
 });

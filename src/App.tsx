@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState, type ReactNode } from 'react'
+import { Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -39,24 +39,54 @@ function PageFallback() {
   return <div className="h-[100dvh] w-full" style={{ background: '#fcf9f4' }} />
 }
 
-function RootGuard() {
+function ProfileLoadError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex h-[100dvh] w-full items-center justify-center bg-background px-6 text-center">
+      <div className="w-full max-w-sm rounded-[32px] bg-white p-7 shadow-sm">
+        <h1 className="font-headline text-2xl font-bold text-on-surface">Не удалось загрузить профиль</h1>
+        <p className="mt-3 text-sm leading-6 text-on-surface-variant">
+          Проверьте интернет-соединение и повторите загрузку.
+        </p>
+        <button
+          className="mt-6 h-12 w-full rounded-full bg-primary font-headline font-bold text-white"
+          onClick={onRetry}
+          type="button"
+        >
+          Попробовать снова
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function useProfileBootstrap(hasToken: boolean) {
   const hasCompletedOnboarding = useAppStore(s => s.hasCompletedOnboarding)
   const syncProfile = useAppStore(s => s.syncProfile)
-  const [hasCheckedProfile, setHasCheckedProfile] = useState(false)
-  const hasToken = !!getAccessToken()
-  const needsProfileCheck = hasToken && !hasCompletedOnboarding && !hasCheckedProfile
+  const [status, setStatus] = useState<'checking' | 'ready' | 'error'>(() =>
+    hasToken && !hasCompletedOnboarding ? 'checking' : 'ready',
+  )
+
+  const checkProfile = useCallback(() => setStatus('checking'), [])
 
   useEffect(() => {
-    if (!needsProfileCheck) return
+    if (status !== 'checking') return
     let cancelled = false
-    void syncProfile().finally(() => {
-      if (!cancelled) setHasCheckedProfile(true)
+    void syncProfile().then((result) => {
+      if (!cancelled) setStatus(result === null ? 'error' : 'ready')
     })
     return () => { cancelled = true }
-  }, [needsProfileCheck, syncProfile])
+  }, [status, syncProfile])
+
+  return { hasCompletedOnboarding, status, checkProfile }
+}
+
+function RootGuard() {
+  const hasToken = !!getAccessToken()
+  const { hasCompletedOnboarding, status, checkProfile } = useProfileBootstrap(hasToken)
 
   if (!hasToken) return <LandingPage />
-  if (needsProfileCheck) return <PageFallback />
+  if (status === 'checking') return <PageFallback />
+  if (status === 'error') return <ProfileLoadError onRetry={checkProfile} />
   return hasCompletedOnboarding ? <Navigate to="/home" replace /> : <Navigate to="/profile-setup" replace />
 }
 
@@ -66,23 +96,12 @@ function RequireAuth({ children }: { children: ReactNode }) {
 }
 
 function RequireAppReady({ children }: { children: ReactNode }) {
-  const hasCompletedOnboarding = useAppStore(s => s.hasCompletedOnboarding)
-  const syncProfile = useAppStore(s => s.syncProfile)
-  const [hasCheckedProfile, setHasCheckedProfile] = useState(false)
   const hasToken = !!getAccessToken()
-  const needsProfileCheck = hasToken && !hasCompletedOnboarding && !hasCheckedProfile
-
-  useEffect(() => {
-    if (!needsProfileCheck) return
-    let cancelled = false
-    void syncProfile().finally(() => {
-      if (!cancelled) setHasCheckedProfile(true)
-    })
-    return () => { cancelled = true }
-  }, [needsProfileCheck, syncProfile])
+  const { hasCompletedOnboarding, status, checkProfile } = useProfileBootstrap(hasToken)
 
   if (!hasToken) return <Navigate to="/" replace />
-  if (needsProfileCheck) return <PageFallback />
+  if (status === 'checking') return <PageFallback />
+  if (status === 'error') return <ProfileLoadError onRetry={checkProfile} />
   if (!hasCompletedOnboarding) return <Navigate to="/profile-setup" replace />
   return children
 }

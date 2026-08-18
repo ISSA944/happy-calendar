@@ -133,7 +133,7 @@ backend/src/
 ```
 1. QR-код → WelcomePage
 2. Нажимает "Начать" → RegistrationPage
-3. Вводит email → POST /api/auth/register → OTP на почту
+3. Вводит email → POST /api/auth/register → OTP и отдельное письмо с двумя PDF на почту
 4. Вводит OTP → POST /api/auth/verify-otp → получает JWT токены
 5. Страница NotificationsPage → запрос на push-уведомления
 6. ProfileSetupPage → вводит дату рождения, пол, имя
@@ -192,7 +192,7 @@ Axios interceptor автоматически:
 ### OTP:
 - 4 цифры, живёт 15 минут
 - Хэшируется bcrypt перед сохранением в БД
-- Два явно перечисленных тест-аккаунта имеют фиксированный OTP `1111` во всех окружениях, включая production: `mukaniskander01@gmail.com` сохраняет прежний bypass без OTP-письма, а `metrolabsgroup@gmail.com` получает реальное письмо с кодом и повторное welcome-письмо с двумя PDF. У Ольги повторная регистрация сохраняет все пользовательские данные. Это осознанный бэкдор, жёстко ограниченный точными адресами в `backend/src/auth/auth.service.ts`.
+- Два явно перечисленных тест-аккаунта имеют фиксированный OTP `1111` во всех окружениях, включая production: `mukaniskander01@gmail.com` сохраняет bypass без OTP-письма, а `metrolabsgroup@gmail.com` получает реальное письмо с кодом. Подарочные PDF отправляются только при первой регистрации нового email и не повторяются при входе. Это осознанный бэкдор, жёстко ограниченный точными адресами в `backend/src/auth/auth.service.ts`.
 - Rate limiting: 10 попыток за 15 минут
 
 ---

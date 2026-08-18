@@ -169,7 +169,7 @@ type AppState = {
   setHolidaysTime: (time: string) => void
   personalCareTime: string
   setPersonalCareTime: (time: string) => void
-  syncProfile: () => Promise<void>
+  syncProfile: () => Promise<boolean | null>
 
   // Goals (ТЗ п. 4.2/4.5/6.4)
   goals: GoalView[]
@@ -530,7 +530,7 @@ export const useAppStore = create<AppState>()(
       },
 
       syncProfile: async () => {
-        if (!getAccessToken()) return
+        if (!getAccessToken()) return null
         try {
           const { data } = await apiClient.get<{
             user?: { email?: string; name?: string | null }
@@ -554,14 +554,16 @@ export const useAppStore = create<AppState>()(
             } | null
           }>('profile')
 
+          const hasCompletedOnboarding = Boolean(
+            data.profile?.birthdate && data.profile?.zodiacSign,
+          )
+
           set({
             email: data.user?.email ?? get().email,
             userName: data.user?.name ?? get().userName,
             birthDate: data.profile?.birthdate ?? '',
             zodiacSign: data.profile?.zodiacSign ?? '',
-            hasCompletedOnboarding: Boolean(
-              data.profile?.birthdate && data.profile?.zodiacSign,
-            ),
+            hasCompletedOnboarding,
             gender:
               (data.profile?.gender as
                 | 'F'
@@ -581,8 +583,10 @@ export const useAppStore = create<AppState>()(
             showSupport: data.prefs?.supportEnabled ?? get().showSupport,
             showPersonalCare: data.prefs?.personalCareEnabled ?? get().showPersonalCare,
           })
+          return hasCompletedOnboarding
         } catch (err) {
           console.warn('[store] Failed to fetch /profile', err)
+          return null
         }
       },
 
