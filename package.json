@@ -12,12 +12,12 @@
     "lint": "eslint src",
     "lint:frontend": "eslint src",
     "test:frontend": "vitest run --dir src",
+    "check:performance": "node scripts/check-performance-budget.mjs",
     "test": "npm --prefix backend test -- --runInBand",
-    "check": "npm run build && npm run lint:frontend && npm run test:frontend && npm --prefix backend run build && npm --prefix backend run lint && npm test",
+    "check": "npm run build && npm run check:performance && npm run lint:frontend && npm run test:frontend && npm --prefix backend run build && npm --prefix backend run lint && npm test",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@material-symbols/font-400": "^0.46.0",
     "axios": "^1.15.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.8.0",

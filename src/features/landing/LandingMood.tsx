@@ -62,7 +62,13 @@ export function LandingMood() {
         >
           {MOODS.map((m) => (
             <div key={m.id} className="snap-center shrink-0 w-full aspect-[16/10] relative overflow-hidden">
-              <img src={getMoodImage(m.id)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              <img
+                src={getMoodImage(m.id)}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
               {/* Лёгкий оверлей, как на реальном баннере настроения (HomePage.tsx) — не тёмная плашка. */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
               <div className="absolute top-4 left-4 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow-sm">

@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -7,29 +7,28 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
-import { BottomNav } from './components/BottomNav'
-import { LoginPushPrompt } from './features/notifications/LoginPushPrompt'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { PageLoader } from './components/ui/PageLoader'
 import { useAppStore } from './store'
 import { getAccessToken } from './auth/token-storage'
 import { PWAUpdater } from './components/ui/PWAUpdater'
 
-// All pages eagerly loaded — no Suspense flashes on first navigation.
 import { LandingPage } from './pages/LandingPage'
-import { HomePage } from './pages/HomePage'
-import { RegistrationPage } from './pages/RegistrationPage'
-import { LoginPage } from './pages/LoginPage'
-import { OtpPage } from './pages/OtpPage'
-import { ProfileSetupPage } from './pages/ProfileSetupPage'
-import { BookmarksPage } from './pages/BookmarksPage'
-import { SettingsPage } from './pages/SettingsPage'
-import { NotificationsListPage } from './pages/NotificationsListPage'
-import { NotificationsPage } from './pages/NotificationsPage'
-import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
-import { ChangeEmailPage } from './pages/ChangeEmailPage'
-import { ChangeEmailOtpPage } from './pages/ChangeEmailOtpPage'
+
+const HomePage = lazy(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })))
+const RegistrationPage = lazy(() => import('./pages/RegistrationPage').then(module => ({ default: module.RegistrationPage })))
+const LoginPage = lazy(() => import('./pages/LoginPage').then(module => ({ default: module.LoginPage })))
+const OtpPage = lazy(() => import('./pages/OtpPage').then(module => ({ default: module.OtpPage })))
+const ProfileSetupPage = lazy(() => import('./pages/ProfileSetupPage').then(module => ({ default: module.ProfileSetupPage })))
+const BookmarksPage = lazy(() => import('./pages/BookmarksPage').then(module => ({ default: module.BookmarksPage })))
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then(module => ({ default: module.SettingsPage })))
+const NotificationsListPage = lazy(() => import('./pages/NotificationsListPage').then(module => ({ default: module.NotificationsListPage })))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(module => ({ default: module.NotificationsPage })))
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(module => ({ default: module.PrivacyPolicyPage })))
+const ChangeEmailPage = lazy(() => import('./pages/ChangeEmailPage').then(module => ({ default: module.ChangeEmailPage })))
+const ChangeEmailOtpPage = lazy(() => import('./pages/ChangeEmailOtpPage').then(module => ({ default: module.ChangeEmailOtpPage })))
+const BottomNav = lazy(() => import('./components/BottomNav').then(module => ({ default: module.BottomNav })))
+const LoginPushPrompt = lazy(() => import('./features/notifications/LoginPushPrompt').then(module => ({ default: module.LoginPushPrompt })))
+const PageLoader = lazy(() => import('./components/ui/PageLoader').then(module => ({ default: module.PageLoader })))
 
 const APP_SHELL_ROUTES: readonly string[] = ['/home', '/bookmarks', '/settings', '/notifications-list']
 
@@ -111,21 +110,15 @@ function TabOutlet() {
 
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden" style={{ background: '#fcf9f4' }}>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={pathname}
-          initial={{ opacity: 0, x: 15 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -15 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="absolute inset-0 w-full h-full overflow-y-auto touch-pan-y overscroll-y-contain"
-        >
-          {pathname === '/home' && <HomePage />}
-          {pathname === '/bookmarks' && <BookmarksPage />}
-          {pathname === '/settings' && <SettingsPage />}
-          {pathname === '/notifications-list' && <NotificationsListPage />}
-        </motion.div>
-      </AnimatePresence>
+      <div
+        key={pathname}
+        className="absolute inset-0 w-full h-full overflow-y-auto touch-pan-y overscroll-y-contain"
+      >
+        {pathname === '/home' && <HomePage />}
+        {pathname === '/bookmarks' && <BookmarksPage />}
+        {pathname === '/settings' && <SettingsPage />}
+        {pathname === '/notifications-list' && <NotificationsListPage />}
+      </div>
     </div>
   )
 }
@@ -212,16 +205,12 @@ function AppLayout() {
 
 function PageTransition({ children }: { children: ReactNode }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.25, ease: 'easeOut' }}
+    <div
       className="absolute inset-0 w-full h-full overflow-hidden"
       style={{ background: '#fcf9f4' }}
     >
       {children}
-    </motion.div>
+    </div>
   )
 }
 
@@ -232,7 +221,6 @@ function AppRoutes() {
   const routeKey = APP_SHELL_ROUTES.includes(location.pathname) ? 'app-shell' : location.key
 
   return (
-    <AnimatePresence mode="wait">
       <Routes location={location} key={routeKey}>
         <Route path="/" element={<PageTransition><RootGuard /></PageTransition>} />
         <Route path="/register" element={<PageTransition><RegistrationPage /></PageTransition>} />
@@ -251,17 +239,11 @@ function AppRoutes() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </AnimatePresence>
   )
 }
 
 export default function App() {
   const showOnboardingLoader = useAppStore(s => s.showOnboardingLoader)
-
-  useEffect(() => {
-    const img = new Image()
-    img.src = '/loader-lotus.png'
-  }, [])
 
   return (
     <BrowserRouter>
@@ -269,7 +251,11 @@ export default function App() {
         className="relative w-full h-[100dvh] overflow-hidden"
         style={{ background: '#fcf9f4' }}
       >
-        <PageLoader show={showOnboardingLoader} />
+        {showOnboardingLoader && (
+          <Suspense fallback={null}>
+            <PageLoader show />
+          </Suspense>
+        )}
         <ErrorBoundary>
           <Suspense fallback={<PageFallback />}>
             <AppRoutes />

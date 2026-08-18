@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { PWA_PRECACHE_PATTERNS } from './src/config/pwaCache'
 
 export default defineConfig(() => {
   return {
@@ -9,7 +10,6 @@ export default defineConfig(() => {
         output: {
           manualChunks: {
             'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-            'motion': ['framer-motion'],
           },
         },
       },
@@ -32,7 +32,6 @@ export default defineConfig(() => {
         filename: 'sw.ts',
         registerType: 'autoUpdate',
         injectRegister: 'auto',
-        includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
           name: 'YoYoJoy Day',
           short_name: 'YoYoJoy',
@@ -70,7 +69,7 @@ export default defineConfig(() => {
           ],
         },
         injectManifest: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
+          globPatterns: PWA_PRECACHE_PATTERNS,
         },
       }),
     ],

@@ -1,11 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LandingHero } from '../features/landing/LandingHero'
-import { LandingAbout } from '../features/landing/LandingAbout'
-import { LandingHolidays } from '../features/landing/LandingHolidays'
-import { LandingGoals } from '../features/landing/LandingGoals'
-import { LandingMood } from '../features/landing/LandingMood'
-import { LandingTrust } from '../features/landing/LandingTrust'
+
+const LandingAbout = lazy(() => import('../features/landing/LandingAbout').then(module => ({ default: module.LandingAbout })))
+const LandingHolidays = lazy(() => import('../features/landing/LandingHolidays').then(module => ({ default: module.LandingHolidays })))
+const LandingGoals = lazy(() => import('../features/landing/LandingGoals').then(module => ({ default: module.LandingGoals })))
+const LandingMood = lazy(() => import('../features/landing/LandingMood').then(module => ({ default: module.LandingMood })))
+const LandingTrust = lazy(() => import('../features/landing/LandingTrust').then(module => ({ default: module.LandingTrust })))
 
 /**
  * Промо-лендинг (главная страница сайта) — витрина уже реализованного в приложении, по ТЗ Оли
@@ -19,6 +20,13 @@ import { LandingTrust } from '../features/landing/LandingTrust'
 export function LandingPage() {
   const navigate = useNavigate()
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // The registration chunk is not part of the critical landing bundle, but is warmed shortly
+    // after the first paint so the primary CTA still opens without a visible download pause.
+    const timer = window.setTimeout(() => void import('./RegistrationPage'), 1200)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     const root = scrollRef.current
@@ -41,7 +49,12 @@ export function LandingPage() {
       },
       { root, threshold: 0.15 },
     )
-    root.querySelectorAll('.landing-fade-in-scroll').forEach((el) => observer.observe(el))
+    const observeFadeIns = () => {
+      root.querySelectorAll('.landing-fade-in-scroll').forEach((el) => observer.observe(el))
+    }
+    observeFadeIns()
+    const mutations = new MutationObserver(observeFadeIns)
+    mutations.observe(root, { childList: true, subtree: true })
 
     let saveTimer: ReturnType<typeof setTimeout> | null = null
     const onScroll = () => {
@@ -54,6 +67,7 @@ export function LandingPage() {
 
     return () => {
       observer.disconnect()
+      mutations.disconnect()
       root.removeEventListener('scroll', onScroll)
       if (saveTimer) clearTimeout(saveTimer)
     }
@@ -77,11 +91,13 @@ export function LandingPage() {
 
       <main>
         <LandingHero />
-        <LandingAbout />
-        <LandingHolidays />
-        <LandingGoals />
-        <LandingMood />
-        <LandingTrust />
+        <Suspense fallback={<div className="min-h-[100dvh] bg-surface" aria-hidden="true" />}>
+          <LandingAbout />
+          <LandingHolidays />
+          <LandingGoals />
+          <LandingMood />
+          <LandingTrust />
+        </Suspense>
       </main>
 
       <footer className="bg-surface border-t border-surface-container py-14 landscape:py-8 px-6 text-center">

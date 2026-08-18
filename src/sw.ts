@@ -60,18 +60,13 @@ registerRoute(
 )
 
 registerRoute(
-  /^https:\/\/fonts\.googleapis\.com\//,
-  new StaleWhileRevalidate({
-    cacheName: 'google-fonts-stylesheets',
-  }),
-)
-
-registerRoute(
-  /^https:\/\/fonts\.gstatic\.com\//,
+  ({ request, url }) =>
+    url.origin === self.location.origin
+    && ['script', 'style', 'font'].includes(request.destination),
   new CacheFirst({
-    cacheName: 'google-fonts-webfonts',
+    cacheName: 'runtime-app-assets',
     plugins: [
-      new ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 }),
+      new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 }),
       new CacheableResponsePlugin({ statuses: [0, 200] }),
     ],
   }),

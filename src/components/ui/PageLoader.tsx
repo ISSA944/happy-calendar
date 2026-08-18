@@ -74,7 +74,7 @@ export function PageLoader({ show }: { show: boolean }) {
                 }}
               >
                 <img
-                  src="/loader-lotus.png"
+                  src="/loader-lotus.webp"
                   alt=""
                   className="h-48 w-48 rounded-full object-cover landscape:h-32 landscape:w-32"
                   draggable={false}
