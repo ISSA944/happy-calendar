@@ -14,6 +14,7 @@ vi.mock('../api', () => ({
 }))
 
 beforeEach(() => {
+  window.localStorage.clear()
   window.sessionStorage.clear()
   useRegistrationDraft.setState({
     name: '',
@@ -26,6 +27,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  window.localStorage.clear()
   window.sessionStorage.clear()
 })
 
@@ -60,12 +62,7 @@ describe('RegistrationPage Android registration flow', () => {
   it('keeps the registration page as the viewport-height scroll container', () => {
     const page = renderRegistration()
 
-    expect(page).toHaveClass(
-      'h-[100dvh]',
-      'overflow-y-auto',
-      'touch-pan-y',
-      '[-webkit-overflow-scrolling:touch]',
-    )
+    expect(page).toHaveClass('h-[100dvh]', 'overflow-y-auto', 'touch-pan-y', '[-webkit-overflow-scrolling:touch]')
     expect(page).not.toHaveClass('min-h-[100dvh]')
   })
 
@@ -96,6 +93,11 @@ describe('RegistrationPage Android registration flow', () => {
     await submitRegistration('new@example.com')
 
     expect(await screen.findByText('Подарки подтверждены')).toBeInTheDocument()
+    expect(JSON.parse(window.localStorage.getItem('yoyojoy-pending-otp') ?? 'null')).toMatchObject({
+      email: 'new@example.com',
+      flow: 'registration',
+      giftEmailAccepted: true,
+    })
   })
 
   it('offers login for an existing account and prefills an editable email', async () => {
@@ -111,5 +113,27 @@ describe('RegistrationPage Android registration flow', () => {
     await user.type(loginEmail, 'corrected@example.com')
     expect(loginEmail).toHaveValue('corrected@example.com')
     expect(apiClient.post).toHaveBeenCalledOnce()
+  })
+
+  it('keeps a successful login recoverable after Android reloads the tab', async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({ data: { ok: true } })
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/otp" element={<OtpStateProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await user.type(screen.getByLabelText('Электронная почта'), 'LOGIN@EXAMPLE.COM')
+    await user.click(screen.getByRole('button', { name: 'Получить код' }))
+
+    expect(JSON.parse(window.localStorage.getItem('yoyojoy-pending-otp') ?? 'null')).toMatchObject({
+      email: 'login@example.com',
+      flow: 'login',
+      giftEmailAccepted: false,
+    })
   })
 })

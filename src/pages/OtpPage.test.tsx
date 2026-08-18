@@ -18,8 +18,12 @@ vi.mock('../auth/token-storage', () => ({
 }))
 
 beforeEach(() => {
+  window.localStorage.clear()
   window.sessionStorage.clear()
-  useAppStore.setState({ email: 'user@example.com', showOnboardingLoader: false })
+  useAppStore.setState({
+    email: 'user@example.com',
+    showOnboardingLoader: false,
+  })
   vi.mocked(apiClient.post).mockResolvedValue({
     data: { accessToken: 'access', refreshToken: 'refresh' },
   })
@@ -28,6 +32,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  window.localStorage.clear()
   window.sessionStorage.clear()
 })
 
@@ -43,15 +48,82 @@ async function verifyOtp(flow?: 'login') {
     </MemoryRouter>,
   )
 
-  fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: '1111' } })
+  fireEvent.change(screen.getAllByRole('textbox')[0], {
+    target: { value: '1111' },
+  })
   await user.click(screen.getByRole('button', { name: 'Продолжить' }))
-  await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('auth/verify-otp', {
-    email: 'user@example.com',
-    code: '1111',
-  }))
+  await waitFor(() =>
+    expect(apiClient.post).toHaveBeenCalledWith('auth/verify-otp', {
+      email: 'user@example.com',
+      code: '1111',
+    }),
+  )
 }
 
 describe('OtpPage push handoff', () => {
+  it('does not restore an expired OTP context', () => {
+    window.localStorage.setItem(
+      'yoyojoy-pending-otp',
+      JSON.stringify({
+        email: 'expired@example.com',
+        flow: 'login',
+        giftEmailAccepted: false,
+        expiresAt: Date.now() - 1,
+      }),
+    )
+    useAppStore.setState({ email: '' })
+
+    render(
+      <MemoryRouter initialEntries={['/otp']}>
+        <Routes>
+          <Route path="/otp" element={<OtpPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(screen.queryByText(/expired@example.com/)).not.toBeInTheDocument()
+    expect(window.localStorage.getItem('yoyojoy-pending-otp')).toBeNull()
+  })
+
+  it('recovers the pending login after an Android tab reload', async () => {
+    window.localStorage.setItem(
+      'yoyojoy-pending-otp',
+      JSON.stringify({
+        email: 'restored@example.com',
+        flow: 'login',
+        giftEmailAccepted: false,
+        expiresAt: Date.now() + 30 * 60 * 1000,
+      }),
+    )
+    useAppStore.setState({ email: '', hasCompletedOnboarding: true })
+    const user = userEvent.setup()
+
+    render(
+      <MemoryRouter initialEntries={['/otp']}>
+        <Routes>
+          <Route path="/otp" element={<OtpPage />} />
+          <Route path="/" element={<p>Главная</p>} />
+          <Route path="/notifications" element={<p>Уведомления</p>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText(/restored@example.com/)).toBeInTheDocument()
+    fireEvent.change(screen.getAllByRole('textbox')[0], {
+      target: { value: '1111' },
+    })
+    await user.click(screen.getByRole('button', { name: 'Продолжить' }))
+
+    await waitFor(() =>
+      expect(apiClient.post).toHaveBeenCalledWith('auth/verify-otp', {
+        email: 'restored@example.com',
+        code: '1111',
+      }),
+    )
+    expect(await screen.findByText('Главная')).toBeInTheDocument()
+    expect(window.localStorage.getItem('yoyojoy-pending-otp')).toBeNull()
+  })
+
   it('marks a current-device push check after a successful login', async () => {
     useAppStore.setState({ hasCompletedOnboarding: true })
     await verifyOtp('login')
@@ -70,10 +142,14 @@ describe('OtpPage push handoff', () => {
 
   it('explains immediately that registration sent the code and two gifts', () => {
     render(
-      <MemoryRouter initialEntries={[{
-        pathname: '/otp',
-        state: { giftEmailAccepted: true },
-      }]}>
+      <MemoryRouter
+        initialEntries={[
+          {
+            pathname: '/otp',
+            state: { giftEmailAccepted: true },
+          },
+        ]}
+      >
         <Routes>
           <Route path="/otp" element={<OtpPage />} />
         </Routes>

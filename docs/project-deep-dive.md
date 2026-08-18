@@ -135,6 +135,7 @@ backend/src/
 2. Нажимает "Начать" → RegistrationPage
 3. Вводит email → POST /api/auth/register → OTP и отдельное письмо с двумя PDF на почту
 4. Вводит OTP → POST /api/auth/verify-otp → получает JWT токены
+   - Android может выгрузить вкладку, пока открыта почта. Поэтому email и тип OTP-flow сохраняются на 30 минут и восстанавливаются после reload; успешная проверка очищает этот временный контекст.
 5. Страница NotificationsPage → запрос на push-уведомления
 6. ProfileSetupPage → вводит дату рождения, пол, имя
 7. Прелоадер 6 секунд (анимация) → HomePage

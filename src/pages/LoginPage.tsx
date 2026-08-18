@@ -5,11 +5,12 @@ import { apiClient } from '../api'
 import { useAppStore } from '../store'
 import { isValidEmail } from '../utils/validation'
 import { getHttpStatus } from '../utils/http'
+import { savePendingOtpContext } from '../features/auth/pendingOtp.storage'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const setEmail = useAppStore((s) => s.setEmail)
+  const setEmail = useAppStore(s => s.setEmail)
 
   const [emailInput, setEmailInput] = useState(() => {
     const routedEmail = (location.state as { email?: unknown } | null)?.email
@@ -29,7 +30,13 @@ export function LoginPage() {
 
     try {
       await apiClient.post('auth/login', { email: emailInput.trim() })
-      setEmail(emailInput.trim())
+      const normalizedEmail = emailInput.trim().toLowerCase()
+      setEmail(normalizedEmail)
+      savePendingOtpContext({
+        email: normalizedEmail,
+        flow: 'login',
+        giftEmailAccepted: false,
+      })
       navigate('/otp', { state: { flow: 'login' } })
     } catch (err: unknown) {
       const status = getHttpStatus(err)
@@ -70,7 +77,6 @@ export function LoginPage() {
       </header>
 
       <main className="flex flex-col items-center px-6 pt-8 pb-[max(2rem,env(safe-area-inset-bottom))] landscape:flex-row landscape:items-start landscape:gap-10 landscape:px-10 landscape:pt-6 landscape:justify-center w-full">
-
         {/* Hero */}
         <div className="flex flex-col gap-3 text-center landscape:text-left mb-8 landscape:mb-0 landscape:pt-6 landscape:w-[280px] landscape:shrink-0">
           <h1 className="font-headline text-4xl landscape:text-3xl font-extrabold text-on-surface tracking-tight leading-tight">
@@ -84,7 +90,6 @@ export function LoginPage() {
         {/* Card */}
         <div className="bg-surface-container-lowest rounded-[24px] p-6 landscape:p-8 shadow-sm w-full landscape:max-w-[400px]">
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-
             {/* Email */}
             <div className="space-y-1.5">
               <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="login-email">
@@ -97,12 +102,13 @@ export function LoginPage() {
                 autoComplete="email"
                 placeholder="example@mail.com"
                 value={emailInput}
-                onChange={(e) => { setEmailInput(e.target.value); setSubmitError('') }}
+                onChange={e => {
+                  setEmailInput(e.target.value)
+                  setSubmitError('')
+                }}
                 className="w-full h-14 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
               />
-              <p className="text-xs text-on-surface-variant/70 ml-1">
-                Мы пришлём код подтверждения на эту почту.
-              </p>
+              <p className="text-xs text-on-surface-variant/70 ml-1">Мы пришлём код подтверждения на эту почту.</p>
             </div>
 
             {/* Кнопка */}
@@ -119,9 +125,7 @@ export function LoginPage() {
             </button>
 
             {/* Ошибка */}
-            {submitError && (
-              <p className="text-center text-sm font-medium text-red-500">{submitError}</p>
-            )}
+            {submitError && <p className="text-center text-sm font-medium text-red-500">{submitError}</p>}
 
             {/* Ссылка на регистрацию */}
             <p className="text-center text-sm text-on-surface-variant">
@@ -130,10 +134,8 @@ export function LoginPage() {
                 Зарегистрироваться
               </Link>
             </p>
-
           </form>
         </div>
-
       </main>
     </motion.div>
   )

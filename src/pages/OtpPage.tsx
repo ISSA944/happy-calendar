@@ -6,6 +6,11 @@ import { setAuthTokens } from '../auth/token-storage'
 import { useAppStore } from '../store'
 import { getHttpStatus } from '../utils/http'
 import { markLoginPushCheckPending } from '../features/notifications/loginPushPrompt.storage'
+import {
+  clearPendingOtpContext,
+  readPendingOtpContext,
+  savePendingOtpContext,
+} from '../features/auth/pendingOtp.storage'
 
 type OtpLocationState = {
   flow?: 'login'
@@ -38,7 +43,9 @@ const CountdownTimer = memo(function CountdownTimer({
   }, [timeLeft, onExpire])
 
   const formatTime = (s: number) =>
-    `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
+    `${Math.floor(s / 60)
+      .toString()
+      .padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 
   return (
     <div className="text-center">
@@ -50,9 +57,7 @@ const CountdownTimer = memo(function CountdownTimer({
         Отправить код ещё раз
       </button>
       {timeLeft > 0 && (
-        <p className="text-[13px] font-medium text-on-surface-variant/60 mt-1">
-          через {formatTime(timeLeft)}
-        </p>
+        <p className="text-[13px] font-medium text-on-surface-variant/60 mt-1">через {formatTime(timeLeft)}</p>
       )}
     </div>
   )
@@ -81,9 +86,7 @@ const OtpBox = memo(function OtpBox({
   return (
     <div
       className={`w-[72px] h-[72px] bg-surface-container-lowest rounded-[24px] flex items-center justify-center shadow-sm transition-colors duration-150 relative overflow-hidden ${
-        isActive
-          ? 'border-2 border-primary'
-          : 'border border-outline-variant'
+        isActive ? 'border-2 border-primary' : 'border border-outline-variant'
       }`}
     >
       {/* font-size: 16px prevents Safari zoom on focus */}
@@ -93,19 +96,19 @@ const OtpBox = memo(function OtpBox({
         inputMode="numeric"
         maxLength={4}
         value={digit}
-        onChange={(e) => onChange(index, e.target.value)}
-        onKeyDown={(e) => onKeyDown(index, e)}
+        onChange={e => onChange(index, e.target.value)}
+        onKeyDown={e => onKeyDown(index, e)}
         onFocus={() => onFocus(index)}
         onBlur={onBlur}
         style={{ fontSize: '16px' }}
         className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
       />
       {digit !== '' ? (
-        <span className="text-2xl font-headline font-bold text-on-surface pointer-events-none">
-          {digit}
-        </span>
+        <span className="text-2xl font-headline font-bold text-on-surface pointer-events-none">{digit}</span>
       ) : (
-        <span className={`w-2 h-2 rounded-full pointer-events-none transition-colors ${isActive ? 'bg-on-surface' : 'bg-on-surface-variant/30'}`} />
+        <span
+          className={`w-2 h-2 rounded-full pointer-events-none transition-colors ${isActive ? 'bg-on-surface' : 'bg-on-surface-variant/30'}`}
+        />
       )}
     </div>
   )
@@ -115,10 +118,12 @@ export function OtpPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const locationState = location.state as OtpLocationState | null
-  const isLoginFlow = locationState?.flow === 'login'
-  const giftEmailAccepted = locationState?.giftEmailAccepted === true
-  const email = useAppStore((s) => s.email)
-  const setHasCompletedOnboarding = useAppStore((s) => s.setHasCompletedOnboarding)
+  const pendingContext = useMemo(readPendingOtpContext, [])
+  const isLoginFlow = (locationState?.flow ?? pendingContext?.flow) === 'login'
+  const giftEmailAccepted = locationState?.giftEmailAccepted ?? pendingContext?.giftEmailAccepted ?? false
+  const storeEmail = useAppStore(s => s.email)
+  const email = storeEmail || pendingContext?.email || ''
+  const setHasCompletedOnboarding = useAppStore(s => s.setHasCompletedOnboarding)
 
   const [code, setCode] = useState(['', '', '', ''])
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
@@ -130,10 +135,11 @@ export function OtpPage() {
 
   // Stable ref callbacks — recreating these inline each render defeats OtpBox memo
   const refCallbacks = useMemo(
-    () => Array.from({ length: 4 }, (_, i) => (el: HTMLInputElement | null) => {
-      inputRefs.current[i] = el
-    }),
-    []
+    () =>
+      Array.from({ length: 4 }, (_, i) => (el: HTMLInputElement | null) => {
+        inputRefs.current[i] = el
+      }),
+    [],
   )
 
   const isValid = code.every(digit => digit !== '')
@@ -145,7 +151,9 @@ export function OtpPage() {
       const digits = value.slice(0, 4).split('')
       setCode(prev => {
         const next = [...prev]
-        digits.forEach((d, i) => { if (index + i < 4) next[index + i] = d })
+        digits.forEach((d, i) => {
+          if (index + i < 4) next[index + i] = d
+        })
         return next
       })
       inputRefs.current[Math.min(index + digits.length, 3)]?.focus()
@@ -160,16 +168,19 @@ export function OtpPage() {
     if (value && index < 3) inputRefs.current[index + 1]?.focus()
   }, [])
 
-  const handleKeyDown = useCallback((index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !code[index] && index > 0) {
-      setCode(prev => {
-        const next = [...prev]
-        next[index - 1] = ''
-        return next
-      })
-      inputRefs.current[index - 1]?.focus()
-    }
-  }, [code])
+  const handleKeyDown = useCallback(
+    (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Backspace' && !code[index] && index > 0) {
+        setCode(prev => {
+          const next = [...prev]
+          next[index - 1] = ''
+          return next
+        })
+        inputRefs.current[index - 1]?.focus()
+      }
+    },
+    [code],
+  )
 
   const handleFocus = useCallback((index: number) => setActiveIndex(index), [])
   const handleBlur = useCallback(() => setActiveIndex(null), [])
@@ -194,6 +205,7 @@ export function OtpPage() {
       })
 
       setAuthTokens(data.accessToken, data.refreshToken)
+      clearPendingOtpContext()
       if (isLoginFlow) {
         markLoginPushCheckPending()
         setHasCompletedOnboarding(false)
@@ -227,6 +239,11 @@ export function OtpPage() {
 
     try {
       await apiClient.post('auth/login', { email })
+      savePendingOtpContext({
+        email,
+        flow: isLoginFlow ? 'login' : 'registration',
+        giftEmailAccepted,
+      })
       setCode(['', '', '', ''])
       setResendKey(k => k + 1)
       requestAnimationFrame(() => inputRefs.current[0]?.focus())
@@ -235,7 +252,7 @@ export function OtpPage() {
     } finally {
       setIsResending(false)
     }
-  }, [email, isResending])
+  }, [email, giftEmailAccepted, isLoginFlow, isResending])
 
   return (
     <motion.div
@@ -270,7 +287,10 @@ export function OtpPage() {
           <p className="text-on-surface-variant text-base landscape:text-sm font-medium leading-relaxed">
             Мы отправили код на вашу электронную почту
             {email && (
-              <> <span className="text-primary font-bold break-all">{email}</span></>
+              <>
+                {' '}
+                <span className="text-primary font-bold break-all">{email}</span>
+              </>
             )}
           </p>
           {giftEmailAccepted && (
@@ -316,23 +336,13 @@ export function OtpPage() {
             {isSubmitting ? 'Проверяем...' : 'Продолжить'}
           </button>
 
-          {submitError ? (
-            <p className="text-center text-sm font-medium text-red-500">
-              {submitError}
-            </p>
-          ) : null}
+          {submitError ? <p className="text-center text-sm font-medium text-red-500">{submitError}</p> : null}
 
-          <CountdownTimer
-            key={resendKey}
-            initialSeconds={120}
-            onExpire={handleExpire}
-            onResend={handleResend}
-          />
+          <CountdownTimer key={resendKey} initialSeconds={120} onExpire={handleExpire} onResend={handleResend} />
         </div>
       </main>
 
       {/* Glassmorphism blobs */}
-
     </motion.div>
   )
 }

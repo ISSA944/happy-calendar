@@ -20,7 +20,7 @@ export interface Bookmark {
   tone?: Tone
 }
 
-export type OfflineTask = 
+export type OfflineTask =
   | { type: 'ADD_BOOKMARK'; payload: Bookmark }
   | { type: 'REMOVE_BOOKMARK'; payload: { id: string } }
 
@@ -85,7 +85,13 @@ export interface MilestoneHit {
 // Server response shapes
 type TodayResponse = {
   date: string
-  horoscope: { main: string; detailed: string; advice: string; moon: string; aspect: string }
+  horoscope: {
+    main: string
+    detailed: string
+    advice: string
+    moon: string
+    aspect: string
+  }
   support: { text: string }
   holiday: { title: string } | null
   meta?: {
@@ -216,10 +222,60 @@ function preloadImage(src: string) {
 
   return new Promise<void>(resolve => {
     const img = new Image()
-    img.onload = () => resolve()
-    img.onerror = () => resolve()
+    let settled = false
+    const timeoutId = window.setTimeout(settle, 4_000)
+
+    function settle() {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timeoutId)
+      resolve()
+    }
+
+    img.onload = settle
+    img.onerror = settle
     img.src = src
   })
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isPersistedDailyPack(value: unknown): value is DailyPack {
+  if (!isRecord(value) || !isRecord(value.horoscope)) return false
+
+  return (
+    typeof value.date === 'string' &&
+    typeof value.supportPhrase === 'string' &&
+    typeof value.horoscope.main === 'string' &&
+    typeof value.horoscope.detailed === 'string' &&
+    typeof value.horoscope.advice === 'string' &&
+    typeof value.horoscope.moon === 'string' &&
+    typeof value.horoscope.aspect === 'string'
+  )
+}
+
+/**
+ * Old mobile sessions can survive many deployments. Never let an outdated or
+ * partially-written local cache replace collection defaults with null/objects:
+ * Home renders these collections before the first server refresh and would
+ * otherwise fall into the global error screen.
+ */
+export function sanitizePersistedAppState(value: unknown): Record<string, unknown> {
+  if (!isRecord(value)) return {}
+
+  return {
+    ...value,
+    bookmarks: Array.isArray(value.bookmarks) ? value.bookmarks : [],
+    offlineQueue: Array.isArray(value.offlineQueue) ? value.offlineQueue : [],
+    goals: Array.isArray(value.goals) ? value.goals : [],
+    todayHolidays: Array.isArray(value.todayHolidays) ? value.todayHolidays : [],
+    personalCareToday: Array.isArray(value.personalCareToday)
+      ? value.personalCareToday.filter(item => isRecord(item) && Array.isArray(item.goalTags))
+      : [],
+    dailyPack: isPersistedDailyPack(value.dailyPack) ? value.dailyPack : null,
+  }
 }
 
 export const useAppStore = create<AppState>()(
@@ -227,13 +283,13 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       currentMood: 'Нормально',
       zodiacSign: '',
-      setZodiacSign: (sign) => set({ zodiacSign: sign }),
+      setZodiacSign: sign => set({ zodiacSign: sign }),
 
       // Daily Pack
       dailyPack: null,
       showOnboardingLoader: false,
       offlineQueue: [],
-      setShowOnboardingLoader: (v) => set({ showOnboardingLoader: v }),
+      setShowOnboardingLoader: v => set({ showOnboardingLoader: v }),
 
       initDailyPack: async () => {
         if (!getAccessToken()) {
@@ -276,10 +332,7 @@ export const useAppStore = create<AppState>()(
           }
 
           if (isLoaderShowing) {
-            await Promise.all([
-              minWait,
-              preloadImage(getMoodImage(get().currentMood)),
-            ])
+            await Promise.all([minWait, preloadImage(getMoodImage(get().currentMood))])
           }
 
           set({
@@ -329,57 +382,60 @@ export const useAppStore = create<AppState>()(
 
       // User Profile defaults
       userName: '',
-      setUserName: (userName) => set({ userName }),
+      setUserName: userName => set({ userName }),
       gender: 'UNKNOWN',
-      setGender: (gender) => {
+      setGender: gender => {
         set({ gender })
         if (getAccessToken()) {
-          apiClient.patch('profile', { gender }).catch((err) => {
+          apiClient.patch('profile', { gender }).catch(err => {
             console.warn('[store] Failed to sync gender with backend', err)
           })
         }
       },
       hasCompletedOnboarding: false,
-      setHasCompletedOnboarding: (hasCompletedOnboarding) => set({ hasCompletedOnboarding }),
+      setHasCompletedOnboarding: hasCompletedOnboarding => set({ hasCompletedOnboarding }),
 
       profilePhoto: '',
-      setProfilePhoto: (profilePhoto) => {
+      setProfilePhoto: profilePhoto => {
         set({ profilePhoto })
         if (getAccessToken()) {
-          apiClient.patch('profile', { avatarUrl: profilePhoto }).catch((err) => {
+          apiClient.patch('profile', { avatarUrl: profilePhoto }).catch(err => {
             console.warn('[store] Failed to sync avatarUrl with backend', err)
           })
         }
       },
 
       email: '',
-      setEmail: (email) => set({ email: email.trim() }),
+      setEmail: email => set({ email: email.trim() }),
       birthDate: '',
-      setBirthDate: (birthDate) => {
+      setBirthDate: birthDate => {
         const prevSign = get().zodiacSign
         const newSign = getZodiac(birthDate)
-        
+
         set({ birthDate, zodiacSign: newSign ?? prevSign })
-        
+
         if (getAccessToken()) {
-          apiClient.patch('profile', { 
-            birthdate: birthDate,
-            zodiacSign: newSign ?? prevSign
-          }).then(() => {
-            // If sign changed, we MUST refresh the daily pack to get new horoscope
-            if (newSign && newSign !== prevSign) {
-              void get().initDailyPack()
-            }
-          }).catch((err) => {
-            console.warn('[store] Failed to sync birthdate with backend', err)
-          })
+          apiClient
+            .patch('profile', {
+              birthdate: birthDate,
+              zodiacSign: newSign ?? prevSign,
+            })
+            .then(() => {
+              // If sign changed, we MUST refresh the daily pack to get new horoscope
+              if (newSign && newSign !== prevSign) {
+                void get().initDailyPack()
+              }
+            })
+            .catch(err => {
+              console.warn('[store] Failed to sync birthdate with backend', err)
+            })
         }
       },
       horoscopeTime: '09:00',
-      setHoroscopeTime: (horoscopeTime) => {
+      setHoroscopeTime: horoscopeTime => {
         set({ horoscopeTime })
         if (getAccessToken()) {
-          apiClient.patch('profile', { horoscopeTime }).catch((err) => {
+          apiClient.patch('profile', { horoscopeTime }).catch(err => {
             console.warn('[store] Failed to sync horoscopeTime with backend', err)
           })
         }
@@ -396,7 +452,7 @@ export const useAppStore = create<AppState>()(
         const next = !get().showHoroscope
         set({ showHoroscope: next })
         if (getAccessToken()) {
-          apiClient.patch('profile', { horoscopeEnabled: next }).catch((err) => {
+          apiClient.patch('profile', { horoscopeEnabled: next }).catch(err => {
             console.warn('[store] Failed to sync horoscopeEnabled with backend', err)
             set({ showHoroscope: !next })
           })
@@ -407,7 +463,7 @@ export const useAppStore = create<AppState>()(
         const next = !get().showHolidays
         set({ showHolidays: next })
         if (getAccessToken()) {
-          apiClient.patch('profile', { holidaysEnabled: next }).catch((err) => {
+          apiClient.patch('profile', { holidaysEnabled: next }).catch(err => {
             console.warn('[store] Failed to sync holidaysEnabled with backend', err)
             set({ showHolidays: !next })
           })
@@ -418,7 +474,7 @@ export const useAppStore = create<AppState>()(
         const next = !get().showSupport
         set({ showSupport: next })
         if (getAccessToken()) {
-          apiClient.patch('profile', { supportEnabled: next }).catch((err) => {
+          apiClient.patch('profile', { supportEnabled: next }).catch(err => {
             console.warn('[store] Failed to sync supportEnabled with backend', err)
             set({ showSupport: !next })
           })
@@ -429,7 +485,7 @@ export const useAppStore = create<AppState>()(
         const next = !get().showPersonalCare
         set({ showPersonalCare: next })
         if (getAccessToken()) {
-          apiClient.patch('profile', { personalCareEnabled: next }).catch((err) => {
+          apiClient.patch('profile', { personalCareEnabled: next }).catch(err => {
             console.warn('[store] Failed to sync personalCareEnabled with backend', err)
             set({ showPersonalCare: !next })
           })
@@ -437,28 +493,28 @@ export const useAppStore = create<AppState>()(
       },
 
       supportTime: '12:00',
-      setSupportTime: (supportTime) => {
+      setSupportTime: supportTime => {
         set({ supportTime })
         if (getAccessToken()) {
-          apiClient.patch('profile', { supportTime }).catch((err) => {
+          apiClient.patch('profile', { supportTime }).catch(err => {
             console.warn('[store] Failed to sync supportTime with backend', err)
           })
         }
       },
       holidaysTime: '10:00',
-      setHolidaysTime: (holidaysTime) => {
+      setHolidaysTime: holidaysTime => {
         set({ holidaysTime })
         if (getAccessToken()) {
-          apiClient.patch('profile', { holidaysTime }).catch((err) => {
+          apiClient.patch('profile', { holidaysTime }).catch(err => {
             console.warn('[store] Failed to sync holidaysTime with backend', err)
           })
         }
       },
       personalCareTime: '08:30',
-      setPersonalCareTime: (personalCareTime) => {
+      setPersonalCareTime: personalCareTime => {
         set({ personalCareTime })
         if (getAccessToken()) {
-          apiClient.patch('profile', { personalCareTime }).catch((err) => {
+          apiClient.patch('profile', { personalCareTime }).catch(err => {
             console.warn('[store] Failed to sync personalCareTime with backend', err)
           })
         }
@@ -477,7 +533,9 @@ export const useAppStore = create<AppState>()(
       setGoals: async (selected: string[]) => {
         if (!getAccessToken()) return
         try {
-          const { data } = await apiClient.patch<GoalView[]>('goals', { selected })
+          const { data } = await apiClient.patch<GoalView[]>('goals', {
+            selected,
+          })
           set({ goals: data })
         } catch (err) {
           console.warn('[store] Failed to PATCH /goals', err)
@@ -511,15 +569,15 @@ export const useAppStore = create<AppState>()(
       },
       completePersonalCare: async (goalId: string) => {
         const items = get().personalCareToday
-        const item = items.find((c) => c.goalTags.includes(goalId))
+        const item = items.find(c => c.goalTags.includes(goalId))
         if (!item || !getAccessToken()) return []
         try {
-          const { data } = await apiClient.post<{ alreadyDone: boolean; milestoneHits: MilestoneHit[] }>(
-            `personal-care/${item.id}/complete`,
-            { goalId },
-          )
+          const { data } = await apiClient.post<{
+            alreadyDone: boolean
+            milestoneHits: MilestoneHit[]
+          }>(`personal-care/${item.id}/complete`, { goalId })
           set({
-            personalCareToday: items.map((c) => (c.goalTags.includes(goalId) ? { ...c, doneToday: true } : c)),
+            personalCareToday: items.map(c => (c.goalTags.includes(goalId) ? { ...c, doneToday: true } : c)),
           })
           void get().fetchGoals()
           return data.milestoneHits
@@ -554,9 +612,7 @@ export const useAppStore = create<AppState>()(
             } | null
           }>('profile')
 
-          const hasCompletedOnboarding = Boolean(
-            data.profile?.birthdate && data.profile?.zodiacSign,
-          )
+          const hasCompletedOnboarding = Boolean(data.profile?.birthdate && data.profile?.zodiacSign)
 
           set({
             email: data.user?.email ?? get().email,
@@ -564,17 +620,10 @@ export const useAppStore = create<AppState>()(
             birthDate: data.profile?.birthdate ?? '',
             zodiacSign: data.profile?.zodiacSign ?? '',
             hasCompletedOnboarding,
-            gender:
-              (data.profile?.gender as
-                | 'F'
-                | 'M'
-                | 'UNKNOWN'
-                | undefined) ?? 'UNKNOWN',
+            gender: (data.profile?.gender as 'F' | 'M' | 'UNKNOWN' | undefined) ?? 'UNKNOWN',
             profilePhoto: data.profile?.avatarUrl ?? '',
             currentMood: data.profile?.currentMood ?? 'Нормально',
-            horoscopeTime: data.prefs?.horoscopeTime
-              ?? data.prefs?.pushTime
-              ?? get().horoscopeTime,
+            horoscopeTime: data.prefs?.horoscopeTime ?? data.prefs?.pushTime ?? get().horoscopeTime,
             supportTime: data.prefs?.supportTime ?? get().supportTime,
             holidaysTime: data.prefs?.holidaysTime ?? get().holidaysTime,
             personalCareTime: data.prefs?.personalCareTime ?? get().personalCareTime,
@@ -598,7 +647,7 @@ export const useAppStore = create<AppState>()(
         try {
           const { data } = await apiClient.get<BookmarkResponse[]>('bookmarks')
           set({
-            bookmarks: data.map((b) => ({
+            bookmarks: data.map(b => ({
               id: b.id,
               type: b.type as BookmarkType,
               date: b.payload?.date ?? '',
@@ -616,10 +665,12 @@ export const useAppStore = create<AppState>()(
 
       addBookmark: async (bookmark: Bookmark) => {
         // Optimistic add
-        set((state) => ({ bookmarks: [bookmark, ...state.bookmarks] }))
+        set(state => ({ bookmarks: [bookmark, ...state.bookmarks] }))
 
         if (!getAccessToken()) {
-          set((state) => ({ offlineQueue: [...state.offlineQueue, { type: 'ADD_BOOKMARK', payload: bookmark }] }))
+          set(state => ({
+            offlineQueue: [...state.offlineQueue, { type: 'ADD_BOOKMARK', payload: bookmark }],
+          }))
           return
         }
 
@@ -636,22 +687,26 @@ export const useAppStore = create<AppState>()(
             },
           })
           // Use backend-generated id
-          set((state) => ({
-            bookmarks: state.bookmarks.map(b => b.id === bookmark.id ? { ...b, id: data.id } : b),
+          set(state => ({
+            bookmarks: state.bookmarks.map(b => (b.id === bookmark.id ? { ...b, id: data.id } : b)),
           }))
         } catch (err) {
           console.warn('[store] Failed to POST /bookmarks', err)
-          set((state) => ({ offlineQueue: [...state.offlineQueue, { type: 'ADD_BOOKMARK', payload: bookmark }] }))
+          set(state => ({
+            offlineQueue: [...state.offlineQueue, { type: 'ADD_BOOKMARK', payload: bookmark }],
+          }))
         }
       },
 
       removeBookmark: async (id: string) => {
         // Optimistic remove
         const prev = get().bookmarks
-        set({ bookmarks: prev.filter((b) => b.id !== id) })
+        set({ bookmarks: prev.filter(b => b.id !== id) })
 
         if (!getAccessToken()) {
-          set((state) => ({ offlineQueue: [...state.offlineQueue, { type: 'REMOVE_BOOKMARK', payload: { id } }] }))
+          set(state => ({
+            offlineQueue: [...state.offlineQueue, { type: 'REMOVE_BOOKMARK', payload: { id } }],
+          }))
           return
         }
 
@@ -659,7 +714,9 @@ export const useAppStore = create<AppState>()(
           await apiClient.delete(`bookmarks/${id}`)
         } catch (err) {
           console.warn('[store] Failed to DELETE /bookmarks/:id', err)
-          set((state) => ({ offlineQueue: [...state.offlineQueue, { type: 'REMOVE_BOOKMARK', payload: { id } }] }))
+          set(state => ({
+            offlineQueue: [...state.offlineQueue, { type: 'REMOVE_BOOKMARK', payload: { id } }],
+          }))
         }
       },
 
@@ -686,8 +743,8 @@ export const useAppStore = create<AppState>()(
                   tone: task.payload.tone,
                 },
               })
-              set((state) => ({
-                bookmarks: state.bookmarks.map(b => b.id === task.payload.id ? { ...b, id: data.id } : b)
+              set(state => ({
+                bookmarks: state.bookmarks.map(b => (b.id === task.payload.id ? { ...b, id: data.id } : b)),
               }))
             } else if (task.type === 'REMOVE_BOOKMARK') {
               await apiClient.delete(`bookmarks/${task.payload.id}`)
@@ -735,13 +792,40 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'yoyojoy-store',
-      version: 1,
+      version: 2,
+      migrate: persistedState => sanitizePersistedAppState(persistedState),
+      merge: (persistedState, currentState) =>
+        ({
+          ...currentState,
+          ...sanitizePersistedAppState(persistedState),
+          showOnboardingLoader: false,
+          email: '',
+        }) as AppState,
       // showOnboardingLoader исключён из persist — на повторных открытиях всегда false
-      partialize: (state) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { showOnboardingLoader, setShowOnboardingLoader, email, setEmail, ...rest } = state
-        return rest
-      },
-    }
-  )
+      partialize: state => ({
+        currentMood: state.currentMood,
+        zodiacSign: state.zodiacSign,
+        dailyPack: state.dailyPack,
+        userName: state.userName,
+        gender: state.gender,
+        hasCompletedOnboarding: state.hasCompletedOnboarding,
+        profilePhoto: state.profilePhoto,
+        birthDate: state.birthDate,
+        horoscopeTime: state.horoscopeTime,
+        installBannerDismissCount: state.installBannerDismissCount,
+        showHoroscope: state.showHoroscope,
+        showHolidays: state.showHolidays,
+        showSupport: state.showSupport,
+        showPersonalCare: state.showPersonalCare,
+        supportTime: state.supportTime,
+        holidaysTime: state.holidaysTime,
+        personalCareTime: state.personalCareTime,
+        goals: state.goals,
+        todayHolidays: state.todayHolidays,
+        personalCareToday: state.personalCareToday,
+        bookmarks: state.bookmarks,
+        offlineQueue: state.offlineQueue,
+      }),
+    },
+  ),
 )

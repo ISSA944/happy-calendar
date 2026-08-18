@@ -5,18 +5,19 @@ import { apiClient } from '../api'
 import { useAppStore, useRegistrationDraft } from '../store'
 import { isValidEmail } from '../utils/validation'
 import { getHttpStatus } from '../utils/http'
+import { savePendingOtpContext } from '../features/auth/pendingOtp.storage'
 
 export function RegistrationPage() {
   const navigate = useNavigate()
-  const setUserName = useAppStore((s) => s.setUserName)
-  const setEmail = useAppStore((s) => s.setEmail)
+  const setUserName = useAppStore(s => s.setUserName)
+  const setEmail = useAppStore(s => s.setEmail)
 
-  const name = useRegistrationDraft((s) => s.name)
-  const emailInput = useRegistrationDraft((s) => s.email)
-  const consent = useRegistrationDraft((s) => s.consent)
-  const marketing = useRegistrationDraft((s) => s.marketing)
-  const updateDraft = useRegistrationDraft((s) => s.update)
-  const clearDraft = useRegistrationDraft((s) => s.clear)
+  const name = useRegistrationDraft(s => s.name)
+  const emailInput = useRegistrationDraft(s => s.email)
+  const consent = useRegistrationDraft(s => s.consent)
+  const marketing = useRegistrationDraft(s => s.marketing)
+  const updateDraft = useRegistrationDraft(s => s.update)
+  const clearDraft = useRegistrationDraft(s => s.clear)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
@@ -43,8 +44,15 @@ export function RegistrationPage() {
 
       setUserName(name.trim())
       setEmail(emailInput.trim())
+      savePendingOtpContext({
+        email: data.email,
+        flow: 'registration',
+        giftEmailAccepted: data.giftEmailAccepted,
+      })
       clearDraft()
-      navigate('/otp', { state: { giftEmailAccepted: data.giftEmailAccepted } })
+      navigate('/otp', {
+        state: { giftEmailAccepted: data.giftEmailAccepted },
+      })
     } catch (err: unknown) {
       const status = getHttpStatus(err)
       if (status === 409) {
@@ -75,14 +83,17 @@ export function RegistrationPage() {
           >
             <span className="material-symbols-outlined text-[24px]">arrow_back</span>
           </button>
-          <h1 className="absolute left-1/2 -translate-x-1/2 font-headline font-bold text-lg text-primary tracking-tight">Регистрация</h1>
+          <h1 className="absolute left-1/2 -translate-x-1/2 font-headline font-bold text-lg text-primary tracking-tight">
+            Регистрация
+          </h1>
         </div>
       </header>
 
       <main className="flex-1 flex flex-col px-5 pt-4 [@media(max-height:700px)]:pt-2 min-h-0 pb-[max(5rem,env(safe-area-inset-bottom))] [@media(max-height:700px)]:pb-16 landscape:pb-6 landscape:px-10 landscape:pt-6">
-
-        <form onSubmit={handleSubmit}
-              className="flex flex-col flex-1 [@media(orientation:landscape)_and_(min-height:450px)]:grid [@media(orientation:landscape)_and_(min-height:450px)]:grid-cols-2 [@media(orientation:landscape)_and_(min-height:450px)]:gap-8 [@media(orientation:landscape)_and_(min-height:450px)]:items-start">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 [@media(orientation:landscape)_and_(min-height:450px)]:grid [@media(orientation:landscape)_and_(min-height:450px)]:grid-cols-2 [@media(orientation:landscape)_and_(min-height:450px)]:gap-8 [@media(orientation:landscape)_and_(min-height:450px)]:items-start"
+        >
           {/* ── LEFT: headline + fields ── */}
           <div className="flex flex-col gap-4 [@media(max-height:700px)]:gap-2">
             <section className="shrink-0">
@@ -96,21 +107,35 @@ export function RegistrationPage() {
 
             <div className="space-y-4 [@media(max-height:700px)]:space-y-2 shrink-0">
               <div className="space-y-1.5">
-                <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="name">Имя</label>
+                <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="name">
+                  Имя
+                </label>
                 <input
                   className="w-full h-14 [@media(max-height:700px)]:h-12 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
-                  id="name" name="name" placeholder="Как к тебе обращаться?" type="text"
-                  value={name} onChange={(e) => updateDraft({ name: e.target.value })}
+                  id="name"
+                  name="name"
+                  placeholder="Как к тебе обращаться?"
+                  type="text"
+                  value={name}
+                  onChange={e => updateDraft({ name: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="email">Электронная почта</label>
+                <label className="block text-sm font-bold text-on-surface ml-1" htmlFor="email">
+                  Электронная почта
+                </label>
                 <input
                   className="w-full h-14 [@media(max-height:700px)]:h-12 px-5 bg-surface-container-lowest border border-outline-variant rounded-[24px] text-on-surface placeholder:text-on-surface-variant/40 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-colors outline-none text-base font-medium shadow-sm"
-                  id="email" name="email" placeholder="example@mail.com" type="email"
-                  value={emailInput} onChange={(e) => updateDraft({ email: e.target.value })}
+                  id="email"
+                  name="email"
+                  placeholder="example@mail.com"
+                  type="email"
+                  value={emailInput}
+                  onChange={e => updateDraft({ email: e.target.value })}
                 />
-                <p className="text-xs text-on-surface-variant/60 ml-1 [@media(max-height:700px)]:hidden">Мы пришлём код подтверждения на эту почту.</p>
+                <p className="text-xs text-on-surface-variant/60 ml-1 [@media(max-height:700px)]:hidden">
+                  Мы пришлём код подтверждения на эту почту.
+                </p>
               </div>
             </div>
           </div>
@@ -121,35 +146,58 @@ export function RegistrationPage() {
 
             <div className="space-y-4 [@media(max-height:700px)]:space-y-2">
               <div className="space-y-3 [@media(max-height:700px)]:space-y-1">
-                <label className="flex gap-4 items-start cursor-pointer hover:bg-primary/5 p-3 -m-3 rounded-2xl transition-colors" htmlFor="consent">
+                <label
+                  className="flex gap-4 items-start cursor-pointer hover:bg-primary/5 p-3 -m-3 rounded-2xl transition-colors"
+                  htmlFor="consent"
+                >
                   <div className="mt-0.5 shrink-0">
-                    <input className="w-5 h-5 rounded-[6px] border-outline-variant text-primary focus:ring-primary/20 cursor-pointer"
-                      id="consent" required type="checkbox" checked={consent}
-                      onChange={(e) => updateDraft({ consent: e.target.checked })} />
+                    <input
+                      className="w-5 h-5 rounded-[6px] border-outline-variant text-primary focus:ring-primary/20 cursor-pointer"
+                      id="consent"
+                      required
+                      type="checkbox"
+                      checked={consent}
+                      onChange={e => updateDraft({ consent: e.target.checked })}
+                    />
                   </div>
                   <span className="text-[13px] font-medium text-on-surface-variant leading-snug">
                     Я согласен(а) на обработку персональных данных (обязательно){' '}
-                    <Link to="/politika" onClick={(e) => e.stopPropagation()}
-                      className="text-primary font-bold underline underline-offset-4 decoration-primary/50 hover:text-primary/80 transition-colors">
+                    <Link
+                      to="/politika"
+                      onClick={e => e.stopPropagation()}
+                      className="text-primary font-bold underline underline-offset-4 decoration-primary/50 hover:text-primary/80 transition-colors"
+                    >
                       Политика
                     </Link>
                   </span>
                 </label>
-                <label className="flex gap-4 items-start cursor-pointer hover:bg-primary/5 p-3 -m-3 rounded-2xl transition-colors" htmlFor="marketing">
+                <label
+                  className="flex gap-4 items-start cursor-pointer hover:bg-primary/5 p-3 -m-3 rounded-2xl transition-colors"
+                  htmlFor="marketing"
+                >
                   <div className="mt-0.5 shrink-0">
-                    <input className="w-5 h-5 rounded-[6px] border-outline-variant text-primary focus:ring-primary/20 cursor-pointer"
-                      id="marketing" type="checkbox" checked={marketing}
-                      onChange={(e) => updateDraft({ marketing: e.target.checked })} />
+                    <input
+                      className="w-5 h-5 rounded-[6px] border-outline-variant text-primary focus:ring-primary/20 cursor-pointer"
+                      id="marketing"
+                      type="checkbox"
+                      checked={marketing}
+                      onChange={e => updateDraft({ marketing: e.target.checked })}
+                    />
                   </div>
                   <div>
-                    <span className="text-[13px] font-medium text-on-surface-variant leading-snug block">Я хочу получать рекламную рассылку на почту</span>
-                    <p className="text-[11px] text-on-surface-variant/60 mt-0.5 [@media(max-height:700px)]:hidden">Можно отписаться в любой момент.</p>
+                    <span className="text-[13px] font-medium text-on-surface-variant leading-snug block">
+                      Я хочу получать рекламную рассылку на почту
+                    </span>
+                    <p className="text-[11px] text-on-surface-variant/60 mt-0.5 [@media(max-height:700px)]:hidden">
+                      Можно отписаться в любой момент.
+                    </p>
                   </div>
                 </label>
               </div>
 
               <button
-                disabled={!canSubmit || isSubmitting} type="submit"
+                disabled={!canSubmit || isSubmitting}
+                type="submit"
                 className={`h-14 [@media(max-height:700px)]:h-12 landscape:h-12 font-headline font-bold text-lg rounded-full transition-colors flex items-center justify-center w-full active:scale-[0.98] ${
                   canSubmit && !isSubmitting
                     ? 'bg-[#006a65] text-white shadow-lg shadow-[#006a65]/30 cursor-pointer'
@@ -164,7 +212,11 @@ export function RegistrationPage() {
                   <p className="text-sm font-medium text-red-500">Этот email уже зарегистрирован.</p>
                   <button
                     type="button"
-                    onClick={() => navigate('/login', { state: { email: emailInput.trim() } })}
+                    onClick={() =>
+                      navigate('/login', {
+                        state: { email: emailInput.trim() },
+                      })
+                    }
                     className="h-12 w-full rounded-full border border-primary text-sm font-bold text-primary transition-colors hover:bg-primary/5 active:scale-[0.98]"
                   >
                     Войти в аккаунт
@@ -173,7 +225,9 @@ export function RegistrationPage() {
               ) : submitError ? (
                 <p className="text-center text-sm font-medium text-red-500">{submitError}</p>
               ) : null}
-              <p className="text-center text-sm font-medium text-on-surface-variant/70 [@media(max-height:700px)]:hidden">Почта нужна, чтобы сохранить твои настройки.</p>
+              <p className="text-center text-sm font-medium text-on-surface-variant/70 [@media(max-height:700px)]:hidden">
+                Почта нужна, чтобы сохранить твои настройки.
+              </p>
 
               <div className="flex items-center justify-center gap-2 pt-1">
                 <span className="text-sm text-on-surface-variant/60">Уже есть аккаунт?</span>
@@ -190,7 +244,6 @@ export function RegistrationPage() {
       </main>
 
       {/* Glassmorphism blobs */}
-
     </motion.div>
   )
 }
