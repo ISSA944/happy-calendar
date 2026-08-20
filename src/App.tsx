@@ -7,6 +7,8 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom'
+import { AnimatePresence, domAnimation, LazyMotion } from 'framer-motion'
+import * as m from 'framer-motion/m'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useAppStore } from './store'
 import { getAccessToken } from './auth/token-storage'
@@ -110,15 +112,21 @@ function TabOutlet() {
 
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden" style={{ background: '#fcf9f4' }}>
-      <div
-        key={pathname}
-        className="absolute inset-0 w-full h-full overflow-y-auto touch-pan-y overscroll-y-contain"
-      >
-        {pathname === '/home' && <HomePage />}
-        {pathname === '/bookmarks' && <BookmarksPage />}
-        {pathname === '/settings' && <SettingsPage />}
-        {pathname === '/notifications-list' && <NotificationsListPage />}
-      </div>
+      <AnimatePresence mode="wait">
+        <m.div
+          key={pathname}
+          initial={{ opacity: 0, x: 15 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -15 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="absolute inset-0 w-full h-full overflow-y-auto touch-pan-y overscroll-y-contain"
+        >
+          {pathname === '/home' && <HomePage />}
+          {pathname === '/bookmarks' && <BookmarksPage />}
+          {pathname === '/settings' && <SettingsPage />}
+          {pathname === '/notifications-list' && <NotificationsListPage />}
+        </m.div>
+      </AnimatePresence>
     </div>
   )
 }
@@ -205,12 +213,16 @@ function AppLayout() {
 
 function PageTransition({ children }: { children: ReactNode }) {
   return (
-    <div
+    <m.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
       className="absolute inset-0 w-full h-full overflow-hidden"
       style={{ background: '#fcf9f4' }}
     >
       {children}
-    </div>
+    </m.div>
   )
 }
 
@@ -221,6 +233,7 @@ function AppRoutes() {
   const routeKey = APP_SHELL_ROUTES.includes(location.pathname) ? 'app-shell' : location.key
 
   return (
+    <AnimatePresence mode="wait">
       <Routes location={location} key={routeKey}>
         <Route path="/" element={<PageTransition><RootGuard /></PageTransition>} />
         <Route path="/register" element={<PageTransition><RegistrationPage /></PageTransition>} />
@@ -239,6 +252,7 @@ function AppRoutes() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </AnimatePresence>
   )
 }
 
@@ -247,22 +261,24 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div
-        className="relative w-full h-[100dvh] overflow-hidden"
-        style={{ background: '#fcf9f4' }}
-      >
-        {showOnboardingLoader && (
-          <Suspense fallback={null}>
-            <PageLoader show />
-          </Suspense>
-        )}
-        <ErrorBoundary>
-          <Suspense fallback={<PageFallback />}>
-            <AppRoutes />
-          </Suspense>
-        </ErrorBoundary>
-        <PWAUpdater />
-      </div>
+      <LazyMotion features={domAnimation}>
+        <div
+          className="relative w-full h-[100dvh] overflow-hidden"
+          style={{ background: '#fcf9f4' }}
+        >
+          {showOnboardingLoader && (
+            <Suspense fallback={null}>
+              <PageLoader show />
+            </Suspense>
+          )}
+          <ErrorBoundary>
+            <Suspense fallback={<PageFallback />}>
+              <AppRoutes />
+            </Suspense>
+          </ErrorBoundary>
+          <PWAUpdater />
+        </div>
+      </LazyMotion>
     </BrowserRouter>
   )
 }

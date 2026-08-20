@@ -115,6 +115,16 @@ describe('RegistrationPage Android registration flow', () => {
     expect(apiClient.post).toHaveBeenCalledOnce()
   })
 
+  it('explains how to enter the existing owner test account', async () => {
+    vi.mocked(apiClient.post).mockRejectedValue({ response: { status: 409 } })
+    renderRegistration()
+
+    await submitRegistration('MUKANISKANDER01@gmail.com')
+
+    expect(await screen.findByText('Это уже созданный тестовый аккаунт. Нажми «Войти в аккаунт» и используй код 1111.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Войти в аккаунт' })).toBeInTheDocument()
+  })
+
   it('keeps a successful login recoverable after Android reloads the tab', async () => {
     vi.mocked(apiClient.post).mockResolvedValueOnce({ data: { ok: true } })
     const user = userEvent.setup()

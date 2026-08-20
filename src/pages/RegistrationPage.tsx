@@ -7,6 +7,8 @@ import { isValidEmail } from '../utils/validation'
 import { getHttpStatus } from '../utils/http'
 import { savePendingOtpContext } from '../features/auth/pendingOtp.storage'
 
+const OWNER_TEST_EMAIL = 'mukaniskander01@gmail.com'
+
 export function RegistrationPage() {
   const navigate = useNavigate()
   const setUserName = useAppStore(s => s.setUserName)
@@ -209,7 +211,11 @@ export function RegistrationPage() {
 
               {submitError === '__email_exists__' ? (
                 <div className="space-y-3 text-center">
-                  <p className="text-sm font-medium text-red-500">Этот email уже зарегистрирован.</p>
+                  <p className="text-sm font-medium text-on-surface-variant">
+                    {emailInput.trim().toLowerCase() === OWNER_TEST_EMAIL
+                      ? 'Это уже созданный тестовый аккаунт. Нажми «Войти в аккаунт» и используй код 1111.'
+                      : 'Этот email уже зарегистрирован.'}
+                  </p>
                   <button
                     type="button"
                     onClick={() =>

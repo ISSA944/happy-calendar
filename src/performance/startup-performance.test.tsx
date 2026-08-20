@@ -73,12 +73,26 @@ describe('startup performance contracts', () => {
     expect(landingSource).not.toContain("import { LandingMood } from '../features/landing/LandingMood'")
   })
 
-  it('does not load the animation runtime for the static first viewport', () => {
+  it('keeps the original smooth app navigation while preserving route code splitting', () => {
     const appSource = readFileSync(resolve('src/App.tsx'), 'utf8')
     const viteSource = readFileSync(resolve('vite.config.ts'), 'utf8')
 
-    expect(appSource).not.toContain("from 'framer-motion'")
+    expect(appSource).toContain("from 'framer-motion'")
+    expect(appSource).toContain('<AnimatePresence mode="wait">')
+    expect(appSource).toContain('initial={{ opacity: 0, x: 15 }}')
+    expect(appSource).toContain('exit={{ opacity: 0, x: -15 }}')
+    expect(appSource).toContain('initial={{ opacity: 0, y: 10 }}')
+    expect(appSource).toContain('exit={{ opacity: 0, y: -10 }}')
+    expect(appSource).toContain('<LazyMotion features={domAnimation}>')
+    expect(appSource).toContain('<m.div')
     expect(appSource).toContain("lazy(() => import('./components/ui/PageLoader')")
     expect(viteSource).not.toContain("'motion': ['framer-motion']")
+  })
+
+  it('keeps the restored animation runtime inside the agreed 140 KiB entry budget', () => {
+    const budgetSource = readFileSync(resolve('scripts/check-performance-budget.mjs'), 'utf8')
+
+    expect(budgetSource).toContain('const entryLimit = 140 * 1024')
+    expect(budgetSource).toContain('const precacheLimit = 650 * 1024')
   })
 })
