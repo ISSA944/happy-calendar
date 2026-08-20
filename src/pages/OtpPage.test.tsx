@@ -159,4 +159,22 @@ describe('OtpPage push handoff', () => {
     expect(screen.getByText(/Код и письмо с двумя подарками отправлены/)).toBeInTheDocument()
     expect(screen.getByText(/Промоакции и Спам/)).toBeInTheDocument()
   })
+
+  it('fits all four OTP fields inside a 320px content width', () => {
+    render(
+      <MemoryRouter initialEntries={['/otp']}>
+        <Routes>
+          <Route path="/otp" element={<OtpPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    const fields = screen.getAllByRole('textbox')
+    const otpRow = fields[0].parentElement?.parentElement
+
+    expect(otpRow).toHaveClass('justify-center', 'gap-3')
+    expect(fields.every(field => field.parentElement?.classList.contains('flex-1'))).toBe(true)
+    expect(fields.every(field => field.parentElement?.classList.contains('min-w-0'))).toBe(true)
+    expect(fields.every(field => field.parentElement?.classList.contains('max-w-[72px]'))).toBe(true)
+  })
 })

@@ -24,17 +24,9 @@ describe('PWA visual regression contracts', () => {
   })
 
   it('keeps every literal Material Symbol in the local font subset manifest', () => {
-    const configuredSymbols = new Set(MATERIAL_SYMBOLS)
+    const configuredSymbols = new Set<string>(MATERIAL_SYMBOLS)
 
     expect([...new Set(literalMaterialSymbols())].filter(icon => !configuredSymbols.has(icon))).toEqual([])
-  })
-
-  it('leaves bookmark filter scrolling unobscured by edge fades', () => {
-    const source = readFileSync(resolve('src/pages/BookmarksPage.tsx'), 'utf8')
-
-    expect(source).toContain('snap-x snap-mandatory')
-    expect(source).not.toContain('bg-gradient-to-r from-background to-transparent')
-    expect(source).not.toContain('bg-gradient-to-l from-background to-transparent')
   })
 
   it('does not let the PWA updater mutate notification settings', () => {

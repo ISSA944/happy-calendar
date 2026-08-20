@@ -1,6 +1,8 @@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { existsSync } from 'fs';
+import { resolve } from 'path';
 import { PrismaService } from '../prisma';
 import { AuthService } from './auth.service';
 
@@ -242,6 +244,49 @@ describe('AuthService registration email lifecycle', () => {
     expect(sentHtml).toContain('width="100%"');
     expect(sentHtml).not.toContain('width="480"');
     expect(sentHtml).toContain('letter-spacing');
+  });
+
+  it('renders OTP and welcome emails with the leaf asset instead of emoji-only branding', () => {
+    const { service } = createService(createUser('mobile@example.com'));
+    const renderer = service as unknown as {
+      renderOtpEmailHtml(code: string): string;
+      renderWelcomeEmailHtml(
+        name: string | null,
+        trackerFile: string | null,
+        checklistFile: string | null,
+      ): string;
+    };
+
+    const otpHtml = renderer.renderOtpEmailHtml('4935');
+    const welcomeHtml = renderer.renderWelcomeEmailHtml(
+      'Искандер',
+      'habit-tracker.pdf',
+      'self-care-checklist-30-days.pdf',
+    );
+
+    for (const html of [otpHtml, welcomeHtml]) {
+      expect(html).toContain(
+        'https://yoyojoy.online/email-assets/brand-leaf.png',
+      );
+      expect(html).toContain('width="100%"');
+      expect(html).not.toContain('width="480"');
+      expect(html).not.toContain('width="600"');
+      expect(html).not.toMatch(/[🌿🎁📎💚🤍]/u);
+    }
+
+    expect(otpHtml).toContain('font-size:32px');
+    expect(otpHtml).toContain('white-space:nowrap');
+    expect(
+      existsSync(
+        resolve(
+          process.cwd(),
+          '..',
+          'public',
+          'email-assets',
+          'brand-leaf.png',
+        ),
+      ),
+    ).toBe(true);
   });
 });
 

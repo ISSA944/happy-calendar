@@ -58,7 +58,7 @@ const OtpBox = memo(function OtpBox({
   onBlur: () => void
 }) {
   return (
-    <div className={`w-[72px] h-[72px] bg-surface-container-lowest rounded-[24px] flex items-center justify-center shadow-sm transition-colors duration-150 relative overflow-hidden ${isActive ? 'border-2 border-primary' : 'border border-outline-variant'}`}>
+    <div className={`flex-1 min-w-0 max-w-[72px] aspect-square bg-surface-container-lowest rounded-[24px] flex items-center justify-center shadow-sm transition-colors duration-150 relative overflow-hidden ${isActive ? 'border-2 border-primary' : 'border border-outline-variant'}`}>
       <input
         ref={inputRef}
         type="text"
@@ -213,7 +213,7 @@ export function ChangeEmailOtpPage() {
         </section>
 
         <section className="mb-10 shrink-0 landscape:mb-5">
-          <div className="flex justify-between gap-3">
+          <div className="flex justify-center gap-3">
             {code.map((digit, index) => (
               <OtpBox
                 key={index}

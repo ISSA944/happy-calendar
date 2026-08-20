@@ -58,7 +58,7 @@ export function LoginPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       style={{ willChange: 'opacity' }}
-      className="relative bg-background text-on-surface font-body selection:bg-primary/20 selection:text-primary min-h-[100dvh] w-full max-w-[430px] landscape:max-w-[860px] mx-auto overflow-x-hidden overflow-y-auto overscroll-none"
+      className="relative h-[100dvh] w-full max-w-[430px] touch-pan-y overflow-x-hidden overflow-y-auto overscroll-none bg-background font-body text-on-surface selection:bg-primary/20 selection:text-primary landscape:max-w-[860px] mx-auto [-webkit-overflow-scrolling:touch]"
     >
       {/* Header */}
       <header className="sticky top-0 w-full z-50 bg-background/95 px-4 pt-[env(safe-area-inset-top,0px)]">
@@ -78,8 +78,8 @@ export function LoginPage() {
 
       <main className="flex flex-col items-center px-6 pt-8 pb-[max(2rem,env(safe-area-inset-bottom))] landscape:flex-row landscape:items-start landscape:gap-10 landscape:px-10 landscape:pt-6 landscape:justify-center w-full">
         {/* Hero */}
-        <div className="flex flex-col gap-3 text-center landscape:text-left mb-8 landscape:mb-0 landscape:pt-6 landscape:w-[280px] landscape:shrink-0">
-          <h1 className="font-headline text-4xl landscape:text-3xl font-extrabold text-on-surface tracking-tight leading-tight">
+        <div className="mb-8 flex w-full max-w-sm flex-col gap-3 text-center landscape:mb-0 landscape:w-[280px] landscape:shrink-0 landscape:pt-6 landscape:text-left">
+          <h1 className="mx-auto max-w-[272px] font-headline text-3xl font-extrabold leading-tight tracking-tight text-on-surface landscape:mx-0 landscape:max-w-none">
             С возвращением
           </h1>
           <p className="font-body text-on-surface-variant text-base landscape:text-sm leading-relaxed">

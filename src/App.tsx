@@ -16,14 +16,19 @@ import { PWAUpdater } from './components/ui/PWAUpdater'
 
 import { LandingPage } from './pages/LandingPage'
 
-const HomePage = lazy(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })))
+const loadHomePage = () => import('./pages/HomePage').then(module => ({ default: module.HomePage }))
+const loadBookmarksPage = () => import('./pages/BookmarksPage').then(module => ({ default: module.BookmarksPage }))
+const loadSettingsPage = () => import('./pages/SettingsPage').then(module => ({ default: module.SettingsPage }))
+const loadNotificationsListPage = () => import('./pages/NotificationsListPage').then(module => ({ default: module.NotificationsListPage }))
+
+const HomePage = lazy(loadHomePage)
 const RegistrationPage = lazy(() => import('./pages/RegistrationPage').then(module => ({ default: module.RegistrationPage })))
 const LoginPage = lazy(() => import('./pages/LoginPage').then(module => ({ default: module.LoginPage })))
 const OtpPage = lazy(() => import('./pages/OtpPage').then(module => ({ default: module.OtpPage })))
 const ProfileSetupPage = lazy(() => import('./pages/ProfileSetupPage').then(module => ({ default: module.ProfileSetupPage })))
-const BookmarksPage = lazy(() => import('./pages/BookmarksPage').then(module => ({ default: module.BookmarksPage })))
-const SettingsPage = lazy(() => import('./pages/SettingsPage').then(module => ({ default: module.SettingsPage })))
-const NotificationsListPage = lazy(() => import('./pages/NotificationsListPage').then(module => ({ default: module.NotificationsListPage })))
+const BookmarksPage = lazy(loadBookmarksPage)
+const SettingsPage = lazy(loadSettingsPage)
+const NotificationsListPage = lazy(loadNotificationsListPage)
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(module => ({ default: module.NotificationsPage })))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(module => ({ default: module.PrivacyPolicyPage })))
 const ChangeEmailPage = lazy(() => import('./pages/ChangeEmailPage').then(module => ({ default: module.ChangeEmailPage })))
@@ -32,7 +37,19 @@ const BottomNav = lazy(() => import('./components/BottomNav').then(module => ({ 
 const LoginPushPrompt = lazy(() => import('./features/notifications/LoginPushPrompt').then(module => ({ default: module.LoginPushPrompt })))
 const PageLoader = lazy(() => import('./components/ui/PageLoader').then(module => ({ default: module.PageLoader })))
 
-const APP_SHELL_ROUTES: readonly string[] = ['/home', '/bookmarks', '/settings', '/notifications-list']
+const APP_SHELL_ROUTES = ['/home', '/bookmarks', '/settings', '/notifications-list'] as const
+type AppShellRoute = typeof APP_SHELL_ROUTES[number]
+
+const APP_SHELL_PRELOADERS: Record<AppShellRoute, () => Promise<unknown>> = {
+  '/home': loadHomePage,
+  '/bookmarks': loadBookmarksPage,
+  '/settings': loadSettingsPage,
+  '/notifications-list': loadNotificationsListPage,
+}
+
+function preloadAppShellRoute(path: AppShellRoute) {
+  void APP_SHELL_PRELOADERS[path]().catch(() => undefined)
+}
 
 let lastSyncAt = 0
 
@@ -191,6 +208,26 @@ function AppLayout() {
     }
   }, [syncProfile, initDailyPack, processOfflineQueue, navigate])
 
+  useEffect(() => {
+    const warmTabs = () => {
+      preloadAppShellRoute('/bookmarks')
+      preloadAppShellRoute('/settings')
+      preloadAppShellRoute('/notifications-list')
+    }
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+      cancelIdleCallback?: (id: number) => void
+    }
+
+    if (idleWindow.requestIdleCallback) {
+      const idleId = idleWindow.requestIdleCallback(warmTabs, { timeout: 750 })
+      return () => idleWindow.cancelIdleCallback?.(idleId)
+    }
+
+    const timeoutId = window.setTimeout(warmTabs, 500)
+    return () => window.clearTimeout(timeoutId)
+  }, [])
+
   return (
     <div
       className="bg-background text-on-surface antialiased h-[100dvh] w-full max-w-full overflow-hidden"
@@ -204,7 +241,7 @@ function AppLayout() {
           <TabOutlet />
         </main>
 
-        <BottomNav />
+        <BottomNav onTabIntent={preloadAppShellRoute} />
       </div>
       <LoginPushPrompt />
     </div>
@@ -230,7 +267,7 @@ function AppRoutes() {
   const location = useLocation()
 
   // Stable key for all app-shell routes → AppLayout never remounts on tab switch.
-  const routeKey = APP_SHELL_ROUTES.includes(location.pathname) ? 'app-shell' : location.key
+  const routeKey = APP_SHELL_ROUTES.includes(location.pathname as AppShellRoute) ? 'app-shell' : location.key
 
   return (
     <AnimatePresence mode="wait">

@@ -80,6 +80,16 @@ describe('RegistrationPage Android registration flow', () => {
     expect(page?.querySelector('main')).toHaveClass('pb-[max(5rem,env(safe-area-inset-bottom))]')
   })
 
+  it('lets consent copy wrap inside a 320px registration viewport', () => {
+    renderRegistration()
+
+    const consentCopy = screen.getByLabelText(/Я согласен/).closest('label')?.querySelector('span')
+    const marketingCopy = screen.getByLabelText(/Я хочу получать/).closest('label')?.querySelector('div:last-child')
+
+    expect(consentCopy).toHaveClass('min-w-0', 'break-words')
+    expect(marketingCopy).toHaveClass('min-w-0', 'break-words')
+  })
+
   it('carries confirmed gift delivery to the OTP screen', async () => {
     vi.mocked(apiClient.post).mockResolvedValueOnce({
       data: {

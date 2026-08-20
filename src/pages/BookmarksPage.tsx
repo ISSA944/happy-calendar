@@ -58,16 +58,15 @@ export function BookmarksPage() {
           </p>
         </div>
 
-        <div className="relative mb-6">
-          {/* snap: скролл всегда останавливается на целом табе, не обрезает его посередине */}
-          <div className="flex gap-2 overflow-x-auto no-scrollbar px-1 snap-x snap-mandatory scroll-px-1">
+        <div className="mb-6">
+          <div className="grid grid-cols-2 min-[400px]:grid-cols-3 gap-2">
             {FILTERS.map(type => {
               const active = filter === type
               return (
                 <button
                   key={type}
                   onClick={() => setFilter(type)}
-                  className={`flex-shrink-0 snap-start px-4 py-2 rounded-full text-sm font-medium transition-colors active:scale-95 ${
+                  className={`min-h-11 w-full px-3 py-2 rounded-full text-sm font-medium transition-colors active:scale-95 last:col-span-2 min-[400px]:last:col-span-1 ${
                     active ? 'bg-primary text-white' : 'bg-white border border-outline-variant text-on-surface-variant'
                   }`}
                 >
@@ -75,9 +74,6 @@ export function BookmarksPage() {
                 </button>
               )
             })}
-            {/* Распорка: без неё последнему табу физически не хватает места прокрутки, чтобы
-                долистаться до snap-start и не остаться обрезанным у правого края. */}
-            <div className="flex-shrink-0 w-[300px]" aria-hidden="true" />
           </div>
         </div>
 

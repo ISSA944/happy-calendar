@@ -7,6 +7,9 @@ import { apiClient } from './api'
 import { useAppStore } from './store'
 import App from './App'
 
+const bookmarksModuleLoaded = vi.hoisted(() => vi.fn())
+const settingsModuleLoaded = vi.hoisted(() => vi.fn())
+
 vi.mock('./api', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
 }))
@@ -19,8 +22,14 @@ vi.mock('./auth/token-storage', () => ({
 vi.mock('./components/ui/PWAUpdater', () => ({ PWAUpdater: () => null }))
 vi.mock('./features/notifications/LoginPushPrompt', () => ({ LoginPushPrompt: () => null }))
 vi.mock('./pages/HomePage', () => ({ HomePage: () => <p>Главная</p> }))
-vi.mock('./pages/BookmarksPage', () => ({ BookmarksPage: () => <p>Экран закладок</p> }))
-vi.mock('./pages/SettingsPage', () => ({ SettingsPage: () => <p>Экран настроек</p> }))
+vi.mock('./pages/BookmarksPage', () => {
+  bookmarksModuleLoaded()
+  return { BookmarksPage: () => <p>Экран закладок</p> }
+})
+vi.mock('./pages/SettingsPage', () => {
+  settingsModuleLoaded()
+  return { SettingsPage: () => <p>Экран настроек</p> }
+})
 vi.mock('./pages/ProfileSetupPage', () => ({ ProfileSetupPage: () => <p>Настройка профиля</p> }))
 
 describe('profile bootstrap routing', () => {
@@ -28,6 +37,8 @@ describe('profile bootstrap routing', () => {
     window.history.replaceState({}, '', '/')
     localStorage.clear()
     vi.mocked(apiClient.get).mockReset()
+    bookmarksModuleLoaded.mockClear()
+    settingsModuleLoaded.mockClear()
     useAppStore.setState({
       hasCompletedOnboarding: false,
       showOnboardingLoader: false,
@@ -56,6 +67,37 @@ describe('profile bootstrap routing', () => {
     expect(useAppStore.getState().showOnboardingLoader).toBe(false)
   })
 
+  it('warms tab modules after the app shell is ready, before the first tab switch', async () => {
+    vi.mocked(apiClient.get).mockImplementation(async (path: string) => {
+      if (path === 'profile') {
+        return {
+          data: {
+            user: { email: 'active@example.com', name: 'Пользователь' },
+            profile: { birthdate: '10.08.1990', zodiacSign: 'Лев ♌︎', currentMood: 'Нормально' },
+            prefs: null,
+          },
+        } as never
+      }
+
+      return {
+        data: {
+          date: '21.08',
+          horoscope: { main: 'Главное', detailed: 'Подробнее', advice: 'Совет', moon: 'Луна', aspect: 'Аспект' },
+          support: { text: 'Поддержка' },
+          holiday: null,
+          meta: { contentSource: 'stored' },
+        },
+      } as never
+    })
+    render(<App />)
+
+    expect(await screen.findByText('Главная')).toBeInTheDocument()
+    await vi.waitFor(() => {
+      expect(bookmarksModuleLoaded).toHaveBeenCalledTimes(1)
+      expect(settingsModuleLoaded).toHaveBeenCalledTimes(1)
+    })
+  })
+
   it('keeps app tabs navigable without patching notification preferences', async () => {
     vi.mocked(apiClient.get).mockImplementation(async (path: string) => {
       if (path === 'profile') {
@@ -78,6 +120,7 @@ describe('profile bootstrap routing', () => {
         },
       } as never
     })
+
     const user = userEvent.setup()
 
     render(<App />)

@@ -61,8 +61,10 @@ describe('startup performance contracts', () => {
   it('keeps authenticated pages out of the landing-page bundle', () => {
     const appSource = readFileSync(resolve('src/App.tsx'), 'utf8')
 
-    expect(appSource).toContain("lazy(() => import('./pages/HomePage')")
-    expect(appSource).toContain("lazy(() => import('./pages/SettingsPage')")
+    expect(appSource).toContain("const loadHomePage = () => import('./pages/HomePage')")
+    expect(appSource).toContain("const loadSettingsPage = () => import('./pages/SettingsPage')")
+    expect(appSource).toContain('const HomePage = lazy(loadHomePage)')
+    expect(appSource).toContain('const SettingsPage = lazy(loadSettingsPage)')
     expect(appSource).not.toContain("import { HomePage } from './pages/HomePage'")
   })
 

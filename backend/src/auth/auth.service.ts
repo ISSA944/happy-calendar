@@ -564,6 +564,7 @@ export class AuthService {
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="x-apple-disable-message-reformatting"/>
 <title>YoYoJoy Day</title>
 </head>
 <body style="margin:0;padding:16px 8px;background:#f5f2ed;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
@@ -573,7 +574,12 @@ export class AuthService {
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:480px;background:#fcf9f4;border-radius:24px;overflow:hidden">
           <tr>
             <td style="padding:32px 20px 24px;background:#006a65;text-align:center">
-              <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px">YoYoJoy Day 🌿</div>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                <tr>
+                  <td style="padding:0 8px 0 0;vertical-align:middle"><img src="${this.brandLeafIconUrl}" width="28" height="28" alt="" style="display:block;border:0;outline:none"></td>
+                  <td style="vertical-align:middle;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px">YoYoJoy Day</td>
+                </tr>
+              </table>
               <div style="color:#a4d8d5;font-size:13px;margin-top:6px">Твой персональный компаньон дня</div>
             </td>
           </tr>
@@ -583,7 +589,7 @@ export class AuthService {
                 Привет! Вот твой одноразовый код для входа:
               </p>
               <div style="text-align:center">
-                <div style="display:inline-block;max-width:100%;box-sizing:border-box;padding:14px 18px 14px 28px;background:#f0fafa;border:2px solid #2FA7A0;border-radius:14px;font-size:36px;font-weight:800;line-height:1.2;letter-spacing:10px;color:#006a65;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;white-space:nowrap">${code}</div>
+                <div style="display:inline-block;max-width:100%;box-sizing:border-box;padding:14px 18px 14px 26px;background:#f0fafa;border:2px solid #2FA7A0;border-radius:14px;font-size:32px;font-weight:800;line-height:1.2;letter-spacing:8px;color:#006a65;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;white-space:nowrap">${code}</div>
               </div>
               <p style="margin:28px 0 0;font-size:14px;line-height:1.55;color:#5a6968">
                 Код действует <strong style="color:#006a65">${this.OTP_TTL_MIN} минут</strong>. Никому его не передавай — мы не запрашиваем коды в чатах и сообщениях.
@@ -631,7 +637,7 @@ export class AuthService {
   // Подарочное письмо отправляется только из register(), до перехода пользователя на OTP.
   // Переиспользует тот же провайдер (Resend/SMTP), что и письмо с кодом.
   private async sendWelcomeEmail(to: string, name: string | null) {
-    const subject = 'Добро пожаловать в YoYoJoy Day 🌿';
+    const subject = 'Добро пожаловать в YoYoJoy Day';
     const gifts = this.loadGiftAttachments();
     const giftNames = new Set(gifts.map((gift) => gift.filename));
     if (
@@ -697,6 +703,8 @@ export class AuthService {
 
   // Логотипы — PNG (не SVG: Gmail/Outlook режут SVG в письмах), хостятся на фронтенд-домене
   // из public/email-assets/*.png (deploy.sh копирует dist/ целиком, public/ уже часть сборки).
+  private readonly brandLeafIconUrl =
+    'https://yoyojoy.online/email-assets/brand-leaf.png';
   private readonly telegramLogoUrl =
     'https://yoyojoy.online/email-assets/telegram.png';
   private readonly maxLogoUrl = 'https://yoyojoy.online/email-assets/max.png';
@@ -739,13 +747,13 @@ export class AuthService {
 
     const channelsSection = channelButtons
       ? `<tr>
-           <td style="padding:4px 40px 2px;">
-             <p style="margin:0 0 2px;font-size:17px;font-weight:bold;color:#23302b;text-align:center;">Подписывайся на наши каналы 💚</p>
+           <td style="padding:4px 20px 2px;">
+             <p style="margin:0 0 2px;font-size:17px;font-weight:bold;color:#23302b;text-align:center;">Подписывайся на наши каналы</p>
              <p style="margin:6px 0 18px;font-size:14px;line-height:1.5;color:#54605b;text-align:center;">Там ещё больше тёплого, полезного и интересного — каждый день.</p>
            </td>
          </tr>
          <tr>
-           <td style="padding:0 40px 22px;">
+           <td style="padding:0 20px 22px;">
              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>${channelButtons}</tr></table>
            </td>
          </tr>`
@@ -759,24 +767,29 @@ export class AuthService {
 <meta name="x-apple-disable-message-reformatting"/>
 <title>YoYoJoy Day</title>
 </head>
-<body style="margin:0;padding:32px 16px;background:#F0EBE1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Держи подарки за регистрацию 🎁 Трекер привычек и чек-лист «30 дней заботы о себе» — внутри.</div>
+<body style="margin:0;padding:16px 8px;background:#F0EBE1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Держи подарки за регистрацию: трекер привычек и чек-лист «30 дней заботы о себе» — внутри.</div>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
     <tr>
       <td align="center">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background:#FAF6EF;border-radius:24px;overflow:hidden">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:520px;width:100%;background:#FAF6EF;border-radius:24px;overflow:hidden">
           <tr>
-            <td style="background:#0E6E62;padding:38px 24px;text-align:center;">
-              <div style="font-size:26px;font-weight:bold;color:#ffffff;letter-spacing:.2px;">YoYoJoy Day 🌿</div>
+            <td style="background:#0E6E62;padding:32px 20px;text-align:center;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                <tr>
+                  <td style="padding:0 8px 0 0;vertical-align:middle"><img src="${this.brandLeafIconUrl}" width="30" height="30" alt="" style="display:block;border:0;outline:none"></td>
+                  <td style="vertical-align:middle;font-size:24px;font-weight:bold;color:#ffffff;letter-spacing:.2px;">YoYoJoy Day</td>
+                </tr>
+              </table>
               <div style="font-size:14px;color:#A9D6CE;margin-top:8px;">Твой персональный компаньон дня</div>
             </td>
           </tr>
           <tr>
-            <td style="padding:36px 40px 8px;color:#2C3A35;">
-              <p style="font-size:20px;font-weight:bold;margin:0 0 10px;">${greeting} Рады, что ты с нами 🌿</p>
+            <td style="padding:32px 20px 8px;color:#2C3A35;">
+              <p style="font-size:20px;font-weight:bold;margin:0 0 10px;">${greeting} Рады, что ты с нами</p>
               <p style="font-size:16px;line-height:1.6;color:#54605b;margin:0 0 26px;">
                 Спасибо за регистрацию в YoYoJoy. Держи два маленьких подарка — чтобы заботиться о себе было ещё теплее и проще.
-                Оба файла уже <b>во вложении к этому письму</b> 🎁
+                Оба файла уже <b>во вложении к этому письму</b>.
               </p>
 
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#E9F3EF;border-radius:16px;margin:0 0 14px;">
@@ -787,7 +800,7 @@ export class AuthService {
                   <td style="padding:18px 18px 18px 14px;vertical-align:top;">
                     <div style="font-size:16px;font-weight:bold;color:#23302b;">Трекер привычек на месяц</div>
                     <div style="font-size:14px;line-height:1.5;color:#54605b;margin-top:4px;">Простая структура, чтобы мягко закрепить полезные ритмы и видеть свой прогресс.</div>
-                    <div style="font-size:12px;color:#8B948F;margin-top:6px;">📎 ${trackerFile ?? 'Трекер-привычек.pdf'}</div>
+                    <div style="font-size:12px;color:#8B948F;margin-top:6px;">${trackerFile ?? 'Трекер-привычек.pdf'}</div>
                   </td>
                 </tr>
               </table>
@@ -800,7 +813,7 @@ export class AuthService {
                   <td style="padding:18px 18px 18px 14px;vertical-align:top;">
                     <div style="font-size:16px;font-weight:bold;color:#23302b;">Чек-лист «30 дней заботы о себе»</div>
                     <div style="font-size:14px;line-height:1.5;color:#54605b;margin-top:4px;">Тёплый микро-ритуал на каждый день: маленькие шаги, из которых складывается забота.</div>
-                    <div style="font-size:12px;color:#8B948F;margin-top:6px;">📎 ${checklistFile ?? '30-дней-заботы-о-себе.pdf'}</div>
+                    <div style="font-size:12px;color:#8B948F;margin-top:6px;">${checklistFile ?? '30-дней-заботы-о-себе.pdf'}</div>
                   </td>
                 </tr>
               </table>
@@ -808,11 +821,11 @@ export class AuthService {
           </tr>
           ${channelsSection}
           <tr>
-            <td style="padding:14px 40px 34px;">
+            <td style="padding:14px 20px 32px;">
               <div style="border-top:1px solid #ECE3D4;margin:0 0 16px;"></div>
               <p style="font-size:12px;line-height:1.6;color:#A7A296;margin:0;text-align:center;">
                 Ты получил(а) это письмо, потому что зарегистрировался(ась) в YoYoJoy.<br>
-                С заботой, команда YoYoJoy 🤍
+                С заботой, команда YoYoJoy
               </p>
             </td>
           </tr>

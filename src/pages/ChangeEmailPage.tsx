@@ -113,7 +113,7 @@ export function ChangeEmailPage() {
                     className="w-5 h-5 rounded-[6px] border-outline-variant text-primary focus:ring-primary/20 cursor-pointer"
                   />
                 </div>
-                <span className="text-[13px] font-medium text-on-surface-variant leading-snug">
+                <span className="min-w-0 break-words text-[13px] font-medium text-on-surface-variant leading-snug">
                   Я согласен(а) на обработку персональных данных (обязательно).{' '}
                   <Link to="/politika" onClick={(e) => e.stopPropagation()} className="text-primary font-bold underline underline-offset-4 decoration-primary/50">
                     Политика
@@ -131,7 +131,7 @@ export function ChangeEmailPage() {
                     className="w-5 h-5 rounded-[6px] border-outline-variant text-primary focus:ring-primary/20 cursor-pointer"
                   />
                 </div>
-                <div>
+                <div className="min-w-0 break-words">
                   <span className="text-[13px] font-medium text-on-surface-variant leading-snug block">
                     Я хочу получать рекламную рассылку на почту
                   </span>

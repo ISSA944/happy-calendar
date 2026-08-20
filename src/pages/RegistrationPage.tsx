@@ -162,7 +162,7 @@ export function RegistrationPage() {
                       onChange={e => updateDraft({ consent: e.target.checked })}
                     />
                   </div>
-                  <span className="text-[13px] font-medium text-on-surface-variant leading-snug">
+                  <span className="min-w-0 break-words text-[13px] font-medium text-on-surface-variant leading-snug">
                     Я согласен(а) на обработку персональных данных (обязательно){' '}
                     <Link
                       to="/politika"
@@ -186,7 +186,7 @@ export function RegistrationPage() {
                       onChange={e => updateDraft({ marketing: e.target.checked })}
                     />
                   </div>
-                  <div>
+                  <div className="min-w-0 break-words">
                     <span className="text-[13px] font-medium text-on-surface-variant leading-snug block">
                       Я хочу получать рекламную рассылку на почту
                     </span>
