@@ -1,8 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { existsSync } from 'fs';
-import { resolve } from 'path';
 import { PrismaService } from '../prisma';
 import { AuthService } from './auth.service';
 
@@ -246,7 +244,7 @@ describe('AuthService registration email lifecycle', () => {
     expect(sentHtml).toContain('letter-spacing');
   });
 
-  it('keeps system emails inside a Gmail mobile shell with the refreshed leaf asset', () => {
+  it('keeps the classic YoYoJoy header inside a Gmail mobile shell', () => {
     const { service } = createService(createUser('mobile@example.com'));
     const renderer = service as unknown as {
       renderOtpEmailHtml(code: string): string;
@@ -265,31 +263,20 @@ describe('AuthService registration email lifecycle', () => {
     );
 
     for (const html of [otpHtml, welcomeHtml]) {
-      expect(html).toContain(
-        'https://yoyojoy.online/email-assets/brand-leaf-v2.png',
-      );
+      expect(html).toContain('YoYoJoy Day 🌿');
       expect(html).toContain('width="100%"');
       expect(html).toContain('class="email-shell"');
       expect(html).toContain('width="520"');
       expect(html).toContain('@media only screen and (max-width: 520px)');
       expect(html).not.toContain('width="480"');
       expect(html).not.toContain('width="600"');
-      expect(html).not.toMatch(/[🌿🎁📎💚🤍]/u);
+      expect(html).not.toContain('brand-leaf-v2.png');
     }
 
     expect(otpHtml).toContain('font-size:32px');
     expect(otpHtml).toContain('white-space:nowrap');
-    expect(
-      existsSync(
-        resolve(
-          process.cwd(),
-          '..',
-          'public',
-          'email-assets',
-          'brand-leaf-v2.png',
-        ),
-      ),
-    ).toBe(true);
+    expect(otpHtml).toContain('background:#0E6E62');
+    expect(welcomeHtml).toContain('background:#0E6E62');
   });
 });
 

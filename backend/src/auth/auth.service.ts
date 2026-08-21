@@ -581,13 +581,8 @@ export class AuthService {
       <td align="center">
         <table role="presentation" class="email-shell" width="520" cellspacing="0" cellpadding="0" border="0" style="width:520px;max-width:100%;background:#fcf9f4;border-radius:24px;overflow:hidden">
           <tr>
-            <td class="email-header" style="padding:32px 20px 24px;background:#006a65;text-align:center">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
-                <tr>
-                  <td style="padding:0 8px 0 0;vertical-align:middle"><img src="${this.brandLeafIconUrl}" width="30" height="30" alt="" style="display:block;border:0;outline:none"></td>
-                  <td style="vertical-align:middle;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px">YoYoJoy Day</td>
-                </tr>
-              </table>
+            <td class="email-header" style="padding:32px 20px 24px;background:#0E6E62;text-align:center">
+              <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px">YoYoJoy Day 🌿</div>
               <div style="color:#a4d8d5;font-size:13px;margin-top:6px">Твой персональный компаньон дня</div>
             </td>
           </tr>
@@ -709,10 +704,8 @@ export class AuthService {
     throw new Error('No email provider configured for welcome email');
   }
 
-  // Логотипы — PNG (не SVG: Gmail/Outlook режут SVG в письмах), хостятся на фронтенд-домене
-  // из public/email-assets/*.png (deploy.sh копирует dist/ целиком, public/ уже часть сборки).
-  private readonly brandLeafIconUrl =
-    'https://yoyojoy.online/email-assets/brand-leaf-v2.png';
+  // Системные письма сохраняют классический знак 🌿 в шапке: он остаётся видимым
+  // даже если почтовый клиент блокирует внешние изображения.
   private readonly telegramLogoUrl =
     'https://yoyojoy.online/email-assets/telegram.png';
   private readonly maxLogoUrl = 'https://yoyojoy.online/email-assets/max.png';
@@ -790,12 +783,7 @@ export class AuthService {
         <table role="presentation" class="email-shell" width="520" cellspacing="0" cellpadding="0" border="0" style="width:520px;max-width:100%;background:#FAF6EF;border-radius:24px;overflow:hidden">
           <tr>
             <td class="email-header" style="background:#0E6E62;padding:32px 20px;text-align:center;">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
-                <tr>
-                  <td style="padding:0 8px 0 0;vertical-align:middle"><img src="${this.brandLeafIconUrl}" width="30" height="30" alt="" style="display:block;border:0;outline:none"></td>
-                  <td style="vertical-align:middle;font-size:24px;font-weight:bold;color:#ffffff;letter-spacing:.2px;">YoYoJoy Day</td>
-                </tr>
-              </table>
+              <div style="font-size:24px;font-weight:bold;color:#ffffff;letter-spacing:.2px;">YoYoJoy Day 🌿</div>
               <div style="font-size:14px;color:#A9D6CE;margin-top:8px;">Твой персональный компаньон дня</div>
             </td>
           </tr>
