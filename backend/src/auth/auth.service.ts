@@ -565,18 +565,26 @@ export class AuthService {
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="x-apple-disable-message-reformatting"/>
+<style>
+@media only screen and (max-width: 520px) {
+  .email-shell { width:100% !important; max-width:100% !important; }
+  .email-header { padding:24px 16px 20px !important; }
+  .email-content { padding-left:16px !important; padding-right:16px !important; }
+  .otp-code { font-size:30px !important; letter-spacing:6px !important; }
+}
+</style>
 <title>YoYoJoy Day</title>
 </head>
 <body style="margin:0;padding:16px 8px;background:#f5f2ed;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:480px;background:#fcf9f4;border-radius:24px;overflow:hidden">
+        <table role="presentation" class="email-shell" width="520" cellspacing="0" cellpadding="0" border="0" style="width:520px;max-width:100%;background:#fcf9f4;border-radius:24px;overflow:hidden">
           <tr>
-            <td style="padding:32px 20px 24px;background:#006a65;text-align:center">
+            <td class="email-header" style="padding:32px 20px 24px;background:#006a65;text-align:center">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
                 <tr>
-                  <td style="padding:0 8px 0 0;vertical-align:middle"><img src="${this.brandLeafIconUrl}" width="28" height="28" alt="" style="display:block;border:0;outline:none"></td>
+                  <td style="padding:0 8px 0 0;vertical-align:middle"><img src="${this.brandLeafIconUrl}" width="30" height="30" alt="" style="display:block;border:0;outline:none"></td>
                   <td style="vertical-align:middle;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px">YoYoJoy Day</td>
                 </tr>
               </table>
@@ -584,12 +592,12 @@ export class AuthService {
             </td>
           </tr>
           <tr>
-            <td style="padding:32px 20px 8px">
+            <td class="email-content" style="padding:32px 20px 8px">
               <p style="margin:0 0 28px;font-size:16px;line-height:1.55;color:#2a3f3e">
                 Привет! Вот твой одноразовый код для входа:
               </p>
               <div style="text-align:center">
-                <div style="display:inline-block;max-width:100%;box-sizing:border-box;padding:14px 18px 14px 26px;background:#f0fafa;border:2px solid #2FA7A0;border-radius:14px;font-size:32px;font-weight:800;line-height:1.2;letter-spacing:8px;color:#006a65;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;white-space:nowrap">${code}</div>
+                <div class="otp-code" style="display:inline-block;max-width:100%;box-sizing:border-box;padding:14px 18px 14px 26px;background:#f0fafa;border:2px solid #2FA7A0;border-radius:14px;font-size:32px;font-weight:800;line-height:1.2;letter-spacing:8px;color:#006a65;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;white-space:nowrap">${code}</div>
               </div>
               <p style="margin:28px 0 0;font-size:14px;line-height:1.55;color:#5a6968">
                 Код действует <strong style="color:#006a65">${this.OTP_TTL_MIN} минут</strong>. Никому его не передавай — мы не запрашиваем коды в чатах и сообщениях.
@@ -704,7 +712,7 @@ export class AuthService {
   // Логотипы — PNG (не SVG: Gmail/Outlook режут SVG в письмах), хостятся на фронтенд-домене
   // из public/email-assets/*.png (deploy.sh копирует dist/ целиком, public/ уже часть сборки).
   private readonly brandLeafIconUrl =
-    'https://yoyojoy.online/email-assets/brand-leaf.png';
+    'https://yoyojoy.online/email-assets/brand-leaf-v2.png';
   private readonly telegramLogoUrl =
     'https://yoyojoy.online/email-assets/telegram.png';
   private readonly maxLogoUrl = 'https://yoyojoy.online/email-assets/max.png';
@@ -765,6 +773,13 @@ export class AuthService {
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="x-apple-disable-message-reformatting"/>
+<style>
+@media only screen and (max-width: 520px) {
+  .email-shell { width:100% !important; max-width:100% !important; }
+  .email-header { padding:24px 16px !important; }
+  .email-content { padding-left:16px !important; padding-right:16px !important; }
+}
+</style>
 <title>YoYoJoy Day</title>
 </head>
 <body style="margin:0;padding:16px 8px;background:#F0EBE1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a3f3e">
@@ -772,9 +787,9 @@ export class AuthService {
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:520px;width:100%;background:#FAF6EF;border-radius:24px;overflow:hidden">
+        <table role="presentation" class="email-shell" width="520" cellspacing="0" cellpadding="0" border="0" style="width:520px;max-width:100%;background:#FAF6EF;border-radius:24px;overflow:hidden">
           <tr>
-            <td style="background:#0E6E62;padding:32px 20px;text-align:center;">
+            <td class="email-header" style="background:#0E6E62;padding:32px 20px;text-align:center;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
                 <tr>
                   <td style="padding:0 8px 0 0;vertical-align:middle"><img src="${this.brandLeafIconUrl}" width="30" height="30" alt="" style="display:block;border:0;outline:none"></td>
@@ -785,7 +800,7 @@ export class AuthService {
             </td>
           </tr>
           <tr>
-            <td style="padding:32px 20px 8px;color:#2C3A35;">
+            <td class="email-content" style="padding:32px 20px 8px;color:#2C3A35;">
               <p style="font-size:20px;font-weight:bold;margin:0 0 10px;">${greeting} Рады, что ты с нами</p>
               <p style="font-size:16px;line-height:1.6;color:#54605b;margin:0 0 26px;">
                 Спасибо за регистрацию в YoYoJoy. Держи два маленьких подарка — чтобы заботиться о себе было ещё теплее и проще.

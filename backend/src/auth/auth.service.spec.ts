@@ -246,7 +246,7 @@ describe('AuthService registration email lifecycle', () => {
     expect(sentHtml).toContain('letter-spacing');
   });
 
-  it('renders OTP and welcome emails with the leaf asset instead of emoji-only branding', () => {
+  it('keeps system emails inside a Gmail mobile shell with the refreshed leaf asset', () => {
     const { service } = createService(createUser('mobile@example.com'));
     const renderer = service as unknown as {
       renderOtpEmailHtml(code: string): string;
@@ -266,9 +266,12 @@ describe('AuthService registration email lifecycle', () => {
 
     for (const html of [otpHtml, welcomeHtml]) {
       expect(html).toContain(
-        'https://yoyojoy.online/email-assets/brand-leaf.png',
+        'https://yoyojoy.online/email-assets/brand-leaf-v2.png',
       );
       expect(html).toContain('width="100%"');
+      expect(html).toContain('class="email-shell"');
+      expect(html).toContain('width="520"');
+      expect(html).toContain('@media only screen and (max-width: 520px)');
       expect(html).not.toContain('width="480"');
       expect(html).not.toContain('width="600"');
       expect(html).not.toMatch(/[🌿🎁📎💚🤍]/u);
@@ -283,7 +286,7 @@ describe('AuthService registration email lifecycle', () => {
           '..',
           'public',
           'email-assets',
-          'brand-leaf.png',
+          'brand-leaf-v2.png',
         ),
       ),
     ).toBe(true);
