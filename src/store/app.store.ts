@@ -130,7 +130,7 @@ type AppState = {
   // Не персистируется: на обычных открытиях приложения всегда false.
   showOnboardingLoader: boolean
   setShowOnboardingLoader: (v: boolean) => void
-  initDailyPack: () => Promise<void>
+  initDailyPack: (options?: { force?: boolean }) => Promise<void>
   // Меняет настроение И обновляет фразу поддержки через бэк
   setMood: (mood: string) => Promise<void>
   // "Другая фраза" — POST /api/today/support/next
@@ -209,6 +209,24 @@ function delay(ms: number) {
 }
 
 let fallbackRetryTimer: ReturnType<typeof setTimeout> | null = null
+
+const dailyRequests = new Map<string, Promise<void>>()
+let loadedDailyKey: string | null = null
+let contentGeneration = 0
+function dailyRequestKey(state: AppState) {
+  const now = new Date()
+  const date = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`
+  // Identity only, not authorization: token refresh must not discard a valid response.
+  const token = getAccessToken()
+  let subject: string | null = token ? state.email : null
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as { sub?: string }
+      if (typeof payload.sub === 'string') subject = payload.sub
+    } catch { /* Invalid tokens are rejected by the API, never trusted here. */ }
+  }
+  return JSON.stringify([subject, state.email, state.zodiacSign, state.currentMood, date, contentGeneration])
+}
 
 function clearFallbackRetry() {
   if (fallbackRetryTimer !== null) {
@@ -291,11 +309,20 @@ export const useAppStore = create<AppState>()(
       offlineQueue: [],
       setShowOnboardingLoader: v => set({ showOnboardingLoader: v }),
 
-      initDailyPack: async () => {
+      initDailyPack: async (options) => {
         if (!getAccessToken()) {
           set({ showOnboardingLoader: false })
           return
         }
+
+        const key = dailyRequestKey(get())
+        const pending = dailyRequests.get(key)
+        if (pending) return pending
+        if (!options?.force && loadedDailyKey === key && get().dailyPack) {
+          set({ showOnboardingLoader: false })
+          return
+        }
+        const request = (async () => {
 
         // Clear stale pack from previous day so yesterday's content isn't shown while fetching
         const stored = get().dailyPack
@@ -312,6 +339,7 @@ export const useAppStore = create<AppState>()(
         const minWait = isLoaderShowing ? delay(6000) : Promise.resolve()
         try {
           const { data } = await apiClient.get<TodayResponse>('today')
+          if (dailyRequestKey(get()) !== key) return
           const nextPack = {
             date: data.date,
             horoscope: data.horoscope,
@@ -321,13 +349,14 @@ export const useAppStore = create<AppState>()(
           }
 
           set({ dailyPack: nextPack })
+          loadedDailyKey = key
 
           clearFallbackRetry()
           if (data.meta?.contentSource === 'fallback') {
             const retryAfterSeconds = data.meta.retryAfterSeconds ?? 300
             fallbackRetryTimer = setTimeout(() => {
               fallbackRetryTimer = null
-              void get().initDailyPack()
+              void get().initDailyPack({ force: true })
             }, retryAfterSeconds * 1000)
           }
 
@@ -335,23 +364,31 @@ export const useAppStore = create<AppState>()(
             await Promise.all([minWait, preloadImage(getMoodImage(get().currentMood))])
           }
 
+          if (dailyRequestKey(get()) !== key) return
+
           set({
             showOnboardingLoader: false,
           })
         } catch (err) {
           console.warn('[store] Failed to fetch /today', err)
           await minWait
-          set({ showOnboardingLoader: false })
+          if (dailyRequestKey(get()) === key) set({ showOnboardingLoader: false })
         }
+        })()
+        dailyRequests.set(key, request)
+        try { await request } finally { if (dailyRequests.get(key) === request) dailyRequests.delete(key) }
       },
 
       setMood: async (mood: string) => {
+        contentGeneration++
         // Optimistic UI update
         set({ currentMood: mood })
 
         if (!getAccessToken()) return
+        const key = dailyRequestKey(get())
         try {
           const { data } = await apiClient.patch<MoodPatchResponse>('profile/mood', { mood })
+          if (dailyRequestKey(get()) !== key) return
           const pack = get().dailyPack
           if (pack) {
             set({ dailyPack: { ...pack, supportPhrase: data.support.text } })
@@ -363,8 +400,10 @@ export const useAppStore = create<AppState>()(
 
       refreshSupportPhrase: async () => {
         if (!getAccessToken()) return
+        const key = dailyRequestKey(get())
         try {
           const { data } = await apiClient.post<{ support: { text: string } }>('today/support/next')
+          if (dailyRequestKey(get()) !== key) return
           const pack = get().dailyPack
           if (pack) {
             set({ dailyPack: { ...pack, supportPhrase: data.support.text } })
@@ -760,6 +799,8 @@ export const useAppStore = create<AppState>()(
       },
 
       resetApp: async () => {
+        contentGeneration++
+        loadedDailyKey = null
         clearFallbackRetry()
         if (getAccessToken()) {
           try {

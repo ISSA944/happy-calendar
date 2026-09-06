@@ -14,30 +14,36 @@ export const SHARE_CHANNELS: ShareChannel[] = [
   { id: 'copy', label: 'Копировать', icon: 'content_copy' },
 ]
 
-/** Пытается системный Web Share; возвращает true если сработал (в т.ч. пользователь просто отменил). */
-export async function nativeShare(title: string, text: string, imageUrl?: string): Promise<boolean> {
+/** Prepare before the click: awaiting fetch inside share loses mobile user activation. */
+export async function prepareShareFile(imageUrl: string, signal?: AbortSignal): Promise<File | null> {
+  const controller = new AbortController()
+  const abort = () => controller.abort()
+  const timer = setTimeout(abort, 8000)
+  signal?.addEventListener('abort', abort, { once: true })
+  if (signal?.aborted) abort()
+  try {
+    const response = await fetch(imageUrl, { signal: controller.signal })
+    if (!response.ok) return null
+    const blob = await response.blob()
+    if (!blob.type.startsWith('image/')) return null
+    const filename = new URL(imageUrl, 'https://yoyojoy.online').pathname.split('/').pop() || 'yoyojoy-postcard.webp'
+    return new File([blob], filename, { type: blob.type })
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener('abort', abort)
+  }
+}
+
+/** true also means the user cancelled: never reopen a second share dialog. */
+export async function nativeShare(title: string, text: string, imageUrl?: string, file?: File): Promise<boolean> {
   if (!navigator.share) return false
   try {
-    if (imageUrl) {
-      try {
-        const response = await fetch(imageUrl)
-        if (response.ok) {
-          const blob = await response.blob()
-          const filename = new URL(imageUrl).pathname.split('/').pop() || 'yoyojoy-postcard.webp'
-          const file = new File([blob], filename, { type: blob.type || 'image/webp' })
-          if (navigator.canShare?.({ files: [file] })) {
-            await navigator.share({ title, text, files: [file] })
-            return true
-          }
-        }
-      } catch {
-        // Если картинку нельзя скачать как File, ниже всё равно делимся её публичной ссылкой.
-      }
-      await navigator.share({ title, text, url: imageUrl })
-      return true
-    }
-
-    await navigator.share({ title, text })
+    const payload: ShareData = file && navigator.canShare?.({ files: [file] })
+      ? { title, text, files: [file] }
+      : { title, text, ...(imageUrl ? { url: imageUrl } : {}) }
+    await navigator.share(payload)
     return true
   } catch (err) {
     // AbortError — пользователь закрыл системный шит, это не ошибка.
@@ -47,23 +53,22 @@ export async function nativeShare(title: string, text: string, imageUrl?: string
 }
 
 /** Открывает конкретный канал (фолбэк, когда navigator.share недоступен). */
-export function shareViaChannel(channel: ShareChannel['id'], title: string, text: string, imageUrl?: string) {
+export async function shareViaChannel(channel: ShareChannel['id'], title: string, text: string, imageUrl?: string): Promise<boolean> {
   const textWithLink = imageUrl ? `${text}\n${imageUrl}` : text
   const enc = encodeURIComponent(textWithLink)
   switch (channel) {
     case 'telegram':
       window.open(`https://t.me/share/url?url=${encodeURIComponent(imageUrl ?? 'https://yoyojoy.online')}&text=${encodeURIComponent(text)}`, '_blank')
-      return
+      return true
     case 'whatsapp':
       window.open(`https://wa.me/?text=${enc}`, '_blank')
-      return
+      return true
     case 'email':
       window.location.href = `mailto:?subject=${encodeURIComponent(title)}&body=${enc}`
-      return
+      return true
     case 'max':
     case 'copy':
-      void copyToClipboard(textWithLink)
-      return
+      return copyToClipboard(textWithLink)
   }
 }
 

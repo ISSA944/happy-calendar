@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest'
 import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
-import { readFileSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { LandingMood } from '../features/landing/LandingMood'
 import { PWA_PRECACHE_PATTERNS } from '../config/pwaCache'
@@ -59,13 +59,14 @@ describe('startup performance contracts', () => {
   })
 
   it('keeps authenticated pages out of the landing-page bundle', () => {
-    const appSource = readFileSync(resolve('src/App.tsx'), 'utf8')
-
-    expect(appSource).toContain("const loadHomePage = () => import('./pages/HomePage')")
-    expect(appSource).toContain("const loadSettingsPage = () => import('./pages/SettingsPage')")
-    expect(appSource).toContain('const HomePage = lazy(loadHomePage)')
-    expect(appSource).toContain('const SettingsPage = lazy(loadSettingsPage)')
-    expect(appSource).not.toContain("import { HomePage } from './pages/HomePage'")
+    const files = readdirSync(resolve('dist/assets'))
+    const entry = files.find(file => /^index-.*\.js$/.test(file))!
+    const built = readFileSync(resolve('dist/assets', entry), 'utf8')
+    for (const page of ['HomePage', 'BookmarksPage', 'SettingsPage', 'NotificationsListPage']) {
+      const chunk = files.find(file => file.startsWith(`${page}-`) && file.endsWith('.js'))
+      expect(chunk).toBeDefined()
+      expect(built).toContain(`import("./${chunk}")`)
+    }
   })
 
   it('keeps below-the-fold landing sections out of the critical bundle', () => {
@@ -81,8 +82,6 @@ describe('startup performance contracts', () => {
 
     expect(appSource).toContain("from 'framer-motion'")
     expect(appSource).toContain('<AnimatePresence mode="wait">')
-    expect(appSource).toContain('initial={{ opacity: 0, x: 15 }}')
-    expect(appSource).toContain('exit={{ opacity: 0, x: -15 }}')
     expect(appSource).toContain('initial={{ opacity: 0, y: 10 }}')
     expect(appSource).toContain('exit={{ opacity: 0, y: -10 }}')
     expect(appSource).toContain('<LazyMotion features={domAnimation}>')

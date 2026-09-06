@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { motion, type Variants } from 'framer-motion'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import type { HolidayCard } from '../../store/app.store'
@@ -11,14 +11,9 @@ interface HolidayListSheetProps {
   holidays: HolidayCard[]
 }
 
-// Без AnimatePresence/mode="wait": та же ловушка, что уже чинили на HomePage — двухфазная
-// choreography (сначала дождаться exit, потом mount) виснет, если requestAnimationFrame не
-// тикает (свёрнутая/неактивная вкладка бросает анимацию на первом кадре). Простой keyed remount
-// надёжнее кросс-контекстно и всё равно даёт нужный slide-in при каждой смене экрана.
-// Без scale: у родителя ниже стоит layout="size" (тоже анимирует через transform) — scale на
-// ребёнке поверх layout-transform родителя даёт составной, визуально "рваный" эффект.
+// The drawer stays fixed; only its inner pane moves, never scale/layout transforms.
 const slideVariants: Variants = {
-  enter: { x: 36, opacity: 0 },
+  enter: (direction: number) => ({ x: direction * 24, opacity: 1 }),
   center: { x: 0, opacity: 1 },
 }
 const SLIDE_TRANSITION = { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }
@@ -26,15 +21,10 @@ const SLIDE_TRANSITION = { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }
 /** Список праздников на дату (ТЗ п. 5.1) → тап по строке открывает открытку внутри того же шита. */
 export function HolidayListSheet({ isOpen, onClose, holidays }: HolidayListSheetProps) {
   const [selected, setSelected] = useState<HolidayCard | null>(null)
+  const listScroll = useRef(0)
 
   const goToCard = useCallback((h: HolidayCard) => setSelected(h), [])
   const goBackToList = useCallback(() => setSelected(null), [])
-
-  // Полное закрытие шита — сбрасываем выбор, чтобы следующее открытие начиналось со списка.
-  const handleClose = useCallback(() => {
-    onClose()
-    setSelected(null)
-  }, [onClose])
 
   const hasRu = holidays.some((h) => h.scope === 'ru')
   const note = hasRu ? 'Российские праздники на сегодня.' : 'Сегодня нет российских праздников — показываем международные.'
@@ -42,7 +32,10 @@ export function HolidayListSheet({ isOpen, onClose, holidays }: HolidayListSheet
   return (
     <BottomSheet
       isOpen={isOpen}
-      onClose={handleClose}
+      onClose={onClose}
+      onClosed={() => { setSelected(null); listScroll.current = 0 }}
+      fixedViewportHeight
+      description="Выберите праздник и тон открытки."
       title={
         selected ? (
           <div className="flex items-center gap-2 min-w-0">
@@ -60,19 +53,17 @@ export function HolidayListSheet({ isOpen, onClose, holidays }: HolidayListSheet
         )
       }
     >
-      {/* layout="size": высота контейнера меняется вместе со слайдом (список короче/длиннее
-          открытки), без него высота скачет мгновенно, а слайд идёт отдельно — ощущается дёргано.
-          Именно "size", не голый layout — тот анимирует ещё и позицию через transform, что
-          вместе со slideVariants ребёнка (тоже transform) даёт составной, дёрганый эффект. */}
-      <motion.div layout="size" className="relative overflow-hidden">
+      <div className="relative flex-1 min-h-0 overflow-hidden">
         {selected ? (
           <motion.div
             key={`card-${selected.id}`}
             variants={slideVariants}
+            custom={1}
             initial="enter"
             animate="center"
             transition={SLIDE_TRANSITION}
             style={{ willChange: 'transform, opacity' }}
+            className="h-full overflow-y-auto touch-pan-y overscroll-contain"
           >
             <PostcardContent holiday={selected} />
           </motion.div>
@@ -80,11 +71,16 @@ export function HolidayListSheet({ isOpen, onClose, holidays }: HolidayListSheet
           <motion.div
             key="list"
             variants={slideVariants}
+            custom={-1}
             initial="enter"
             animate="center"
             transition={SLIDE_TRANSITION}
             style={{ willChange: 'transform, opacity' }}
-            className="px-5 pb-6 flex flex-col gap-3"
+            role="region"
+            aria-label="Список праздников"
+            ref={node => { if (node) node.scrollTop = listScroll.current }}
+            onScroll={event => { listScroll.current = event.currentTarget.scrollTop }}
+            className="h-full overflow-y-auto touch-pan-y overscroll-contain px-5 pb-6 flex flex-col gap-3"
           >
             <p className="text-sm text-on-surface-variant -mt-1">{note}</p>
             {holidays.map((h) => (
@@ -110,7 +106,7 @@ export function HolidayListSheet({ isOpen, onClose, holidays }: HolidayListSheet
             ))}
           </motion.div>
         )}
-      </motion.div>
+      </div>
     </BottomSheet>
   )
 }

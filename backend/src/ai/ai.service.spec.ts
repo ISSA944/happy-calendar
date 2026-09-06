@@ -36,6 +36,14 @@ function completion(content: unknown) {
 }
 
 describe('AiService', () => {
+  it('bounds provider requests and disables SDK retries so the service owns the single retry', () => {
+    const service = new AiService(config({ AI_API_KEY: 'test-key' }));
+    const client = (
+      service as unknown as { openai: { timeout: number; maxRetries: number } }
+    ).openai;
+    expect(client.timeout).toBe(20_000);
+    expect(client.maxRetries).toBe(0);
+  });
   it.each([
     'Овен ♈︎',
     'Телец ♉︎',

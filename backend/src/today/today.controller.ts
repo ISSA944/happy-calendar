@@ -14,14 +14,19 @@ import { resolveHoliday } from '../ai/holidays.data';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/current-user.decorator';
+import { randomUUID } from 'node:crypto';
+import type { AiSupportBatch } from '../ai/ai.service';
 
 const POOL_MIN = 2; // refill pool when fewer than this many phrases left
 const POOL_TTL = 86400; // 24h TTL for pool keys
+const SUPPORT_FALLBACK =
+  'Сейчас можно спокойно вернуть себе опору. Выбери один бережный шаг и не требуй от себя решить всё сразу.';
 
 @Controller('api/today')
 @UseGuards(JwtAuthGuard)
 export class TodayController {
   private readonly logger = new Logger(TodayController.name);
+  private readonly fills = new Map<string, Promise<AiSupportBatch | null>>();
 
   constructor(
     private readonly todayService: TodayService,
@@ -70,21 +75,18 @@ export class TodayController {
     } else {
       // Pool empty — generate batch and fill it
       this.logger.log(`nextSupport pool MISS key=${poolKey}, generating batch`);
-      const batch = await this.ai.generateSupportPhrasesBatch(
-        mood,
-        zodiacSign,
-        holiday,
-        name,
-        gender,
-      );
-      if (!batch.isFallback && batch.phrases.length > 1) {
-        await this.redis.lpush(poolKey, batch.phrases.slice(1), POOL_TTL);
-      }
-      supportPhrase =
-        batch.phrases[0] ??
-        'Сейчас можно спокойно вернуть себе опору. Выбери один бережный шаг и не требуй от себя решить всё сразу.';
-      if (batch.isFallback) {
-        return { support: { text: supportPhrase } };
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const batch = await Promise.race([
+        this.refillPool(poolKey, mood, zodiacSign, holiday, name, gender),
+        new Promise<null>((resolve) => {
+          timer = setTimeout(() => resolve(null), 8000);
+        }),
+      ]).finally(() => clearTimeout(timer));
+      supportPhrase = await this.redis.rpop(poolKey);
+      if (!supportPhrase) {
+        // Slow/failed provider: return promptly, let the single refill finish in background.
+        // Never persist this temporary response as the user's daily support.
+        return { support: { text: batch?.phrases[0] ?? SUPPORT_FALLBACK } };
       }
     }
 
@@ -92,31 +94,77 @@ export class TodayController {
     return { support: { text: supportPhrase } };
   }
 
-  private async refillPool(
+  private refillPool(
     poolKey: string,
     mood: string,
     zodiacSign?: string,
     holiday?: string,
     name?: string,
     gender?: string,
-  ): Promise<void> {
-    try {
-      const batch = await this.ai.generateSupportPhrasesBatch(
-        mood,
-        zodiacSign,
-        holiday,
-        name,
-        gender,
-      );
-      if (!batch.isFallback && batch.phrases.length > 0) {
-        await this.redis.lpush(poolKey, batch.phrases, POOL_TTL);
-        this.logger.log(
-          `nextSupport pool refilled key=${poolKey}, ${batch.phrases.length} phrases`,
+  ): Promise<AiSupportBatch | null> {
+    const existing = this.fills.get(poolKey);
+    if (existing) return existing;
+    const filling = (async (): Promise<AiSupportBatch | null> => {
+      const lockKey = `lock:${poolKey}`;
+      const owner = randomUUID();
+      let owned = false;
+      try {
+        const cooldown = await this.redis.get(`fallback:${poolKey}`);
+        if (cooldown) return JSON.parse(cooldown) as AiSupportBatch;
+        const lock = await this.redis.acquireOwnedLock(lockKey, owner, 50);
+        owned = lock === 'acquired';
+        if (lock === 'busy') {
+          const deadline = Date.now() + 8000;
+          while (Date.now() < deadline) {
+            if ((await this.redis.llen(poolKey)) > 0) return null;
+            const fallback = await this.redis.get(`fallback:${poolKey}`);
+            if (fallback) return JSON.parse(fallback) as AiSupportBatch;
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+          return null;
+        }
+        if ((await this.redis.llen(poolKey)) >= POOL_MIN) return null;
+        const batch = await this.ai.generateSupportPhrasesBatch(
+          mood,
+          zodiacSign,
+          holiday,
+          name,
+          gender,
         );
+        if (!batch.isFallback && batch.phrases.length > 0) {
+          await this.redis.lpush(poolKey, batch.phrases, POOL_TTL);
+          this.logger.log(
+            `nextSupport pool refilled key=${poolKey}, ${batch.phrases.length} phrases`,
+          );
+        } else {
+          await this.redis.set(
+            `fallback:${poolKey}`,
+            JSON.stringify(batch),
+            300,
+          );
+        }
+        return batch;
+      } catch (err) {
+        this.logger.error('Pool refill failed', err);
+        const fallback: AiSupportBatch = {
+          phrases: [SUPPORT_FALLBACK],
+          isFallback: true,
+        };
+        await this.redis.set(
+          `fallback:${poolKey}`,
+          JSON.stringify(fallback),
+          300,
+        );
+        return fallback;
+      } finally {
+        if (owned) await this.redis.releaseOwnedLock(lockKey, owner);
       }
-    } catch (err) {
-      this.logger.error('Pool refill failed', err);
-    }
+    })();
+    this.fills.set(poolKey, filling);
+    void filling.finally(() => {
+      if (this.fills.get(poolKey) === filling) this.fills.delete(poolKey);
+    });
+    return filling;
   }
 
   private getTodayDateParts(timezone?: string | null): {

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useEffectEvent, useState, type ReactNode } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -13,22 +13,19 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { useAppStore } from './store'
 import { getAccessToken } from './auth/token-storage'
 import { PWAUpdater } from './components/ui/PWAUpdater'
+import { ReadyTabOutlet, cachedPageLoader } from './components/ReadyTabOutlet'
 
 import { LandingPage } from './pages/LandingPage'
 
-const loadHomePage = () => import('./pages/HomePage').then(module => ({ default: module.HomePage }))
-const loadBookmarksPage = () => import('./pages/BookmarksPage').then(module => ({ default: module.BookmarksPage }))
-const loadSettingsPage = () => import('./pages/SettingsPage').then(module => ({ default: module.SettingsPage }))
-const loadNotificationsListPage = () => import('./pages/NotificationsListPage').then(module => ({ default: module.NotificationsListPage }))
+const loadHomePage = cachedPageLoader(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })))
+const loadBookmarksPage = cachedPageLoader(() => import('./pages/BookmarksPage').then(module => ({ default: module.BookmarksPage })))
+const loadSettingsPage = cachedPageLoader(() => import('./pages/SettingsPage').then(module => ({ default: module.SettingsPage })))
+const loadNotificationsListPage = cachedPageLoader(() => import('./pages/NotificationsListPage').then(module => ({ default: module.NotificationsListPage })))
 
-const HomePage = lazy(loadHomePage)
 const RegistrationPage = lazy(() => import('./pages/RegistrationPage').then(module => ({ default: module.RegistrationPage })))
 const LoginPage = lazy(() => import('./pages/LoginPage').then(module => ({ default: module.LoginPage })))
 const OtpPage = lazy(() => import('./pages/OtpPage').then(module => ({ default: module.OtpPage })))
 const ProfileSetupPage = lazy(() => import('./pages/ProfileSetupPage').then(module => ({ default: module.ProfileSetupPage })))
-const BookmarksPage = lazy(loadBookmarksPage)
-const SettingsPage = lazy(loadSettingsPage)
-const NotificationsListPage = lazy(loadNotificationsListPage)
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then(module => ({ default: module.NotificationsPage })))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(module => ({ default: module.PrivacyPolicyPage })))
 const ChangeEmailPage = lazy(() => import('./pages/ChangeEmailPage').then(module => ({ default: module.ChangeEmailPage })))
@@ -40,7 +37,7 @@ const PageLoader = lazy(() => import('./components/ui/PageLoader').then(module =
 const APP_SHELL_ROUTES = ['/home', '/bookmarks', '/settings', '/notifications-list'] as const
 type AppShellRoute = typeof APP_SHELL_ROUTES[number]
 
-const APP_SHELL_PRELOADERS: Record<AppShellRoute, () => Promise<unknown>> = {
+const APP_SHELL_PRELOADERS = {
   '/home': loadHomePage,
   '/bookmarks': loadBookmarksPage,
   '/settings': loadSettingsPage,
@@ -126,38 +123,24 @@ function RequireAppReady({ children }: { children: ReactNode }) {
 
 function TabOutlet() {
   const { pathname } = useLocation()
-
-  return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden" style={{ background: '#fcf9f4' }}>
-      <AnimatePresence mode="wait">
-        <m.div
-          key={pathname}
-          initial={{ opacity: 0, x: 15 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -15 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="absolute inset-0 w-full h-full overflow-y-auto touch-pan-y overscroll-y-contain"
-        >
-          {pathname === '/home' && <HomePage />}
-          {pathname === '/bookmarks' && <BookmarksPage />}
-          {pathname === '/settings' && <SettingsPage />}
-          {pathname === '/notifications-list' && <NotificationsListPage />}
-        </m.div>
-      </AnimatePresence>
-    </div>
-  )
+  return <ReadyTabOutlet path={pathname} loaders={APP_SHELL_PRELOADERS} />
 }
 
 function AppLayout() {
   const navigate = useNavigate()
+  const navigateFromEvent = useEffectEvent((path: string) => navigate(path))
   const syncProfile = useAppStore(s => s.syncProfile)
   const initDailyPack = useAppStore(s => s.initDailyPack)
   const processOfflineQueue = useAppStore(s => s.processOfflineQueue)
 
   useEffect(() => {
     lastSyncAt = Date.now()
-    void syncProfile()
-    void initDailyPack()
+    let disposed = false
+    const refresh = async (force = false) => {
+      await syncProfile()
+      if (!disposed) await initDailyPack({ force })
+    }
+    void refresh()
     void processOfflineQueue()
 
     // Push nav: app was closed → opened via /?push_nav=/home (iOS + Android)
@@ -165,13 +148,13 @@ function AppLayout() {
     const pushNavParam = params.get('push_nav')
     if (pushNavParam) {
       window.history.replaceState({}, '', '/')
-      setTimeout(() => navigate(decodeURIComponent(pushNavParam)), 200)
+      setTimeout(() => navigateFromEvent(decodeURIComponent(pushNavParam)), 200)
     }
 
     // Push nav: app was open → SW sends postMessage (iOS + Android)
     const handleSwMessage = (event: MessageEvent) => {
       if (event.data?.type === 'PUSH_NAV' && event.data?.url) {
-        setTimeout(() => navigate(event.data.url as string), 100)
+        setTimeout(() => navigateFromEvent(event.data.url as string), 100)
       }
     }
     navigator.serviceWorker?.addEventListener('message', handleSwMessage)
@@ -182,14 +165,13 @@ function AppLayout() {
         const pendingNav = localStorage.getItem('push_pending_nav')
         if (pendingNav) {
           localStorage.removeItem('push_pending_nav')
-          navigate(pendingNav)
+          navigateFromEvent(pendingNav)
           return
         }
         const now = Date.now()
         if (now - lastSyncAt > 5 * 60 * 1000) {
           lastSyncAt = now
-          void syncProfile()
-          void initDailyPack()
+          void refresh(true)
         }
       }
     }
@@ -202,14 +184,16 @@ function AppLayout() {
     window.addEventListener('online', handleOnline)
 
     return () => {
+      disposed = true
       navigator.serviceWorker?.removeEventListener('message', handleSwMessage)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('online', handleOnline)
     }
-  }, [syncProfile, initDailyPack, processOfflineQueue, navigate])
+  }, [syncProfile, initDailyPack, processOfflineQueue])
 
   useEffect(() => {
     const warmTabs = () => {
+      preloadAppShellRoute('/home')
       preloadAppShellRoute('/bookmarks')
       preloadAppShellRoute('/settings')
       preloadAppShellRoute('/notifications-list')
@@ -241,9 +225,9 @@ function AppLayout() {
           <TabOutlet />
         </main>
 
-        <BottomNav onTabIntent={preloadAppShellRoute} />
+        <Suspense fallback={<div className="h-20" />}><BottomNav onTabIntent={preloadAppShellRoute} /></Suspense>
       </div>
-      <LoginPushPrompt />
+      <Suspense fallback={null}><LoginPushPrompt /></Suspense>
     </div>
   )
 }

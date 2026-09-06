@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiClient } from '../api'
 import { sanitizePersistedAppState, useAppStore } from './app.store'
+const session = vi.hoisted(() => ({ token: 'test-token' }))
 
 vi.mock('../api', () => ({
   apiClient: {
@@ -13,7 +14,7 @@ vi.mock('../api', () => ({
 }))
 
 vi.mock('../auth/token-storage', () => ({
-  getAccessToken: () => 'test-token',
+  getAccessToken: () => session.token,
   clearAuthTokens: vi.fn(),
 }))
 
@@ -50,6 +51,56 @@ describe('daily fallback refresh', () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.unstubAllGlobals()
+  })
+
+  it('coalesces overlapping daily requests and reuses a loaded pack on tab return', async () => {
+    let finish!: (value: ReturnType<typeof todayResponse>) => void
+    vi.mocked(apiClient.get).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    const first = useAppStore.getState().initDailyPack()
+    const second = useAppStore.getState().initDailyPack()
+    expect(apiClient.get).toHaveBeenCalledTimes(1)
+    finish(todayResponse('ai', 'Один ответ'))
+    await Promise.all([first, second])
+    await useAppStore.getState().initDailyPack()
+    expect(apiClient.get).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores a daily response after the profile identity changes', async () => {
+    let finish!: (value: ReturnType<typeof todayResponse>) => void
+    vi.mocked(apiClient.get).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    const loading = useAppStore.getState().initDailyPack()
+    useAppStore.setState({ email: 'another@example.com' })
+    finish(todayResponse('ai', 'Чужой ответ'))
+    await loading
+    expect(useAppStore.getState().dailyPack).toBeNull()
+  })
+
+  it('accepts the response when auto-refresh rotates the token for the same user', async () => {
+    const token = (exp: number) => `header.${btoa(JSON.stringify({ sub: 'same-user', exp }))}.signature`
+    session.token = token(1)
+    let finish!: (value: ReturnType<typeof todayResponse>) => void
+    vi.mocked(apiClient.get).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    const loading = useAppStore.getState().initDailyPack()
+    session.token = token(2)
+    finish(todayResponse('ai', 'После обновления токена'))
+    await loading
+    expect(useAppStore.getState().dailyPack?.horoscope.main).toBe('После обновления токена')
+    session.token = 'test-token'
+  })
+
+  it('does not replace the latest mood support with a slower previous mood response', async () => {
+    useAppStore.setState({ dailyPack: {
+      date: '06.09', horoscope: todayResponse('ai', 'Прогноз').data.horoscope,
+      holiday: null, supportPhrase: 'Исходная поддержка', contentSource: 'ai',
+    } })
+    let finish!: (value: unknown) => void
+    vi.mocked(apiClient.patch).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+      .mockResolvedValueOnce({ data: { support: { text: 'Для спокойного настроения' } } })
+    const first = useAppStore.getState().setMood('Тревожна')
+    await useAppStore.getState().setMood('Спокойна')
+    finish({ data: { support: { text: 'Устаревшая поддержка' } } })
+    await first
+    expect(useAppStore.getState().dailyPack?.supportPhrase).toBe('Для спокойного настроения')
   })
 
   it('quietly retries after 300 seconds and replaces fallback with live AI', async () => {

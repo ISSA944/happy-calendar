@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAppStore } from '../../store'
 import type { HolidayCard, HolidayCardWithText, Tone } from '../../store/app.store'
 import { ThemeArt } from './ThemeArt'
-import { nativeShare, shareViaChannel, SHARE_CHANNELS } from '../../utils/share'
+import { nativeShare, prepareShareFile, shareViaChannel, SHARE_CHANNELS } from '../../utils/share'
 import { getFullDateStr } from '../../services/content.service'
 
 const TONES: { id: Tone; label: string }[] = [
@@ -37,15 +37,31 @@ function PostcardContentInner({ holiday }: PostcardContentProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [showChannels, setShowChannels] = useState(false)
   const [copyFeedback, setCopyFeedback] = useState('')
+  const [attempt, setAttempt] = useState(0)
+  const [loadError, setLoadError] = useState(false)
+  const [isSharing, setIsSharing] = useState(false)
+  const sharing = useRef(false)
+  const preparedFile = useRef<{ url: string; file: File } | null>(null)
 
   useEffect(() => {
     let cancelled = false
     getHolidayCard(holiday.id, tone)
       .then((data) => { if (!cancelled) setCard(data) })
-      .catch(() => { if (!cancelled) setCard(null) })
+      .catch(() => { if (!cancelled) { setCard(null); setLoadError(true) } })
       .finally(() => { if (!cancelled) setIsLoading(false) })
     return () => { cancelled = true }
-  }, [holiday, tone, getHolidayCard])
+  }, [holiday.id, tone, getHolidayCard, attempt])
+
+  const imageUrl = !isLoading && card?.postcardReady ? card.imageUrl : null
+  useEffect(() => {
+    preparedFile.current = null
+    if (!imageUrl) return
+    const controller = new AbortController()
+    void prepareShareFile(imageUrl, controller.signal).then(file => {
+      if (file && !controller.signal.aborted) preparedFile.current = { url: imageUrl, file }
+    })
+    return () => controller.abort()
+  }, [imageUrl])
 
   const savedBookmark = card ? bookmarks.find((b) => (
     b.type === 'открытка'
@@ -54,6 +70,7 @@ function PostcardContentInner({ holiday }: PostcardContentProps) {
   const isSaved = Boolean(savedBookmark)
 
   const handleSave = useCallback(() => {
+    if (isLoading || loadError) return
     if (savedBookmark) { void removeBookmark(savedBookmark.id); return }
     if (!card) return
     void addBookmark({
@@ -66,17 +83,22 @@ function PostcardContentInner({ holiday }: PostcardContentProps) {
       title: card.title,
       tone: card.tone,
     })
-  }, [card, savedBookmark, addBookmark, removeBookmark])
+  }, [card, savedBookmark, addBookmark, removeBookmark, isLoading, loadError])
 
   const handleShare = useCallback(async () => {
-    if (!card) return
+    if (!card || isLoading || loadError || sharing.current) return
+    sharing.current = true
+    setIsSharing(true)
     const ok = await nativeShare(
       `YoYoJoy · ${card.title}`,
       card.text,
       card.postcardReady ? card.imageUrl ?? undefined : undefined,
+      preparedFile.current?.url === imageUrl ? preparedFile.current?.file : undefined,
     )
+    sharing.current = false
+    setIsSharing(false)
     if (!ok) setShowChannels(true)
-  }, [card])
+  }, [card, isLoading, loadError, imageUrl])
 
   return (
     <div className="px-5 pb-6 flex flex-col gap-4">
@@ -87,9 +109,14 @@ function PostcardContentInner({ holiday }: PostcardContentProps) {
           <button
             key={t.id}
             onClick={() => {
+              if (tone === t.id) return
               setTone(t.id)
               setIsLoading(true)
+              setLoadError(false)
+              setShowChannels(false)
+              setCopyFeedback('')
             }}
+            disabled={isSharing}
             className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border transition-colors ${
               tone === t.id
                 ? 'bg-primary/10 border-primary/40 text-primary'
@@ -109,7 +136,7 @@ function PostcardContentInner({ holiday }: PostcardContentProps) {
           }
         </div>
         {!card?.postcardReady && (
-          <motion.div layout="size" className="bg-white p-5 min-h-[64px]">
+          <div className="bg-white p-5 min-h-[64px]">
             <motion.p
               key={isLoading ? 'loading' : tone}
               initial={{ opacity: 0 }}
@@ -119,14 +146,22 @@ function PostcardContentInner({ holiday }: PostcardContentProps) {
             >
               {isLoading ? '…' : card?.text}
             </motion.p>
-          </motion.div>
+          </div>
         )}
       </div>
+
+      {loadError && <div role="alert" className="text-sm text-on-surface-variant">
+        Не удалось загрузить открытку.
+        <button className="block min-h-11 text-primary underline" onClick={() => {
+          setLoadError(false); setIsLoading(true); setAttempt(value => value + 1)
+        }}>Повторить загрузку</button>
+      </div>}
 
       {!showChannels ? (
         <div className="flex gap-3">
           <button
             onClick={handleSave}
+            disabled={isLoading || loadError || !card}
             className={`flex-1 h-12 rounded-xl border font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
               isSaved ? 'border-primary/30 text-primary bg-primary/5' : 'border-outline-variant text-on-surface-variant'
             }`}
@@ -138,6 +173,7 @@ function PostcardContentInner({ holiday }: PostcardContentProps) {
           </button>
           <button
             onClick={handleShare}
+            disabled={isLoading || loadError || !card || isSharing}
             className="flex-1 h-12 rounded-xl bg-primary-container text-white font-semibold text-sm flex items-center justify-center gap-2"
           >
             <span className="material-symbols-outlined text-lg">ios_share</span>
@@ -152,15 +188,14 @@ function PostcardContentInner({ holiday }: PostcardContentProps) {
                 key={ch.id}
                 onClick={async () => {
                   if (!card) return
-                  shareViaChannel(
+                  const copied = await shareViaChannel(
                     ch.id,
                     `YoYoJoy · ${card.title}`,
                     card.text,
                     card.postcardReady ? card.imageUrl ?? undefined : undefined,
                   )
                   if (ch.id === 'copy' || ch.id === 'max') {
-                    setCopyFeedback(ch.id === 'max' ? 'Вставь в МАКС' : 'Скопировано')
-                    setTimeout(() => setCopyFeedback(''), 1800)
+                    setCopyFeedback(copied ? (ch.id === 'max' ? 'Скопировано — вставь в МАКС' : 'Скопировано') : 'Не удалось скопировать. Попробуй ещё раз.')
                   }
                 }}
                 className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-white border border-outline-variant/30 active:scale-95 transition-transform"

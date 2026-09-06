@@ -49,7 +49,6 @@ export function HomePage() {
   const zodiacSign         = useAppStore(s => s.zodiacSign)
   const userName           = useAppStore(s => s.userName)
   const dailyPack          = useAppStore(s => s.dailyPack)
-  const initDailyPack      = useAppStore(s => s.initDailyPack)
   const refreshSupportPhrase = useAppStore(s => s.refreshSupportPhrase)
   const addBookmark        = useAppStore(s => s.addBookmark)
   const removeBookmark     = useAppStore(s => s.removeBookmark)
@@ -65,7 +64,6 @@ export function HomePage() {
   const [isMoodSheetOpen, setIsMoodSheetOpen] = useState(false)
 
   useEffect(() => {
-    void initDailyPack()
     void fetchBookmarks()
     void fetchGoals()
     void fetchHolidaysToday()

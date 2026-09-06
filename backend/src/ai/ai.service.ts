@@ -54,6 +54,8 @@ export class AiService {
     this.openai = apiKey
       ? new OpenAI({
           apiKey,
+          timeout: 20_000,
+          maxRetries: 0, // AiService owns the one retry; no hidden SDK multiplication.
           ...(this.baseURL ? { baseURL: this.baseURL } : {}),
         })
       : null;

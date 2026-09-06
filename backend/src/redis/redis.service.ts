@@ -74,6 +74,35 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async acquireOwnedLock(
+    key: string,
+    owner: string,
+    ttlSeconds: number,
+  ): Promise<'acquired' | 'busy' | 'unavailable'> {
+    if (!this.client) return 'unavailable';
+    try {
+      return (await this.client.set(key, owner, 'EX', ttlSeconds, 'NX')) ===
+        'OK'
+        ? 'acquired'
+        : 'busy';
+    } catch {
+      return 'unavailable';
+    }
+  }
+
+  async releaseOwnedLock(key: string, owner: string): Promise<void> {
+    try {
+      await this.client?.eval(
+        "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+        1,
+        key,
+        owner,
+      );
+    } catch {
+      /* Expiry releases an abandoned lock. */
+    }
+  }
+
   async lpush(
     key: string,
     values: string[],
